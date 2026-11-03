@@ -28,10 +28,22 @@ def _parse_hhmm(value: Any) -> time:
 HHMM = Annotated[
     time,
     BeforeValidator(_parse_hhmm),
-    PlainSerializer(lambda t: t.strftime("%H:%M"), return_type=str),
+    # Chỉ đổi thành chuỗi khi xuất JSON; model_dump() thường vẫn giữ kiểu `time` cho service.
+    PlainSerializer(lambda t: t.strftime("%H:%M"), return_type=str, when_used="json"),
 ]
 
 VietnameseText = Annotated[str, BeforeValidator(lambda v: nfc(v) if isinstance(v, str) else v)]
+
+
+def _blank_to_none(value: Any) -> Any:
+    if isinstance(value, str):
+        value = nfc(value)
+        return value or None
+    return value
+
+
+# Chuỗi tuỳ chọn: chuẩn hoá NFC; chuỗi rỗng/toàn khoảng trắng được coi là không có (None).
+OptionalText = Annotated[str | None, BeforeValidator(_blank_to_none)]
 
 
 def _field_path(loc: tuple) -> str:
@@ -58,6 +70,10 @@ def _message(err: dict) -> str:
         if lo == 1:
             return "Trường này không được để trống"
         return f"Phải dài ít nhất {lo} ký tự"
+    if kind == "literal_error":
+        return f"Giá trị phải là một trong: {ctx.get('expected', '')}".replace("'", "")
+    if kind == "too_short" and ctx.get("min_length") == 1:
+        return "Cần chọn ít nhất một giá trị"
     if kind in ("too_short", "too_long"):
         return "Số phần tử không hợp lệ"
     if kind == "greater_than_equal":
