@@ -30,13 +30,20 @@ def create_app(config_overrides: dict | None = None) -> Flask:
 
 def register_blueprints(app: Flask) -> None:
     """Mọi API nằm dưới /api. Blueprint của từng user story được thêm vào danh sách này."""
-    from app.api.health import bp as health_bp
-    from app.api.lists import bp as lists_bp
-    from app.api.semesters import bp as semesters_bp
-    from app.api.settings import bp as settings_bp
-    from app.api.subjects import bp as subjects_bp
-    from app.api.tasks import bp as tasks_bp
-    from app.api.today import bp as today_bp
+    from app.api import (
+        calendar,
+        health,
+        lists,
+        semesters,
+        sessions,
+        settings,
+        shifts,
+        subjects,
+        tags,
+        tasks,
+        today,
+    )
 
-    for bp in (health_bp, settings_bp, tasks_bp, lists_bp, semesters_bp, subjects_bp, today_bp):
-        app.register_blueprint(bp, url_prefix="/api")
+    modules = (health, settings, tasks, lists, semesters, subjects, today, sessions, calendar)
+    for module in (*modules, shifts, tags):
+        app.register_blueprint(module.bp, url_prefix="/api")

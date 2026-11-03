@@ -506,7 +506,7 @@ buổi đó giữ ngoại lệ (quickstart V4).
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T066 [P] [US4] Test API trong `backend/tests/integration/test_sessions_api.py`:
+- [X] T066 [P] [US4] Test API trong `backend/tests/integration/test_sessions_api.py`:
   - `/cancel`, `/restore`: khôi phục giữ nguyên giờ và phòng đã sửa riêng.
   - PATCH `start_time`/`end_time` đặt `time_overridden`; PATCH `room` đặt `room_overridden`.
   - `end_time <= start_time` → `400`.
@@ -515,14 +515,14 @@ buổi đó giữ ngoại lệ (quickstart V4).
 
 ### Implementation for User Story 4
 
-- [ ] T067 [US4] Tạo `backend/app/services/sessions.py` (`cancel`, `restore`, `update_session`, gọi
+- [X] T067 [US4] Tạo `backend/app/services/sessions.py` (`cancel`, `restore`, `update_session`, gọi
   `bump_revision`) và blueprint `backend/app/api/sessions.py`: `PATCH /api/sessions/{id}`, `POST
   /api/sessions/{id}/cancel|restore`.
-- [ ] T068 [US4] Tạo `frontend/src/api/sessions.ts` và `frontend/src/components/SessionDetail.tsx`:
+- [X] T068 [US4] Tạo `frontend/src/api/sessions.ts` và `frontend/src/components/SessionDetail.tsx`:
   - Hộp chi tiết buổi học: môn, ngày dạng "Thứ Hai, 16/11/2026", giờ, phòng.
   - Nút "Huỷ buổi này" / "Khôi phục"; form đổi giờ và phòng chỉ cho buổi này.
   - Mở được từ `TodayPage`.
-- [ ] T069 [US4] Trong `frontend/src/components/SubjectForm.tsx` và
+- [X] T069 [US4] Trong `frontend/src/components/SubjectForm.tsx` và
   `frontend/src/pages/SubjectsPage.tsx`:
   - Khi lưu môn mà API báo buổi ngoại lệ nằm ngoài khoảng mới (`409`), hiện hộp thoại xác nhận.
   - Thêm nút "Xoá môn học" có `ConfirmDialog` nêu số buổi học sẽ bị xoá (FR-014).
@@ -540,12 +540,12 @@ ngày và đúng màu (SC-006).
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T070 [P] [US5] Test API trong `backend/tests/integration/test_calendar_api.py`:
+- [X] T070 [P] [US5] Test API trong `backend/tests/integration/test_calendar_api.py`:
   - `GET /api/calendar?from&to` chỉ trả mục trong khoảng (tính cả hai đầu).
   - Buổi huỷ vẫn có, kèm `is_cancelled`.
   - Task không có hạn chót không xuất hiện.
   - `display_color` = màu môn hoặc màu danh sách khi không có nhãn.
-- [ ] T071 [P] [US5] Test thuần trong `frontend/tests/calendarEvents.test.ts` cho `toCalendarEvents`:
+- [X] T071 [P] [US5] Test thuần trong `frontend/tests/calendarEvents.test.ts` cho `toCalendarEvents`:
   - Buổi học thành sự kiện có giờ.
   - Task có giờ thành sự kiện có giờ; task chỉ có ngày thành sự kiện cả ngày.
   - Buổi huỷ có class `is-cancelled`.
@@ -553,11 +553,11 @@ ngày và đúng màu (SC-006).
 
 ### Implementation for User Story 5
 
-- [ ] T072 [US5] Tạo `backend/app/services/calendar.py` và blueprint `backend/app/api/calendar.py`:
+- [X] T072 [US5] Tạo `backend/app/services/calendar.py` và blueprint `backend/app/api/calendar.py`:
   `GET /api/calendar?from=&to=` trả `{sessions, tasks}`. Tham số `tags` để trống, US9 sẽ thêm.
-- [ ] T073 [US5] Tạo `frontend/src/lib/calendarEvents.ts`: hàm thuần `toCalendarEvents(sessions,
+- [X] T073 [US5] Tạo `frontend/src/lib/calendarEvents.ts`: hàm thuần `toCalendarEvents(sessions,
   tasks)` ánh xạ sang EventInput của FullCalendar.
-- [ ] T074 [US5] Tạo `frontend/src/api/calendar.ts` và `frontend/src/pages/CalendarPage.tsx`:
+- [X] T074 [US5] Tạo `frontend/src/api/calendar.ts` và `frontend/src/pages/CalendarPage.tsx`:
   - FullCalendar với `dayGridMonth`, `timeGridWeek`, `timeGridDay`.
   - `locale: 'vi'`, `firstDay: 1`, định dạng giờ 24h (`slotLabelFormat`, `eventTimeFormat` với
     `hour12: false`), `dayMaxEvents: true` (tự hiện "+n").
@@ -565,7 +565,7 @@ ngày và đúng màu (SC-006).
   - Tải dữ liệu theo `datesSet`.
   - Bấm buổi học mở `SessionDetail`; bấm task mở `TaskForm`.
   - CSS `.is-cancelled { text-decoration: line-through; opacity: .5 }`.
-- [ ] T075 [US5] Đổi màu (FR-018): thêm `ColorPicker` vào form danh sách trong
+- [X] T075 [US5] Đổi màu (FR-018): thêm `ColorPicker` vào form danh sách trong
   `frontend/src/pages/TasksPage.tsx` và kiểm tra `SubjectForm` đã có; màu được tự gán khi tạo (đã có
   `next_color` phía backend).
 
@@ -582,12 +582,12 @@ sửa giờ riêng (quickstart V5).
 
 ### Tests for User Story 8 ⚠️
 
-- [ ] T076 [P] [US8] Test thuần trong `backend/tests/unit/test_shifts.py`:
+- [X] T076 [P] [US8] Test thuần trong `backend/tests/unit/test_shifts.py`:
   - `resolve_range(ca1, ca2)` → 06:45–12:10.
   - `match_shift_range(start, end, shifts, tolerance_min=5)`:
     - Khớp 1 ca (lệch 4 phút vẫn khớp, lệch 6 phút thì không).
     - Khớp dãy ca liền nhau (Ca 1–2); không khớp → `None`.
-- [ ] T077 [P] [US8] Test API trong `backend/tests/integration/test_shifts_api.py`:
+- [X] T077 [P] [US8] Test API trong `backend/tests/integration/test_shifts_api.py`:
   - Có sẵn 4 ca mặc định đúng giờ.
   - `end_time <= start_time` → `400`.
   - PATCH ca đang dùng mà thiếu `confirm` → `409` với `details.subject_count`; có `confirm=true`
@@ -598,20 +598,20 @@ sửa giờ riêng (quickstart V5).
 
 ### Implementation for User Story 8
 
-- [ ] T078 [US8] Tạo `backend/app/services/shifts.py`:
+- [X] T078 [US8] Tạo `backend/app/services/shifts.py`:
   - Hàm thuần `resolve_range`, `match_shift_range`, `shift_label(start_shift, end_shift)` (ví dụ
     "Ca 1" hoặc "Ca 1–2").
   - `update_shift` / `delete_shift` lan thay đổi sang `subjects` rồi gọi
     `services.subjects.regenerate_sessions`.
   - Gọi `bump_revision`.
   - Dùng `resolve_range` trong `services/subjects.resolve_times` (thay code tạm ở T057).
-- [ ] T079 [US8] Tạo blueprint `backend/app/api/shifts.py` (`GET/POST /api/shifts`, `PATCH/DELETE
+- [X] T079 [US8] Tạo blueprint `backend/app/api/shifts.py` (`GET/POST /api/shifts`, `PATCH/DELETE
   /api/shifts/{id}?confirm=true`); `SessionOut.shift_label` lấy từ `shift_label`.
-- [ ] T080 [US8] Tạo `frontend/src/api/shifts.ts` và `frontend/src/components/ShiftPicker.tsx`:
+- [X] T080 [US8] Tạo `frontend/src/api/shifts.ts` và `frontend/src/components/ShiftPicker.tsx`:
   - Chọn "Ca n", dãy "Ca a–b" (ca cuối ≥ ca đầu), hoặc "Giờ tuỳ chỉnh" (hiện ô nhập giờ).
   - Hiển thị giờ tương ứng.
   - Thay ô giờ trong `SubjectForm.tsx` và `BulkSubjectForm.tsx` bằng `ShiftPicker`.
-- [ ] T081 [US8] Tạo `frontend/src/pages/ShiftsPage.tsx` (trong Cài đặt): sửa giờ, thêm, xoá ca;
+- [X] T081 [US8] Tạo `frontend/src/pages/ShiftsPage.tsx` (trong Cài đặt): sửa giờ, thêm, xoá ca;
   gặp `409` thì hiện `ConfirmDialog` "N môn học sẽ cập nhật theo giờ mới" / "N môn học sẽ chuyển
   sang giờ tuỳ chỉnh".
 
@@ -628,7 +628,7 @@ dưới 1 giây (quickstart V6; SC-016).
 
 ### Tests for User Story 9 ⚠️
 
-- [ ] T082 [P] [US9] Test API trong `backend/tests/integration/test_tags_api.py`:
+- [X] T082 [P] [US9] Test API trong `backend/tests/integration/test_tags_api.py`:
   - Tạo nhãn; trùng tên khác hoa thường → `400`.
   - Nhãn `e_learning`: đổi tên hoặc xoá → `400`, đổi màu → `200`.
   - `PUT /tasks/{id}/tags` giữ đúng thứ tự.
@@ -638,23 +638,23 @@ dưới 1 giây (quickstart V6; SC-016).
 
 ### Implementation for User Story 9
 
-- [ ] T083 [US9] Tạo `backend/app/services/tags.py`:
+- [X] T083 [US9] Tạo `backend/app/services/tags.py`:
   - CRUD (chặn sửa tên hoặc xoá nhãn có `system_key`, kiểm tra trùng `ci_key`).
   - `set_tags(owner, tag_ids)` ghi `position` theo thứ tự.
   - `effective_tags(session)`.
   - Gọi `bump_revision`.
   Tạo blueprint `backend/app/api/tags.py` gồm `PUT /api/subjects/{id}/tags`,
   `/api/sessions/{id}/tags`, `/api/tasks/{id}/tags`.
-- [ ] T084 [US9] Cập nhật `backend/app/services/calendar.py`, `services/tasks.list_tasks` và
+- [X] T084 [US9] Cập nhật `backend/app/services/calendar.py`, `services/tasks.list_tasks` và
   `services/today.py`:
   - Lọc theo `tag_ids` với logic OR.
   - Tính `tags` và `display_color` bằng `colors.display_color` cho buổi học và task.
   - Xử lý `tag_ids` trong `TaskIn` và `SubjectInput`.
-- [ ] T085 [US9] Tạo `frontend/src/api/tags.ts`, `frontend/src/components/TagPicker.tsx` (chọn nhiều,
+- [X] T085 [US9] Tạo `frontend/src/api/tags.ts`, `frontend/src/components/TagPicker.tsx` (chọn nhiều,
   giữ thứ tự chọn) và `frontend/src/pages/TagsPage.tsx`:
   - TagsPage: tạo, đổi tên, đổi màu, xoá nhãn (nhãn E-Learning chỉ đổi màu).
   - Gắn `TagPicker` vào `TaskForm`, `SubjectForm`, `SessionDetail`.
-- [ ] T086 [US9] Tạo `frontend/src/components/TagFilter.tsx` và gắn vào `CalendarPage` và
+- [X] T086 [US9] Tạo `frontend/src/components/TagFilter.tsx` và gắn vào `CalendarPage` và
   `TasksPage`:
   - Bộ lọc lưu trong tham số URL `?tags=1,2`, nên giữ nguyên khi đổi chế độ xem (FR-045).
   - Nút "Bỏ lọc".

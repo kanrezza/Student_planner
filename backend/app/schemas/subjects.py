@@ -7,6 +7,7 @@ from pydantic import Field, ValidationInfo, field_validator
 from app.lib.timeutil import iso
 from app.schemas.common import HHMM, ApiModel, OptionalText, VietnameseText
 from app.services.colors import display_color
+from app.services.shifts import shift_label
 from app.services.tag_links import serialize_tags
 
 # ---- Học kỳ ---------------------------------------------------------------------------------
@@ -119,18 +120,6 @@ class BulkSubjectsIn(ApiModel):
     rows: list[SubjectFields] = Field(min_length=1)
 
 
-def shift_label(start_shift, end_shift) -> str | None:
-    """ "Ca 1" hoặc "Ca 1–2" (bỏ tiền tố chung "Ca " ở ca cuối)."""
-    if start_shift is None or end_shift is None:
-        return None
-    if start_shift.id == end_shift.id:
-        return start_shift.name
-    end_name = end_shift.name
-    if start_shift.name.startswith("Ca ") and end_name.startswith("Ca "):
-        end_name = end_name.removeprefix("Ca ")
-    return f"{start_shift.name}–{end_name}"
-
-
 def serialize_subject(subject, session_count: int | None = None) -> dict:
     tags = subject.tags
     data = {
@@ -179,6 +168,7 @@ def serialize_session(session) -> dict:
         "room_overridden": session.room_overridden,
         "color": subject.color,
         "tags": serialize_tags(tags),
+        "own_tag_ids": [link.tag_id for link in session.tag_links],  # nhãn riêng (không gồm môn)
         "display_color": display_color([t.color for t in tags], subject.color),
         "shift_label": (
             None if session.time_overridden else shift_label(subject.start_shift, subject.end_shift)

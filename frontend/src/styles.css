@@ -466,7 +466,7 @@ textarea {
 .bulk-table__head,
 .bulk-table__row {
   display: grid;
-  grid-template-columns: 2fr 2.4fr 0.9fr 0.9fr 1fr 1.4fr 1.4fr 2rem;
+  grid-template-columns: 2fr 2.4fr 2.2fr 1fr 1.4fr 1.4fr 2rem;
   gap: 0.4rem;
   align-items: start;
   min-width: 980px;
@@ -489,4 +489,156 @@ textarea {
 
 .bulk-cell.field--error input {
   border-color: var(--danger);
+}
+
+/* ---- Trang Cài đặt ---- */
+.settings > .panel {
+  margin-bottom: 1.25rem;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.5rem;
+}
+
+.simple-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.simple-table th {
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0.25rem;
+}
+
+.simple-table td {
+  padding: 0.25rem;
+  vertical-align: top;
+}
+
+.simple-table input {
+  width: 100%;
+}
+
+/* ---- Buổi học bấm được (mở chi tiết) ---- */
+.task-item--clickable {
+  cursor: pointer;
+}
+
+.task-item--clickable:hover,
+.task-item--clickable:focus-visible {
+  border-color: var(--primary);
+}
+
+/* ---- Nhãn ---- */
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tag-chip {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.tag-chip.is-selected {
+  color: #fff;
+}
+
+.tag-chip__order {
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  padding: 0 0.3rem;
+}
+
+.tag-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.tag-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  margin-left: 3px;
+  vertical-align: middle;
+}
+
+/* ---- Chọn ca ---- */
+.shift-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.shift-picker__times {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.shift-picker--compact {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.shift-picker--compact input {
+  width: 6.5rem;
+}
+
+/* ---- Lịch (FullCalendar) ---- */
+.calendar-page {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.calendar-page .fc .fc-toolbar-title {
+  font-size: 1.2rem;
+}
+
+.calendar-page .fc .fc-button {
+  text-transform: none;
+}
+
+.fc-event-body {
+  overflow: hidden;
+  font-size: 0.8rem;
+  line-height: 1.25;
+  padding: 1px 2px;
+}
+
+.fc-event-time {
+  font-weight: 600;
+  margin-right: 0.3rem;
+}
+
+.fc .is-cancelled {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.fc .is-done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.fc-event {
+  cursor: pointer;
 }

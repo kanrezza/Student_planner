@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useToday } from '../api/today';
 import type { ClassSession } from '../api/types';
+import { SessionDetail } from '../components/SessionDetail';
 import { TaskItem } from '../components/TaskItem';
 import { t } from '../i18n/vi';
 import { colorHex } from '../lib/colors';
@@ -9,6 +11,7 @@ import { sessionTimeRange } from '../lib/format';
 /** Trang "Hôm nay" (US3, FR-019, FR-020): buổi học, công việc hạn hôm nay, nhóm Quá hạn. */
 export function TodayPage() {
   const today = useToday();
+  const [openSession, setOpenSession] = useState<ClassSession | null>(null);
   if (today.isLoading) return <p className="muted">{t('common.loading')}</p>;
   if (today.error) return <p className="field__error">{today.error.message}</p>;
   const data = today.data!;
@@ -35,7 +38,7 @@ export function TodayPage() {
           ) : (
             <ul className="task-list">
               {data.sessions.map((s) => (
-                <SessionRow key={s.id} session={s} />
+                <SessionRow key={s.id} session={s} onOpen={() => setOpenSession(s)} />
               ))}
             </ul>
           )}
@@ -63,13 +66,20 @@ export function TodayPage() {
           )}
         </>
       )}
+      {openSession && <SessionDetail session={openSession} onClose={() => setOpenSession(null)} />}
     </section>
   );
 }
 
-function SessionRow({ session }: { session: ClassSession }) {
+function SessionRow({ session, onOpen }: { session: ClassSession; onOpen: () => void }) {
   return (
-    <li className={`task-item${session.is_cancelled ? ' is-done' : ''}`}>
+    <li
+      className={`task-item task-item--clickable${session.is_cancelled ? ' is-done' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onOpen()}
+    >
       <span className="color-bar" style={{ backgroundColor: colorHex(session.display_color) }} />
       <div className="session-time">{sessionTimeRange(session)}</div>
       <div className="task-item__body">

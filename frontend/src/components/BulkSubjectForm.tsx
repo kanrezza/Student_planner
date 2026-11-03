@@ -5,6 +5,7 @@ import type { Semester } from '../api/types';
 import { t } from '../i18n/vi';
 import { blankToNull } from '../lib/format';
 import { FormField, fieldError } from './FormField';
+import { ShiftPicker, timeChoiceToInput, type TimeChoice } from './ShiftPicker';
 import { FormActions } from './TaskForm';
 import { WeekdayPicker } from './WeekdayPicker';
 
@@ -12,8 +13,7 @@ type Row = {
   key: number;
   name: string;
   weekdays: number[];
-  start_time: string;
-  end_time: string;
+  time: TimeChoice;
   room: string;
   class_code: string;
   lecturer: string;
@@ -21,8 +21,6 @@ type Row = {
 
 const COLUMN_LABELS = {
   name: 'subjects.fieldName',
-  start_time: 'subjects.fieldStartTime',
-  end_time: 'subjects.fieldEndTime',
   room: 'subjects.fieldRoom',
   class_code: 'subjects.fieldClassCode',
   lecturer: 'subjects.fieldLecturer',
@@ -33,8 +31,7 @@ const emptyRow = (): Row => ({
   key: nextKey++,
   name: '',
   weekdays: [],
-  start_time: '',
-  end_time: '',
+  time: { shift: null, start_time: '', end_time: '' },
   room: '',
   class_code: '',
   lecturer: '',
@@ -77,7 +74,9 @@ export function BulkSubjectForm({
   function submit(e: FormEvent) {
     e.preventDefault();
     // Bỏ qua dòng trống hoàn toàn để người dùng không phải xoá các dòng thừa.
-    const filled = rows.filter((r) => r.name.trim() || r.weekdays.length || r.start_time);
+    const filled = rows.filter(
+      (r) => r.name.trim() || r.weekdays.length || r.time.shift || r.time.start_time,
+    );
     bulk.mutate(
       {
         semester_id: semesterId,
@@ -86,8 +85,7 @@ export function BulkSubjectForm({
         rows: filled.map((r) => ({
           name: r.name.trim(),
           weekdays: r.weekdays,
-          start_time: r.start_time || null,
-          end_time: r.end_time || null,
+          ...timeChoiceToInput(r.time),
           room: blankToNull(r.room),
           class_code: blankToNull(r.class_code),
           lecturer: blankToNull(r.lecturer),
@@ -133,8 +131,7 @@ export function BulkSubjectForm({
         <div className="bulk-table__head">
           <span>{t('subjects.fieldName')}</span>
           <span>{t('subjects.fieldWeekdays')}</span>
-          <span>{t('subjects.fieldStartTime')}</span>
-          <span>{t('subjects.fieldEndTime')}</span>
+          <span>{t('shifts.pick')}</span>
           <span>{t('subjects.fieldRoom')}</span>
           <span>{t('subjects.fieldClassCode')}</span>
           <span>{t('subjects.fieldLecturer')}</span>
@@ -146,20 +143,31 @@ export function BulkSubjectForm({
               [
                 ['name', 'text'],
                 ['weekdays', 'weekdays'],
-                ['start_time', 'time'],
-                ['end_time', 'time'],
+                ['time', 'shift'],
                 ['room', 'text'],
                 ['class_code', 'text'],
                 ['lecturer', 'text'],
               ] as const
             ).map(([field, kind]) => {
-              const message = cellError(i, field);
+              const message =
+                field === 'time'
+                  ? (cellError(i, 'shift') ??
+                    cellError(i, 'start_time') ??
+                    cellError(i, 'end_time'))
+                  : cellError(i, field);
               return (
                 <div key={field} className={`bulk-cell${message ? ' field--error' : ''}`}>
                   {kind === 'weekdays' ? (
                     <WeekdayPicker
                       value={row.weekdays}
                       onChange={(days) => updateRow(i, { weekdays: days })}
+                    />
+                  ) : kind === 'shift' ? (
+                    <ShiftPicker
+                      compact
+                      label={`${t('shifts.pick')} – dòng ${i + 1}`}
+                      value={row.time}
+                      onChange={(time) => updateRow(i, { time })}
                     />
                   ) : (
                     <input

@@ -3,11 +3,12 @@ import { apiFetch } from './client';
 import { invalidateTaskViews, keys } from './keys';
 import type { Task, TaskInput } from './types';
 
-export function useTasks(listId: number | null, includeCompleted: boolean) {
+export function useTasks(listId: number | null, includeCompleted: boolean, tagIds: number[] = []) {
   const params = new URLSearchParams({ include_completed: String(includeCompleted) });
   if (listId !== null) params.set('list_id', String(listId));
+  if (tagIds.length) params.set('tags', tagIds.join(','));
   return useQuery({
-    queryKey: [...keys.tasks, listId, includeCompleted],
+    queryKey: [...keys.tasks, listId, includeCompleted, tagIds.join(',')],
     queryFn: async () => (await apiFetch<Task[]>(`/tasks?${params}`)).data,
   });
 }

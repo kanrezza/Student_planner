@@ -47,6 +47,7 @@ chính máy (constitution IV).
 ```
 
 `display_color` = màu của nhãn hiệu lực đầu tiên, nếu không có nhãn thì màu môn (FR-044).
+`tags` là nhãn hiệu lực (nhãn môn rồi nhãn riêng); `own_tag_ids` là nhãn riêng của buổi, dùng khi sửa.
 
 ---
 

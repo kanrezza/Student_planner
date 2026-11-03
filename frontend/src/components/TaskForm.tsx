@@ -4,6 +4,7 @@ import type { Priority, Task, TaskList } from '../api/types';
 import { t } from '../i18n/vi';
 import { PRIORITIES, blankToNull, priorityLabel } from '../lib/format';
 import { FormField } from './FormField';
+import { TagPicker } from './TagPicker';
 
 /** Thêm hoặc sửa một công việc (FR-001, FR-002). Lỗi từ API hiện ngay dưới ô tương ứng. */
 export function TaskForm({
@@ -24,6 +25,7 @@ export function TaskForm({
   const [priority, setPriority] = useState<Priority>(task?.priority ?? 2);
   const [listId, setListId] = useState(task?.list_id ?? defaultListId);
   const [titleError, setTitleError] = useState<string | null>(null);
+  const [tagIds, setTagIds] = useState<number[]>(task?.tags.map((tag) => tag.id) ?? []);
 
   const create = useCreateTask();
   const update = useUpdateTask();
@@ -44,6 +46,7 @@ export function TaskForm({
       due_time: dueDate && dueTime ? dueTime : null,
       priority,
       list_id: listId,
+      tag_ids: tagIds,
     };
     const options = { onSuccess: onDone };
     if (task) update.mutate({ id: task.id, input }, options);
@@ -105,6 +108,9 @@ export function TaskForm({
           </select>
         </FormField>
       </div>
+      <FormField label={t('tags.pick')} name="tag_ids" error={error}>
+        <TagPicker value={tagIds} onChange={setTagIds} />
+      </FormField>
       <FormActions saving={saving} onCancel={onDone} />
     </form>
   );

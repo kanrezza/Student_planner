@@ -8,7 +8,14 @@ export const keys = {
   calendar: ['calendar'] as const,
   semesters: ['semesters'] as const,
   subjects: ['subjects'] as const,
+  shifts: ['shifts'] as const,
+  tags: ['tags'] as const,
 };
+
+/** Mọi dữ liệu hiển thị đều có thể đổi (ví dụ đổi màu nhãn) → làm mới tất cả. */
+export function invalidateAll(qc: QueryClient) {
+  void qc.invalidateQueries();
+}
 
 /** Task thay đổi → danh sách task, số đếm của danh sách, trang Hôm nay, lịch. */
 export function invalidateTaskViews(qc: QueryClient) {

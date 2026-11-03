@@ -5,6 +5,7 @@ import { useDeleteTask, useTasks } from '../api/tasks';
 import type { Task, TaskList } from '../api/types';
 import { ColorPicker } from '../components/ColorPicker';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { TagFilter, useTagFilter } from '../components/TagFilter';
 import { FormField } from '../components/FormField';
 import { Modal } from '../components/Modal';
 import { FormActions, TaskForm } from '../components/TaskForm';
@@ -28,7 +29,8 @@ export function TasksPage() {
     allLists.find((l) => l.id === selectedId) ??
     allLists.find((l) => l.is_default_study) ??
     allLists[0];
-  const tasks = useTasks(selected?.id ?? null, showCompleted);
+  const [tagIds] = useTagFilter();
+  const tasks = useTasks(selected?.id ?? null, showCompleted, tagIds);
 
   if (lists.isLoading) return <p className="muted">{t('common.loading')}</p>;
 
@@ -81,6 +83,7 @@ export function TasksPage() {
               />
               {t('tasks.showCompleted')}
             </label>
+            <TagFilter />
             {tasks.data?.length === 0 && <p className="muted">{t('tasks.empty')}</p>}
             <ul className="task-list">
               {tasks.data?.map((task) => (

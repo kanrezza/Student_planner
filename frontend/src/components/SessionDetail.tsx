@@ -1,0 +1,99 @@
+import { useState, type FormEvent } from 'react';
+import { useSessionActions, type SessionPatch } from '../api/sessions';
+import type { ClassSession } from '../api/types';
+import { t } from '../i18n/vi';
+import { formatDayLong, formatTime } from '../lib/dates';
+import { blankToNull, sessionTimeRange } from '../lib/format';
+import { FormField } from './FormField';
+import { Modal } from './Modal';
+import { TagPicker } from './TagPicker';
+import { FormActions } from './TaskForm';
+
+/**
+ * Chi tiết một buổi học (US4): huỷ/khôi phục, đổi giờ hoặc phòng chỉ cho buổi này (FR-011, FR-012),
+ * gắn nhãn riêng của buổi (FR-043).
+ */
+export function SessionDetail({
+  session,
+  onClose,
+}: {
+  session: ClassSession;
+  onClose: () => void;
+}) {
+  const { update, setCancelled, setTags } = useSessionActions();
+  const [startTime, setStartTime] = useState(formatTime(session.start_at));
+  const [endTime, setEndTime] = useState(formatTime(session.end_at));
+  const [room, setRoom] = useState(session.room ?? '');
+  const [ownTags, setOwnTags] = useState<number[]>(session.own_tag_ids);
+  const subjectTagIds = session.tags
+    .map((tag) => tag.id)
+    .filter((id) => !session.own_tag_ids.includes(id));
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    // Chỉ gửi trường đã đổi, để không đánh dấu "sửa riêng" khi người dùng không đổi gì.
+    const patch: SessionPatch = {};
+    if (startTime !== formatTime(session.start_at)) patch.start_time = startTime;
+    if (endTime !== formatTime(session.end_at)) patch.end_time = endTime;
+    if (blankToNull(room) !== session.room) patch.room = blankToNull(room);
+    const tagsChanged = ownTags.join(',') !== session.own_tag_ids.join(',');
+    const saveTags = () =>
+      tagsChanged
+        ? setTags.mutate({ id: session.id, tagIds: ownTags }, { onSuccess: onClose })
+        : onClose();
+    if (Object.keys(patch).length)
+      update.mutate({ id: session.id, patch }, { onSuccess: saveTags });
+    else saveTags();
+  }
+
+  return (
+    <Modal title={session.subject_name} onClose={onClose}>
+      <p>
+        <strong>{formatDayLong(session.date)}</strong> · {sessionTimeRange(session)}
+        {session.shift_label && ` (${session.shift_label})`}
+        <br />
+        {session.room ?? t('session.noRoom')}
+        {session.lecturer && ` · ${session.lecturer}`}
+      </p>
+      <div className="row-actions">
+        {session.is_cancelled && (
+          <span className="badge badge--danger">{t('session.cancelled')}</span>
+        )}
+        {session.time_overridden && <span className="badge">{t('session.timeOverridden')}</span>}
+        {session.room_overridden && <span className="badge">{t('session.roomOverridden')}</span>}
+        <button
+          type="button"
+          className={session.is_cancelled ? 'button--primary' : 'button--danger'}
+          disabled={setCancelled.isPending}
+          onClick={() =>
+            setCancelled.mutate(
+              { id: session.id, cancelled: !session.is_cancelled },
+              { onSuccess: onClose },
+            )
+          }
+        >
+          {session.is_cancelled ? t('session.restore') : t('session.cancel')}
+        </button>
+      </div>
+
+      <form onSubmit={submit} noValidate>
+        <h3>{t('session.editOnly')}</h3>
+        <div className="form-row">
+          <FormField label={t('subjects.fieldStartTime')} name="start_time" error={update.error}>
+            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+          </FormField>
+          <FormField label={t('subjects.fieldEndTime')} name="end_time" error={update.error}>
+            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+          </FormField>
+          <FormField label={t('subjects.fieldRoom')} name="room" error={update.error}>
+            <input value={room} onChange={(e) => setRoom(e.target.value)} />
+          </FormField>
+        </div>
+        <FormField label={t('session.tags')} name="tag_ids" error={setTags.error}>
+          <TagPicker value={ownTags} onChange={setOwnTags} exclude={subjectTagIds} />
+        </FormField>
+        <FormActions saving={update.isPending || setTags.isPending} onCancel={onClose} />
+      </form>
+    </Modal>
+  );
+}

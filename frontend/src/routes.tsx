@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { CalendarPage } from './pages/CalendarPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SubjectsPage } from './pages/SubjectsPage';
@@ -13,7 +14,7 @@ export const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { index: true, element: <TodayPage /> },
-      { path: 'lich', element: <PlaceholderPage titleKey="calendar.title" /> },
+      { path: 'lich', element: <CalendarPage /> },
       { path: 'cong-viec', element: <TasksPage /> },
       { path: 'mon-hoc', element: <SubjectsPage /> },
       { path: 'nhap-anh', element: <PlaceholderPage titleKey="import.title" /> },
