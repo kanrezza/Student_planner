@@ -201,6 +201,7 @@ position)`, `task_tags(task_id, tag_id, position)`, `exam_tags(exam_id, tag_id, 
 | exam_reminder_minutes | integer | 60 (1 mốc cho buổi thi không quan trọng, FR-069) |
 | daily_digest_enabled | boolean | `true` (FR-065) |
 | daily_digest_time | time | 05:00 |
+| daily_digest_overdue_only | boolean | `true` ("Gửi tóm tắt khi chỉ có việc quá hạn", FR-065) |
 
 Đổi các cột `auto_deadline_*` thì reconcile mọi buổi học có hạn chót chưa qua.
 
@@ -281,16 +282,19 @@ Hàm thuần `services/digest.py: build_digest(day, exams, sessions, tasks, shif
 |--------|-------|
 | date | ngày của bản tóm tắt |
 | fire_at | `date + settings.daily_digest_time` |
-| title | một dòng, ví dụ `Hôm nay: Thi CSDL 07:30 A5-310 · Ca 1 Giải tích A101 · Ca 3 Vật lý B203 · 1 task đến hạn, 2 quá hạn` |
-| lines | các dòng chi tiết: buổi thi (giờ, tên học phần, phòng) → buổi học chưa huỷ theo `start_at` (nhãn ca nếu khớp ca, ngược lại `HH:MM`; tên môn; phòng hoặc "chưa có phòng") → `"Task: n đến hạn hôm nay, m quá hạn"` (bỏ dòng nếu cả hai bằng 0) |
+| title | một dòng, ví dụ `Hôm nay: Thi CSDL 07:30 A5-310 · Ca 1 Giải tích A101 · Việc: Nộp bài Toán, Đọc chương 3 (quá hạn) +2 việc khác` |
+| lines | các dòng chi tiết: buổi thi (giờ, tên học phần, phòng) → buổi học chưa huỷ theo `start_at` (nhãn ca nếu khớp ca, ngược lại `HH:MM`; tên môn; phòng hoặc "chưa có phòng") → mỗi task được chọn một dòng (`<tiêu đề> – hạn HH:MM` hoặc `– cả ngày` cho task đến hạn, `– quá hạn từ dd/mm` cho task quá hạn) → `"+N việc khác"` nếu còn |
 | is_important | `true` nếu có buổi thi hoặc mục quan trọng trong ngày (đánh dấu ★ ở đầu tiêu đề) |
 
 - Đến hạn hôm nay = task chưa hoàn thành có `due_date = date`. Quá hạn = task chưa hoàn thành có
   `due_at < date 00:00` (tính theo dữ liệu hiện tại).
-- Trả `None` (không gửi) khi không có buổi thi, buổi học, task đến hạn và task quá hạn, hoặc khi
-  `daily_digest_enabled = false`.
+- **Chọn task**: task đến hạn hôm nay sắp theo `due_at` (task chỉ có ngày sau task có giờ), rồi task
+  quá hạn sắp theo `due_at` tăng dần (quá hạn lâu nhất trước); lấy 3 task đầu, `N` = số còn lại.
+- Trả `None` (không gửi) khi không có buổi thi, buổi học, task đến hạn và task quá hạn; khi chỉ có
+  task quá hạn mà `daily_digest_overdue_only = false`; hoặc khi `daily_digest_enabled = false`.
 - Feed sinh bản tóm tắt cho `today … today + 13` (14 ngày, research R15).
-- Không có tiêu đề task, ghi chú, số báo danh, hình thức thi (FR-052, FR-065).
+- Chỉ có tối đa 3 tiêu đề task (đã có sẵn trong Lời nhắc); không có ghi chú, số báo danh, hình thức
+  thi (FR-052, FR-065).
 
 ---
 

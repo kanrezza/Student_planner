@@ -41,8 +41,8 @@ Cơ chế chi tiết xem [research R5](../research.md#r5-cơ-chế-đồng-bộ-
   ],
   "digests": [
     {"sync_key": "digest:2026-11-16", "fingerprint": "77e0…", "date": "2026-11-16",
-     "title": "Hôm nay: Ca 1 Giải tích A101 · Ca 3 Vật lý B203 · 1 task đến hạn",
-     "notes": "Ca 1 (06:45): Giải tích – A101\nCa 3 (13:00): Vật lý – B203\nTask: 1 đến hạn hôm nay, 0 quá hạn",
+     "title": "Hôm nay: Ca 1 Giải tích A101 · Ca 3 Vật lý B203 · Việc: Nộp bài Toán, Đọc chương 3 (quá hạn) +2 việc khác",
+     "notes": "Ca 1 (06:45): Giải tích – A101\nCa 3 (13:00): Vật lý – B203\nNộp bài Toán – hạn 17:00\nĐọc chương 3 – quá hạn từ 12/11\n+2 việc khác",
      "alarm_at": "2026-11-16T05:00:00+07:00"}
   ]
 }
@@ -60,15 +60,14 @@ Cơ chế chi tiết xem [research R5](../research.md#r5-cơ-chế-đồng-bộ-
   - `alarms_at` là danh sách thời điểm tuyệt đối (sắp tăng dần), `[]` nếu task đã tắt nhắc.
   - `due_has_time = false` thì ghi hạn theo ngày; `alarms_at` lúc `date_only_task_reminder_time`.
   - `important = true` thì `EKReminder.priority = 1` (cao, FR-070).
-- `digests`: bản tóm tắt của `today … today + 13` không trống, chỉ khi `daily_digest_enabled`
-  (FR-065, FR-066). `title` là bản một dòng (hiện trong thông báo), `notes` là các dòng chi tiết.
+- `digests`: bản tóm tắt của `today … today + 13` không trống, chỉ khi `daily_digest_enabled`; ngày
+  chỉ có task quá hạn chỉ có mặt khi `daily_digest_overdue_only` (FR-065, FR-066). `title` là bản một dòng (hiện trong thông báo), `notes` là các dòng chi tiết.
   Thay đổi so với bản cũ: `alarm_at` của reminder đổi thành danh sách `alarms_at`; agent cũ (0.1.x)
   cần cài lại cùng lúc với backend mới.
 
 **Giới hạn nội dung** (FR-052, constitution IV): chỉ gồm tiêu đề, địa điểm (phòng), thời gian, báo
-trước, mức quan trọng và bản tóm tắt (ca, tên môn/học phần, giờ, phòng, số lượng task). Không gửi
-ghi chú, tiêu đề task trong bản tóm tắt, giảng viên, mã lớp, nhãn, số báo danh, hình thức thi hay
-ảnh.
+trước, mức quan trọng và bản tóm tắt (ca, tên môn/học phần, giờ, phòng, tối đa 3 tiêu đề task và
+số việc còn lại). Không gửi ghi chú, giảng viên, mã lớp, nhãn, số báo danh, hình thức thi hay ảnh.
 
 `fingerprint` = SHA-256 của các trường nội dung ở trên, để agent biết mục nào cần cập nhật.
 
