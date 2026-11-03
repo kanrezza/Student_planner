@@ -30,7 +30,8 @@ EventKit qua PyObjC ([research R2, R4](research.md)).
 
 ## Technical Context
 
-**Language/Version**: Python 3.12 (backend, mac-agent); TypeScript 5 + React 18 (frontend);
+**Language/Version**: Python 3.12 (backend, trong Docker); Python 3.11 Homebrew dạng framework
+(mac-agent, vì py2app cần Python framework, xem research R4); TypeScript 5 + React 18 (frontend);
 Node 22 LTS (chỉ dùng lúc build)
 
 **Primary Dependencies**:

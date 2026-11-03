@@ -10,7 +10,8 @@ Hướng dẫn chạy và các kịch bản kiểm chứng end-to-end. Chi tiế
 
 - macOS 14 trở lên, Apple Silicon hoặc Intel.
 - OrbStack đã cài, có bật "Start at login".
-- Python 3.12, chỉ cần để build `mac-agent`.
+- Homebrew `python@3.11` (Python dạng framework), chỉ cần để build `mac-agent`:
+  `brew install python@3.11`.
 - Internet chỉ cần cho **lần build đầu** (tải image Docker, gói Python/Node và model EasyOCR). Sau
   đó ứng dụng chạy offline hoàn toàn.
 - Để kiểm tra nhắc trên iPhone: iPhone cùng Apple ID, đã bật iCloud cho Lịch và Lời nhắc.
