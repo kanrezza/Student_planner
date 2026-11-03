@@ -138,7 +138,7 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
 | due_time | time | tuỳ chọn; chỉ có khi có `due_date` |
 | priority | smallint | 1 = Cao, 2 = Trung bình (mặc định), 3 = Thấp |
 | completed_at | timestamptz | `NULL` = chưa hoàn thành |
-| reminder_minutes | integer | `NULL` = mặc định; `-1` = tắt; ≥ 0 (chỉ dùng khi có `due_time`) |
+| reminder_minutes | integer | `NULL` = mặc định; `-1` = tắt nhắc (áp dụng cho mọi task, kể cả task chỉ có ngày); ≥ 0 = số phút trước hạn (chỉ có tác dụng khi có `due_time`) |
 | source_session_id | bigint FK → class_sessions | có giá trị ⇔ task tự tạo; duy nhất; `ON DELETE SET NULL` |
 | is_auto | boolean | `true` nếu do quy tắc tạo ra |
 | user_modified | boolean | `true` sau khi người dùng sửa bất kỳ trường nào ngoài `completed_at` |
@@ -148,6 +148,7 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
 - **Thời điểm nhắc**:
   - Task có `due_time`: `due_at − (reminder_minutes ?? settings.task_reminder_minutes)`.
   - Task chỉ có `due_date`: `due_date + settings.date_only_task_reminder_time` (mặc định 08:00).
+  - `reminder_minutes = -1` thì không nhắc, bất kể task có giờ hay chỉ có ngày.
 - **Quá hạn** = chưa hoàn thành và `due_at < now()`.
 
 **Vòng đời task tự tạo**:
@@ -228,6 +229,8 @@ ImportPreview
    ├─ semester_id: id | null   (null ⇒ phải chọn hoặc tạo học kỳ)
    ├─ duplicate_of_session_id: id | null   ("Đã có trong lịch")
    ├─ repeat: {mode: "once"|"weekly", until: date}
+   ├─ merge_group: string | null   (các dòng cùng tên, thứ, giờ có chung giá trị)
+   ├─ merge_accepted: bool   (mặc định false; người dùng bấm "Gộp" thì cả nhóm thành true)
    └─ selected: bool   (mặc định false nếu trùng)
 ```
 
@@ -238,7 +241,8 @@ ImportPreview
 - Mỗi dòng tạo một `subject`:
   - `weekly`: `weekdays = [weekday(date)]`, khoảng ngày từ `date` đến `until`.
   - `once`: `start_date = end_date = date`.
-- Các dòng cùng tên, cùng thứ, cùng giờ được gộp thành một môn nếu người dùng chấp nhận gợi ý gộp.
+- Các dòng cùng `merge_group` có `merge_accepted = true` tạo **một** môn lặp hàng tuần, bắt đầu từ
+  ngày sớm nhất trong nhóm; nếu `merge_accepted = false` thì mỗi dòng là một môn riêng.
 
 ---
 
