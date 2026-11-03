@@ -804,8 +804,10 @@ research R2.
 - [ ] T104 [P] [US11] Test thuần trong `backend/tests/unit/test_exams.py`:
   - `duration_from_format("Trắc nghiệm trên máy 60p")` = 60; `"Tự luận 90 phút"` = 90; `"Bài tập
     lớn"` = `None`.
-  - `resolve_offsets`: `None` → `settings.exam_reminder_offsets` (`[1440, 60]`); `[]` → không nhắc;
-    `[120]` → `[120]`.
+  - `resolve_offsets` (dùng `reminders.alarm_offsets` của T151): `None` + quan trọng →
+    `important_reminder_offsets ∪ exam_extra_reminder_offsets` (`[10080, 1440, 180, 60, 15]`);
+    `None` + không quan trọng → `[exam_reminder_minutes]` (`[60]`); `[]` → không nhắc; `[120]` →
+    `[120]` (FR-063, FR-069).
   - `find_conflicts`: trùng buổi học chưa huỷ và buổi thi khác → có; buổi học đã huỷ → không; chạm
     mép (kết thúc 09:25, bắt đầu 09:25) → không.
   - `is_past` theo `end_at < now`.
@@ -860,16 +862,18 @@ research R2.
 
 ### Implementation for User Story 11
 
-- [ ] T110 [US11] Tạo migration `backend/migrations/versions/0002_exams.py` và model
+- [ ] T110 [US11] Tạo migration `backend/migrations/versions/0003_exams.py` (sau
+  `0002_important_digest` của T147) và model
   `backend/app/models/exam.py` (`Exam`, `ExamTag`) đúng data-model.md, đăng ký trong
   `app/models/__init__.py`:
   - Cột: `course_code` (tuỳ chọn), `course_name` "1–200 ký tự", `attempt` "≥ 1, mặc định 1",
     `date`, `start_at`, `end_at` (CHECK `end_at > start_at`), `exam_format`, `room` (có thể trống),
-    `candidate_number` (số báo danh), `reminder_offsets`;
+    `candidate_number` (số báo danh), `reminder_offsets`, `is_important boolean NOT NULL DEFAULT
+    true` (FR-067);
     `reminder_offsets integer[]` với CHECK `reminder_offsets IS NULL OR 0 <= ALL(reminder_offsets)`;
     index `(date)`, `(start_at)`.
   - `exam_tags(exam_id, tag_id, position)` khoá chính ghép, FK `ON DELETE CASCADE`.
-  - Thêm cột `settings.exam_reminder_offsets integer[]` mặc định `{1440, 60}`.
+  - Cột cài đặt nhắc thi (`exam_extra_reminder_offsets`, `exam_reminder_minutes`) đã có từ T147.
   - Thêm nhãn hệ thống "Thi" (`system_key='exam'`, màu `c07`).
   - Không có cột nào cho họ tên hay mã số sinh viên (FR-061). `test_migrations_match_models` phải
     vẫn pass.
@@ -879,7 +883,7 @@ research R2.
     `is_past`.
   - CRUD; nhãn "Thi" luôn ở vị trí đầu (`replace_tag_links` + chèn nhãn hệ thống); cảnh báo
     `time_conflict` (FR-058); mọi thao tác ghi gọi `bump_revision`.
-  - Thêm `exam_reminder_offsets` (danh sách số ≥ 0, tối đa 5 mốc) vào `schemas/settings.py`.
+  - Nhận `is_important` (mặc định `true`) trong schema tạo/sửa buổi thi.
   - Đăng ký blueprint trong `create_app`.
 - [ ] T112 [US11] Hiển thị buổi thi ở backend: thêm `exams` (kèm `conflicts`, `display_color`) vào
   `services/today.py`/`api/today.py` và `services/calendar.py`/`api/calendar.py` (lọc theo khoảng
@@ -915,13 +919,18 @@ research R2.
   ID mới đặt sau T145 để không phải đánh số lại):
   - Backend: `reminders.exam_alarm_offsets(exam, settings)` dùng `services.exams.resolve_offsets`;
     `upcoming` trả một mục cho mỗi mốc với `sync_key="exam:{id}:{phút}"`; `sync_feed.build_feed`
-    thêm buổi thi vào `events` (`sync_key="exam:{id}"`, tiêu đề "Thi: <tên học phần>",
-    `alarms_minutes_before` theo `reminder_offsets`, không có SBD/hình thức thi — FR-064); ghi buổi
-    thi và `settings.exam_reminder_offsets` gọi `bump_revision`.
-  - Test: các ý về buổi thi trong T123–T126 (mặc định [1440, 60], `[]` → không nhắc, đổi giờ/xoá →
-    feed và `upcoming` đổi theo, `revision` tăng).
-  - Frontend: Cài đặt → Nhắc lịch thêm mốc nhắc buổi thi; `ExamForm` chọn nhắc riêng/tắt nhắc
-    (`reminder_offsets`). Agent không cần sửa (đã nhận `lichhoc://exam/{id}` và danh sách mốc).
+    thêm buổi thi vào `events` (`sync_key="exam:{id}"`, tiêu đề "Thi: <tên học phần>", tiền tố "★ "
+    khi quan trọng, `important`, `alarms_minutes_before` theo `resolve_offsets`, không có SBD/hình
+    thức thi — FR-064); ghi buổi thi gọi `bump_revision`.
+  - Bản tóm tắt (T151 `digest.build_digest`): truyền buổi thi của ngày vào, buổi thi đứng đầu
+    (FR-065); test thêm trong `test_digest.py`.
+  - Test: các ý về buổi thi trong T123–T126 (mặc định quan trọng `[10080, 1440, 180, 60, 15]`, không
+    quan trọng `[60]`, `[]` → không nhắc, đổi giờ/xoá → feed, `upcoming` và bản tóm tắt đổi theo,
+    `revision` tăng).
+  - Frontend: `ExamForm` có công tắc "Quan trọng" (bật sẵn) và chọn nhắc riêng/tắt nhắc
+    (`reminder_offsets`); buổi thi quan trọng có ★ và viền đậm (dùng helper của T156). Cài đặt →
+    Nhắc lịch: mốc thêm cho buổi thi quan trọng và mốc của buổi thi thường (cài đặt đã có từ T147).
+    Agent không cần sửa (đã nhận `lichhoc://exam/{id}` và danh sách mốc).
 
 **Checkpoint**: US6 và US11 pass; quickstart V7, V8, V18 pass; `pytest -m ocr` ≥ 80% cho cả hai loại
 ảnh.
@@ -1012,7 +1021,9 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
 ### Tests for User Story 7 ⚠️
 
 - [X] T123 [P] [US7] Test thuần trong `backend/tests/unit/test_reminders.py` (các ý về buổi thi
-  trong T123–T133 dời sang T146 ở Phase 10):
+  trong T123–T133 dời sang T146 ở Phase 10; mốc mặc định buổi thi nay theo FR-069, và `alarm_at`
+  của task đổi thành danh sách `alarms_at` ở T151 — các ý tương ứng dưới đây được cập nhật trong
+  T146, T150):
   - Thời điểm nhắc buổi học: mặc định 15 phút; `subject.reminder_minutes=30` ghi đè; `-1` → không
     nhắc.
   - Task có giờ: mặc định 60 phút; task chỉ có ngày → 08:00 ngày đó (`date_only_task_reminder_time`).
@@ -1150,7 +1161,97 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
   - `launchctl bootout` (bỏ qua lỗi) rồi `launchctl bootstrap gui/$UID …`.
   - Tuỳ chọn `--uninstall`.
 
-**Checkpoint**: US7 pass; quickstart V11–V14 pass.
+### US7 mở rộng: Tóm tắt hằng ngày và mức "Quan trọng" (FR-065 đến FR-070)
+
+Bổ sung sau khi T118–T138 đã xong. ID tiếp nối T146 để không phải đánh số lại. Phần buổi thi nằm ở
+T146 (Phase 10).
+
+- [ ] T147 [US7] Migration `backend/migrations/versions/0002_important_digest.py` và model:
+  - `subjects.is_important boolean NOT NULL DEFAULT false`; `tasks.is_important boolean NOT NULL
+    DEFAULT false`; `class_sessions.important_override boolean NULL`.
+  - `settings`: `important_reminder_offsets integer[] DEFAULT '{1440,180,60,15}'` (CHECK 1–6 phần tử,
+    mỗi phần tử ≥ 0), `exam_extra_reminder_offsets integer[] DEFAULT '{10080}'` (0–3 phần tử ≥ 0),
+    `exam_reminder_minutes integer DEFAULT 60` (≥ 0), `daily_digest_enabled boolean DEFAULT true`,
+    `daily_digest_time time DEFAULT '05:00'`.
+  - Cập nhật `schemas/settings.py` (mảng mốc: bỏ trùng, sắp giảm dần, ≥ 0), `schemas/tasks.py`,
+    `schemas/subjects.py`, `schemas/sessions.py` (`is_important`; buổi học trả `is_important` hiệu lực
+    và `important_override`). `test_migrations_match_models` vẫn pass.
+- [ ] T148 [P] [US7] Test thuần mốc nhắc trong `backend/tests/unit/test_reminders.py` (FR-068):
+  - Buổi học thường `[15]`; môn quan trọng `[1440, 180, 60, 15]`; môn quan trọng + `reminder_minutes
+    = 30` → `[1440, 180, 60, 30, 15]`; `reminder_minutes = 15` không nhân đôi; `-1` → `[]`.
+  - `important_override = false` trên buổi của môn quan trọng → `[15]`; `true` trên môn thường →
+    nhiều mốc.
+  - Task có giờ quan trọng → 4 thời điểm; task chỉ có ngày quan trọng → 08:00 ngày hạn và 08:00 ngày
+    trước; `important_reminder_offsets = [2880, 60]` → 08:00 ngày hạn và 2 ngày trước.
+- [ ] T149 [P] [US7] Test thuần trong `backend/tests/unit/test_digest.py` (FR-065):
+  - Ngày có 2 buổi học (Ca 3 và giờ tuỳ chỉnh 14:00) + 1 task đến hạn + 2 quá hạn → tiêu đề và
+    `lines` đúng thứ tự (buổi theo giờ, rồi dòng task); buổi không có phòng → "chưa có phòng".
+  - Buổi đã huỷ bị bỏ; task đã hoàn thành không được đếm; quá hạn tính theo `due_at < 00:00` của ngày.
+  - Ngày trống → `None`; chỉ có task quá hạn → vẫn có bản tóm tắt.
+  - Không có tiêu đề task trong `title`/`lines`; có mục quan trọng → tiền tố "★ ".
+- [ ] T150 [P] [US7] Test API trong `backend/tests/integration/test_digest_important_api.py`:
+  - PATCH `is_important` của task, môn, `important_override` của buổi → `revision` tăng; feed có
+    `important`, tiền tố "★ ", `alarms_minutes_before` nhiều mốc; reminder có `alarms_at` dạng
+    danh sách và `important`.
+  - Feed có `digests` cho các ngày không trống trong `today … today+13`; huỷ buổi / hoàn thành task
+    → `fingerprint` của bản tóm tắt ngày đó đổi; `daily_digest_enabled = false` → `digests = []`;
+    đổi `daily_digest_time` → `alarm_at` đổi.
+  - `GET /api/digest?date=` trả bản xem trước hoặc `{empty: true}`.
+  - `GET /api/reminders/upcoming` khi tắt đồng bộ có mục `digest:YYYY-MM-DD` và một mục cho mỗi mốc
+    của mục quan trọng; PATCH các trường cài đặt mới → `revision` tăng.
+- [ ] T151 [US7] Backend:
+  - `services/reminders.py`: hàm thuần `alarm_offsets(kind, item_reminder, is_important, settings)`
+    theo data-model "Quy tắc mốc nhắc"; `session_alarm_minutes`, `task_alarm_times` (danh sách) dùng
+    nó; `upcoming` sinh một mục cho mỗi mốc (`sync_key="{kind}:{id}:{phút}"` khi nhiều mốc) và mục
+    `digest`.
+  - `services/digest.py`: `build_digest(day, exams, sessions, tasks, shifts, settings)` (hàm thuần)
+    và `digests_for_range(start, days=14)` (truy vấn một lần cho cả khoảng).
+  - `services/sync_feed.py`: thêm `important`, tiền tố "★ ", `alarms_at`, mảng `digests` (contracts/
+    calendar-sync.md §2); fingerprint gồm các trường mới.
+  - `api/digest.py`: `GET /api/digest`; đăng ký trong `create_app`. Contract rest-api đã có dòng.
+- [ ] T152 [US7] API ghi: `tasks`, `subjects`, `sessions` nhận `is_important` / `important_override`
+  và gọi `bump_revision`; sửa `is_important` của task tự tạo đặt `user_modified = true`; `/today` và
+  `/calendar` trả `is_important` cho buổi học và task.
+- [ ] T153 [P] [US7] Test agent trong `mac-agent/tests/`:
+  - `test_reconcile.py`: `digests` được tạo/cập nhật/xoá như sự kiện (key `digest:YYYY-MM-DD`);
+    reminder đổi `alarms_at` hoặc `important` → update.
+  - `test_main.py`: sang ngày mới (giả lập đồng hồ) → buộc lấy feed và đối chiếu toàn phần;
+    `FakeCalendarStore` ghi nhận `all_day`, `notes`, nhiều alarm, `priority`.
+- [ ] T154 [US7] mac-agent:
+  - `calendar_store.py`: digest → `EKEvent` cả ngày (`setAllDay_(True)`, `notes`, `URL =
+    lichhoc://digest/{date}`, alarm tuyệt đối `alarm_at`); reminder thêm mọi phần tử `alarms_at` và
+    `setPriority_(1 if important else 0)`; đọc khoá `digest` từ URL khi liệt kê.
+  - `main.py`: lưu ngày của lần đồng bộ cuối, sang ngày mới thì `sync_once(force=True)`.
+  - `__version__ = "0.2.0"`; README/hướng dẫn: chạy lại `mac-agent/scripts/install.sh` sau khi cập
+    nhật backend (feed đổi `alarm_at` → `alarms_at`).
+- [ ] T155 [P] [US7] Test frontend:
+  - `frontend/tests/calendarEvents.test.ts`: mục quan trọng có class `is-important` và tiền tố "★".
+  - `frontend/tests/reminders.test.ts`: mục `digest` và nhiều mốc của cùng mục được hẹn riêng, mỗi
+    mốc hiện một lần.
+  - `frontend/tests/components.test.tsx`: `ImportantToggle` bật/tắt trong tối đa 2 lần bấm; ô "Theo
+    môn / Quan trọng / Không quan trọng" của buổi học gửi `important_override` đúng.
+- [ ] T156 [US7] Frontend "Quan trọng" (FR-067, FR-070):
+  - `components/ImportantToggle.tsx` dùng trong `TaskForm`, `SubjectForm`; `SessionDetail` có ô
+    chọn ba trạng thái.
+  - `lib/calendarEvents.ts`: thêm class `is-important` và "★ " vào tiêu đề; `TaskItem` và các thẻ buổi
+    học trên `TodayPage` có ★ và viền đậm; CSS `.is-important` trong `styles.css`.
+  - Cập nhật `api/types.ts` (`is_important`, `important_override`).
+- [ ] T157 [US7] Frontend tóm tắt và cài đặt (FR-065, FR-066, FR-068):
+  - `ReminderSettings.tsx`: công tắc "Thông báo tổng hợp hằng ngày", ô giờ gửi, nút "Xem trước hôm
+    nay" (gọi `GET /api/digest`); danh sách mốc nhắc cho mục quan trọng (thêm/bớt, tối đa 6, dạng
+    chip như từ khoá ngoại lệ).
+  - `reminders/scheduler.ts`: kiểu `kind` thêm `'digest'`; thông báo trình duyệt của bản tóm tắt có
+    `body` nhiều dòng.
+  - Chuỗi tiếng Việt trong `i18n/vi.ts`.
+- [ ] T158 [US7] Cập nhật `README.md`/hướng dẫn và `quickstart.md` nếu có thay đổi khi làm; chạy
+  `./scripts/test.sh`.
+- [ ] T159 [US7] Kiểm chứng thủ công trên iPhone (research R15, R16) và ghi kết quả vào
+  `research.md`:
+  - Sự kiện cả ngày có alarm tuyệt đối báo đúng giờ khi Mac gập; tiêu đề dài hiện đủ hay bị cắt.
+  - Một sự kiện có 5 `EKAlarm` và một lời nhắc có 4 alarm: iPhone báo đủ mọi mốc. Nếu không, áp
+    phương án dự phòng trong R16 và cập nhật contract.
+
+**Checkpoint**: US7 pass; quickstart V11–V14 pass; phần mở rộng: V19, V20 pass.
 
 ---
 
@@ -1216,6 +1317,7 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
 | US10 Deadline tự tạo (P3) | US1, US2, US9 | Cần nhãn E-Learning gắn được |
 | US11 Lịch thi (P2) | US2, US3, US5, US9, US6 (pipeline OCR), T010 | Làm cùng phase với US6; trùng giờ cần buổi học; hiển thị cần lịch và nhãn |
 | US7 Nhắc (P3) | US1, US2, T011 | Có thể làm trước US10; feed tự gồm task tự tạo khi US10 xong và buổi thi khi US11 xong |
+| US7 mở rộng (T147–T159) | T118–T138 | Làm trước Phase 10 thì T110 dùng migration `0003_exams`; phần buổi thi của tóm tắt và "Quan trọng" nằm ở T146 |
 
 ### Within Each User Story
 
@@ -1231,6 +1333,8 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
   backend.
 - Sau MVP: US4, US8 song song (cùng phụ thuộc US2); agent (T134–T138) song song với phần backend của
   US7 (T129–T131), vì giao tiếp qua contract đã cố định.
+- US7 mở rộng: T148, T149, T150, T153, T155 song song sau T147; agent (T154) song song với backend
+  (T151–T152).
 
 ---
 

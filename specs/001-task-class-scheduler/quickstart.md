@@ -76,6 +76,8 @@ và tỉ lệ này phải ≥ 80% (SC-011).
 | V15 | Offline | Tắt Wi-Fi rồi lặp lại V1, V7, V11 | Mọi thứ hoạt động; agent và backend không có kết nối ra ngoài | FR-025, SC-013 |
 | V16 | Chỉ localhost | Từ máy khác cùng mạng LAN truy cập `http://<ip-mac>:8080` | Không kết nối được | Constitution IV |
 | V18 | Lịch thi | Thêm tay 1 buổi thi trùng giờ một buổi học; nhập `samples/synthetic/exam-01.png` (bảng lịch thi giả lập có 2 môn đã qua) | Cảnh báo trùng giờ; bảng xem trước loại "Lịch thi", 2 dòng "Đã qua" bỏ chọn, không có họ tên/mã SV; buổi thi hiện trên Hôm nay và lịch với nhãn "Thi"; nhập lại không tạo trùng | US11, SC-019 đến SC-021 |
+| V19 | Tóm tắt hằng ngày | Bật đồng bộ; Cài đặt → giờ tổng hợp = 5 phút nữa; ngày mai có 2 buổi học và 1 task quá hạn; xem trước bằng `GET /api/digest?date=<ngày mai>`; gập Mac qua giờ tổng hợp hôm nay; huỷ 1 buổi của ngày mai | Lịch "Lịch Học Cá Nhân" có sự kiện cả ngày cho mỗi ngày không trống trong 14 ngày; iPhone nhận bản tóm tắt đúng giờ khi Mac gập; bản của ngày mai cập nhật sau khi huỷ; ngày trống không có sự kiện | US7, FR-065, FR-066, SC-022 |
+| V20 | Quan trọng | Bật "Quan trọng" cho 1 task có giờ hạn sau 2 ngày và cho 1 môn; đặt riêng 1 buổi của môn đó là "không quan trọng" | Task có 4 lời báo (1 ngày, 3 giờ, 1 giờ, 15 phút) trong Lời nhắc với ưu tiên cao; buổi của môn có 4 lời báo và tiền tố ★, trừ buổi đặt riêng; ★ và viền đậm trên lịch và Hôm nay; iPhone báo đủ các mốc | US7, FR-067 đến FR-070, SC-023 |
 | V17 | Hiệu năng | Seed 6 môn + 200 task (`docker compose run --rm backend flask seed-demo`); mở trang Hôm nay | Hiện trong dưới 2 giây; chuyển chế độ xem dưới 1 giây | SC-005, SC-006 |
 
 ## Sao lưu & khôi phục

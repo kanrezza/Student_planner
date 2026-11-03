@@ -479,3 +479,59 @@ nhiều, gộp sẽ làm code khó đọc và khó bảo đảm loại bỏ cộ
 Mọi mục trong Technical Context đã có quyết định. Còn hai SPIKE (R2: độ chính xác EasyOCR; R4:
 quyền EventKit qua PyObjC). Mỗi spike có phương án dự phòng, và được đặt làm task đầu tiên khi
 triển khai.
+
+---
+
+## R15. Thông báo tổng hợp hằng ngày trên iPhone khi Mac gập
+
+**Quyết định**: Mỗi bản tóm tắt là một **sự kiện cả ngày** trong lịch "Lịch Học Cá Nhân"
+(`sync_key = digest:YYYY-MM-DD`, `URL = lichhoc://digest/YYYY-MM-DD`) với một `EKAlarm` thời điểm
+tuyệt đối lúc `daily_digest_time`. Nội dung tóm tắt nằm ở `title` (một dòng, hiện trong thông báo),
+chi tiết nằm ở `notes`. Backend sinh bản tóm tắt cho hôm nay và 13 ngày tới trong feed; ngày trống
+không có mục. Agent đối chiếu như các mục khác (fingerprint), nên huỷ buổi, hoàn thành task hay đổi
+giờ tổng hợp đều cập nhật ngay. Agent tự đồng bộ toàn phần khi sang ngày mới để cửa sổ 14 ngày trượt
+và bản của ngày đã qua bị xoá.
+
+**Lý do**:
+- Mac có thể gập lúc 05:00, nên không thể để agent hay trình duyệt tự phát thông báo đúng lúc; chỉ
+  mục đã ghi sẵn trong Lịch/iCloud mới chắc chắn báo trên iPhone (cùng lý do với R5).
+- Sự kiện cả ngày nằm ở dải "cả ngày", không chiếm chỗ trong lưới giờ, và tự trôi vào quá khứ, không
+  cần người dùng đánh dấu xong như lời nhắc.
+- 14 ngày đủ cho kỳ nghỉ ngắn khi Mac gập; nhiều hơn làm feed lớn và số task quá hạn ở ngày xa kém
+  chính xác.
+
+**Phương án đã cân nhắc**:
+- Lời nhắc (`EKReminder`) mỗi ngày: phải tick hoàn thành, làm đầy danh sách lời nhắc.
+- Sự kiện có giờ 05:00–05:05: chen vào lưới giờ mỗi ngày.
+- Thông báo cục bộ từ agent (`UNUserNotificationCenter`): không chạy khi Mac ngủ, không tới iPhone.
+
+**Cần kiểm chứng khi làm (T159)**: thông báo của sự kiện cả ngày trên iPhone hiện đủ tiêu đề dài
+(khoảng 100–150 ký tự); nếu bị cắt, rút gọn tiêu đề (bỏ phòng, chỉ giữ ca + tên môn).
+
+---
+
+## R16. Mức "Quan trọng" và nhiều mốc nhắc
+
+**Quyết định**:
+- Cột `is_important` cho `tasks`, `subjects` (áp dụng cho mọi buổi), `exams` (mặc định `true`), và
+  `class_sessions.important_override` (nullable) để đặt riêng một buổi, giống cách giữ ngoại lệ giờ
+  và phòng.
+- Mốc nhắc là danh sách phút, tính bằng một hàm thuần duy nhất (data-model "Quy tắc mốc nhắc"), dùng
+  chung cho feed và nhắc trình duyệt. Feed đã gửi `alarms_minutes_before` dạng danh sách cho sự kiện;
+  lời nhắc đổi `alarm_at` thành `alarms_at` (danh sách), nên agent và backend phải nâng cấp cùng lúc.
+- Task quan trọng chỉ có ngày: nhắc lúc `date_only_task_reminder_time` của ngày hạn và của các ngày
+  ứng với mốc ≥ 1 ngày, vì "3 giờ trước 23:59" không có nghĩa với task không có giờ.
+- Hiển thị nổi bật: dấu ★ và viền đậm trong lịch và trang Hôm nay; trong Lịch Apple dùng tiền tố
+  "★ " ở tiêu đề sự kiện và `priority = 1` cho lời nhắc.
+
+**Lý do**: Một hàm tính mốc giúp test dễ và tránh lệch giữa iPhone và trình duyệt. Đặt cờ ở môn kèm
+ghi đè ở buổi tránh phải bật từng buổi trong 15 tuần.
+
+**Cần kiểm chứng khi làm (T159)**: EventKit cho thêm nhiều `EKAlarm` vào một sự kiện/lời nhắc và
+iPhone báo đủ cả 5 mốc (ứng dụng Lịch trên iPhone chỉ hiện 2 ô "Thông báo" khi sửa tay, nhưng mục tạo
+bằng EventKit có thể có nhiều hơn). Nếu iPhone chỉ báo 2 mốc đầu, giới hạn mục quan trọng ở 2 mốc
+trong sự kiện và ghi thêm các mốc còn lại thành lời nhắc riêng, rồi cập nhật contract.
+
+**Phương án đã cân nhắc**: dùng `priority` sẵn có của task làm "quan trọng": không áp dụng cho buổi
+học và buổi thi, và trộn hai ý nghĩa khác nhau (thứ tự làm việc và mức nhắc).
+
