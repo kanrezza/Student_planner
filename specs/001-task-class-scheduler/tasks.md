@@ -1172,7 +1172,7 @@ T146 (Phase 10).
   - `settings`: `important_reminder_offsets integer[] DEFAULT '{1440,180,60,15}'` (CHECK 1–6 phần tử,
     mỗi phần tử ≥ 0), `exam_extra_reminder_offsets integer[] DEFAULT '{10080}'` (0–3 phần tử ≥ 0),
     `exam_reminder_minutes integer DEFAULT 60` (≥ 0), `daily_digest_enabled boolean DEFAULT true`,
-    `daily_digest_time time DEFAULT '05:00'`.
+    `daily_digest_time time DEFAULT '05:00'`, `daily_digest_overdue_only boolean DEFAULT true`.
   - Cập nhật `schemas/settings.py` (mảng mốc: bỏ trùng, sắp giảm dần, ≥ 0), `schemas/tasks.py`,
     `schemas/subjects.py`, `schemas/sessions.py` (`is_important`; buổi học trả `is_important` hiệu lực
     và `important_override`). `test_migrations_match_models` vẫn pass.
@@ -1184,18 +1184,25 @@ T146 (Phase 10).
   - Task có giờ quan trọng → 4 thời điểm; task chỉ có ngày quan trọng → 08:00 ngày hạn và 08:00 ngày
     trước; `important_reminder_offsets = [2880, 60]` → 08:00 ngày hạn và 2 ngày trước.
 - [ ] T149 [P] [US7] Test thuần trong `backend/tests/unit/test_digest.py` (FR-065):
-  - Ngày có 2 buổi học (Ca 3 và giờ tuỳ chỉnh 14:00) + 1 task đến hạn + 2 quá hạn → tiêu đề và
-    `lines` đúng thứ tự (buổi theo giờ, rồi dòng task); buổi không có phòng → "chưa có phòng".
-  - Buổi đã huỷ bị bỏ; task đã hoàn thành không được đếm; quá hạn tính theo `due_at < 00:00` của ngày.
-  - Ngày trống → `None`; chỉ có task quá hạn → vẫn có bản tóm tắt.
-  - Không có tiêu đề task trong `title`/`lines`; có mục quan trọng → tiền tố "★ ".
+  - Ngày có 2 buổi học (Ca 3 và giờ tuỳ chỉnh 14:00) + 2 task đến hạn + 3 quá hạn → `title` và
+    `lines` đúng thứ tự (buổi theo giờ; 2 task đến hạn theo `due_at`; 1 task quá hạn lâu nhất;
+    "+2 việc khác"); buổi không có phòng → "chưa có phòng".
+  - ≤ 3 task → không có dòng "+N việc khác"; 4 task đến hạn → 3 task đầu theo `due_at`, "+1 việc
+    khác", không có task quá hạn nào được ghi tiêu đề.
+  - Buổi đã huỷ bị bỏ; task đã hoàn thành không được tính; quá hạn tính theo `due_at < 00:00` của
+    ngày.
+  - Ngày trống → `None`; chỉ có task quá hạn → có bản tóm tắt khi `daily_digest_overdue_only = true`,
+    `None` khi `false`.
+  - Không có ghi chú task; có mục quan trọng → tiền tố "★ ".
 - [ ] T150 [P] [US7] Test API trong `backend/tests/integration/test_digest_important_api.py`:
   - PATCH `is_important` của task, môn, `important_override` của buổi → `revision` tăng; feed có
     `important`, tiền tố "★ ", `alarms_minutes_before` nhiều mốc; reminder có `alarms_at` dạng
     danh sách và `important`.
   - Feed có `digests` cho các ngày không trống trong `today … today+13`; huỷ buổi / hoàn thành task
     → `fingerprint` của bản tóm tắt ngày đó đổi; `daily_digest_enabled = false` → `digests = []`;
-    đổi `daily_digest_time` → `alarm_at` đổi.
+    đổi `daily_digest_time` → `alarm_at` đổi; tắt `daily_digest_overdue_only` → ngày chỉ có task
+    quá hạn biến mất khỏi `digests`; sửa tiêu đề một task được ghi trong bản tóm tắt → `fingerprint`
+    đổi.
   - `GET /api/digest?date=` trả bản xem trước hoặc `{empty: true}`.
   - `GET /api/reminders/upcoming` khi tắt đồng bộ có mục `digest:YYYY-MM-DD` và một mục cho mỗi mốc
     của mục quan trọng; PATCH các trường cài đặt mới → `revision` tăng.
@@ -1237,8 +1244,9 @@ T146 (Phase 10).
     học trên `TodayPage` có ★ và viền đậm; CSS `.is-important` trong `styles.css`.
   - Cập nhật `api/types.ts` (`is_important`, `important_override`).
 - [ ] T157 [US7] Frontend tóm tắt và cài đặt (FR-065, FR-066, FR-068):
-  - `ReminderSettings.tsx`: công tắc "Thông báo tổng hợp hằng ngày", ô giờ gửi, nút "Xem trước hôm
-    nay" (gọi `GET /api/digest`); danh sách mốc nhắc cho mục quan trọng (thêm/bớt, tối đa 6, dạng
+  - `ReminderSettings.tsx`: công tắc "Thông báo tổng hợp hằng ngày", ô giờ gửi, công tắc "Gửi tóm
+    tắt khi chỉ có việc quá hạn" (bật sẵn, ẩn khi tắt tổng hợp), nút "Xem trước hôm nay" (gọi
+    `GET /api/digest`); danh sách mốc nhắc cho mục quan trọng (thêm/bớt, tối đa 6, dạng
     chip như từ khoá ngoại lệ).
   - `reminders/scheduler.ts`: kiểu `kind` thêm `'digest'`; thông báo trình duyệt của bản tóm tắt có
     `body` nhiều dòng.
