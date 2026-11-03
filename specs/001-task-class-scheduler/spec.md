@@ -33,6 +33,11 @@ cần đăng nhập."
   dùng làm dự phòng khi người dùng chưa bật đồng bộ.
 - Q: Task chỉ có ngày hạn chót (không có giờ) thì nhắc lúc nào? → A: 08:00 sáng ngày hạn chót, giờ
   này chỉnh được trong cài đặt.
+- Q: Có cần bản tóm tắt mỗi sáng và mức "Quan trọng" cho nhắc không? → A: Có (bổ sung vào US7):
+  thông báo tổng hợp hằng ngày (mặc định 05:00, bật/tắt được, ngày trống không gửi, tạo sẵn trước
+  nhiều ngày trong Lịch để iPhone nhận khi Mac gập); công tắc "Quan trọng" cho task, buổi học, buổi
+  thi; mục quan trọng nhắc nhiều mốc (mặc định 1 ngày, 3 giờ, 1 giờ, 15 phút), buổi thi mặc định
+  quan trọng và thêm mốc 7 ngày (FR-065 đến FR-070).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -223,13 +228,21 @@ tự đồng bộ sang iPhone, nên iPhone vẫn nhắc đúng giờ khi Mac đa
 trình duyệt trong lúc tab ứng dụng đang mở. Người dùng chỉnh được thời gian nhắc mặc định và chỉnh
 riêng cho từng môn học hoặc từng task, hoặc tắt nhắc.
 
+Mỗi sáng (mặc định 05:00) người dùng nhận một **thông báo tổng hợp** tóm tắt ngày hôm đó: buổi thi
+(nếu có, đứng đầu), các buổi học (ca, tên môn, phòng), số task đến hạn hôm nay và số task quá hạn.
+Bản tóm tắt được tạo sẵn cho nhiều ngày tới trong Lịch của Apple và tự cập nhật khi dữ liệu đổi, nên
+iPhone vẫn nhận đúng giờ khi Mac đang gập. Người dùng đánh dấu **"Quan trọng"** cho task, buổi học
+hoặc buổi thi: mục quan trọng được nhắc nhiều mốc và hiển thị nổi bật; buổi thi mặc định là quan
+trọng và có thêm mốc nhắc trước 7 ngày.
+
 **Why this priority**: Hữu ích nhưng người dùng vẫn dùng được ứng dụng bằng cách tự xem trang Hôm
 nay.
 
 **Independent Test**: Bật đồng bộ, đặt nhắc 5 phút trước một buổi học và 10 phút trước hạn chót một
 task trong tương lai gần, đóng tab ứng dụng và gập Mac; kiểm tra iPhone hiện thông báo đúng thời
 điểm với nội dung tiếng Việt. Sau đó huỷ buổi học trong ứng dụng và kiểm tra lời nhắc biến mất khỏi
-Lịch trên cả Mac và iPhone.
+Lịch trên cả Mac và iPhone. Đặt giờ tổng hợp sau vài phút, gập Mac và kiểm tra iPhone nhận bản tóm
+tắt; đánh dấu một task là Quan trọng và kiểm tra lời nhắc của nó có đủ các mốc.
 
 **Acceptance Scenarios**:
 
@@ -255,6 +268,23 @@ Lịch trên cả Mac và iPhone.
 10. **Given** chưa bật đồng bộ và tab ứng dụng đang mở, **When** tới thời điểm nhắc, **Then** trình
     duyệt hiện thông báo (sau khi người dùng cho phép); khi tab đã đóng thì không nhắc, và các nhắc
     đã lỡ không hiện dồn khi mở lại.
+11. **Given** thông báo tổng hợp đang bật lúc 05:00 và ngày mai có 1 buổi thi, 2 buổi học, 1 task đến
+    hạn và 2 task quá hạn, **When** tới 05:00 ngày mai, **Then** có một thông báo liệt kê buổi thi
+    trước (giờ, phòng), rồi từng buổi học (ca, tên môn, phòng), rồi "1 task đến hạn, 2 task quá
+    hạn".
+12. **Given** một ngày không có buổi thi, buổi học, task đến hạn hay task quá hạn, **When** tới giờ
+    tổng hợp, **Then** không có thông báo nào.
+13. **Given** đồng bộ đang bật và bản tóm tắt của 3 ngày tới đã có trên iPhone, **When** người dùng
+    huỷ một buổi học của ngày kia, **Then** bản tóm tắt của ngày đó được cập nhật (bỏ buổi đã huỷ)
+    trên Mac và iPhone; Mac gập suốt 3 ngày thì iPhone vẫn nhận đủ 3 bản tóm tắt đúng giờ.
+14. **Given** người dùng tắt thông báo tổng hợp hoặc đổi giờ sang 06:30, **Then** các bản tóm tắt đã
+    tạo bị xoá hoặc chuyển sang 06:30.
+15. **Given** một task có giờ hạn chót được bật "Quan trọng" với cài đặt mặc định, **Then** task được
+    nhắc 1 ngày, 3 giờ, 1 giờ và 15 phút trước hạn; tắt "Quan trọng" thì quay về 1 mốc như cũ.
+16. **Given** một buổi thi mới, **Then** buổi thi mặc định là Quan trọng và được nhắc trước 7 ngày,
+    1 ngày, 3 giờ, 1 giờ và 15 phút.
+17. **Given** một mục quan trọng, **When** xem lịch hoặc trang Hôm nay, **Then** mục đó hiện nổi
+    bật (dấu ★ và viền đậm) so với mục thường.
 
 ---
 
@@ -356,8 +386,8 @@ Người dùng quản lý lịch thi: mỗi buổi thi có mã học phần, tê
 trống) và số báo danh. Buổi thi là sự kiện một lần, không lặp. Người dùng nhập tay hoặc đưa ảnh chụp
 bảng "Lịch thi cá nhân" trên cổng sinh viên; hệ thống tự nhận biết ảnh là lịch học dạng tuần hay lịch
 thi dạng bảng. Buổi thi hiện trên lịch và trang Hôm nay với nhãn "Thi" màu nổi bật, được cảnh báo khi
-trùng giờ với buổi học, được nhắc trước 1 ngày và trước 1 giờ, và đồng bộ sang Lịch/Lời nhắc của
-Apple như buổi học.
+trùng giờ với buổi học, mặc định là mục Quan trọng nên được nhắc trước 7 ngày, 1 ngày, 3 giờ, 1 giờ
+và 15 phút (FR-069), và đồng bộ sang Lịch/Lời nhắc của Apple như buổi học.
 
 **Why this priority**: Lịch thi là mốc quan trọng nhất của học kỳ; quên giờ hoặc phòng thi gây hậu
 quả lớn. Tính năng dựa trên phần nhập ảnh (US6) và lịch (US5) nên xếp cùng nhóm P2.
@@ -385,9 +415,9 @@ tạo trùng.
 6. **Given** một buổi thi trong ảnh đã có trong ứng dụng (cùng mã học phần hoặc tên học phần, cùng
    ngày và giờ bắt đầu), **When** hiện bảng xem trước, **Then** dòng đó có nhãn "Đã có trong lịch",
    mặc định bỏ chọn và không bị tạo trùng khi lưu.
-7. **Given** buổi thi sắp tới với nhắc mặc định, **When** tới 1 ngày trước và 1 giờ trước giờ thi,
-   **Then** có thông báo gồm tên học phần, giờ và phòng thi; khi đồng bộ đang bật, buổi thi có trong
-   lịch "Lịch Học Cá Nhân" kèm hai lời báo trước đó.
+7. **Given** buổi thi sắp tới với nhắc mặc định, **When** tới từng mốc 7 ngày, 1 ngày, 3 giờ, 1 giờ
+   và 15 phút trước giờ thi, **Then** có thông báo gồm tên học phần, giờ và phòng thi; khi đồng bộ
+   đang bật, buổi thi có trong lịch "Lịch Học Cá Nhân" kèm đủ các lời báo trước đó.
 8. **Given** trang Hôm nay vào ngày có thi, **When** mở trang, **Then** buổi thi hiện ở khối "Buổi
    thi" phía trên buổi học, gồm giờ, phòng, hình thức thi, số báo danh.
 
@@ -452,6 +482,20 @@ tạo trùng.
 - Buổi thi trùng giờ với buổi học đã huỷ: không cảnh báo.
 - Sửa hoặc xoá buổi thi khi đồng bộ đang bật: bản trong Lịch được cập nhật hoặc xoá như buổi học.
 - Lần thi lại (lần 2) của cùng học phần: là buổi thi riêng, không bị coi là trùng với lần 1.
+- Giờ tổng hợp của hôm nay đã qua lúc bản tóm tắt được tạo hoặc sửa: không gửi bù cho hôm nay.
+- Buổi học hoặc buổi thi bắt đầu trước giờ tổng hợp (ví dụ thi 05:00 mà tổng hợp lúc 05:00): vẫn có
+  trong bản tóm tắt; nhắc riêng của mục đó vẫn hoạt động như thường.
+- Mac gập lâu hơn số ngày được tạo sẵn (14 ngày): các ngày sau đó không có bản tóm tắt trên iPhone
+  cho tới khi Mac mở lại; nhắc buổi học và task vẫn hoạt động vì đã được ghi sẵn.
+- Số task quá hạn trong bản tóm tắt của ngày tương lai được tính theo dữ liệu hiện tại (task chưa
+  xong có hạn trước ngày đó); hoàn thành task thì các bản tóm tắt được cập nhật.
+- Mốc nhắc của mục quan trọng đã qua (ví dụ đánh dấu Quan trọng 2 giờ trước giờ học): chỉ còn các mốc
+  chưa tới; không gửi bù mốc đã qua.
+- Task chỉ có ngày hạn chót được đánh dấu Quan trọng: nhắc vào giờ nhắc task chỉ có ngày (mặc định
+  08:00) của ngày hạn và của 1 ngày trước; các mốc dưới 1 ngày không áp dụng.
+- Mục quan trọng đã tắt nhắc riêng ("Không nhắc"): vẫn hiển thị nổi bật nhưng không có nhắc nào.
+- Mục quan trọng có mốc nhắc riêng (ví dụ 30 phút): được nhắc theo các mốc quan trọng cộng thêm mốc
+  riêng đó; hai mốc trùng nhau chỉ nhắc một lần.
 
 ## Requirements *(mandatory)*
 
@@ -544,8 +588,9 @@ tạo trùng.
   rồi ghi mỗi buổi học (không bị huỷ) kèm giờ báo trước vào một lịch riêng tên "Lịch Học Cá Nhân",
   và mỗi task có hạn chót (kể cả task deadline tự tạo) kèm giờ báo trước vào một danh sách lời nhắc
   riêng cùng tên, để iCloud của người dùng đồng bộ sang iPhone.
-- **FR-052**: Bản sao chỉ chứa tên môn hoặc tiêu đề task, thời gian, phòng học và giờ báo trước;
-  KHÔNG chứa ghi chú, ảnh hay dữ liệu khác. Ứng dụng KHÔNG ĐƯỢC đọc, sửa hay xoá mục nào ngoài lịch
+- **FR-052**: Bản sao chỉ chứa tên môn hoặc tiêu đề task, thời gian, phòng học, giờ báo trước, mức
+  "Quan trọng" và bản tóm tắt hằng ngày (FR-065, chỉ gồm ca, tên môn, tên học phần, giờ, phòng và
+  số lượng task); KHÔNG chứa ghi chú, ảnh hay dữ liệu khác. Ứng dụng KHÔNG ĐƯỢC đọc, sửa hay xoá mục nào ngoài lịch
   và danh sách lời nhắc do nó tạo.
 - **FR-053**: Mọi thay đổi trong ứng dụng (thêm, sửa, huỷ, khôi phục, xoá buổi học hoặc môn học; thêm,
   sửa, hoàn thành, xoá task; đổi giờ nhắc; task tự tạo được sinh, cập nhật hoặc xoá) PHẢI được cập
@@ -563,6 +608,28 @@ tạo trùng.
   08:00 sáng ngày đó) và chỉnh riêng hoặc tắt nhắc cho từng môn học, từng task.
 - **FR-023**: Ứng dụng KHÔNG ĐƯỢC gửi nhắc cho buổi đã huỷ, task đã hoàn thành hoặc đã xoá, và PHẢI
   cập nhật lịch nhắc ngay khi giờ/hạn chót thay đổi.
+- **FR-065**: Ứng dụng PHẢI gửi **thông báo tổng hợp hằng ngày**, bật/tắt được (mặc định bật), giờ
+  gửi chỉnh được (mặc định 05:00). Nội dung theo thứ tự: buổi thi trong ngày (giờ, tên học phần,
+  phòng), các buổi học chưa huỷ theo giờ bắt đầu (ca hoặc giờ, tên môn, phòng), số task chưa hoàn
+  thành đến hạn hôm nay và số task quá hạn. KHÔNG có tiêu đề task, ghi chú, số báo danh hay hình
+  thức thi. Ngày không có buổi thi, buổi học, task đến hạn và task quá hạn thì KHÔNG gửi.
+- **FR-066**: Khi đồng bộ đang bật, bản tóm tắt của hôm nay và 13 ngày tiếp theo PHẢI được ghi sẵn
+  vào lịch "Lịch Học Cá Nhân" kèm lời báo đúng giờ tổng hợp, và PHẢI được cập nhật hoặc xoá ngay khi
+  dữ liệu hay cài đặt thay đổi (như FR-053), để iPhone nhận đúng giờ khi Mac gập. Khi chưa bật đồng
+  bộ, bản tóm tắt hiện bằng thông báo trình duyệt như FR-021.
+- **FR-067**: Task, buổi học và buổi thi PHẢI có công tắc **"Quan trọng"**. Môn học có công tắc áp
+  dụng cho mọi buổi của môn; từng buổi học có thể đặt riêng (theo môn / quan trọng / không quan
+  trọng). Task và môn mặc định không quan trọng; buổi thi mặc định quan trọng.
+- **FR-068**: Mục quan trọng PHẢI được nhắc theo các mốc nhắc quan trọng (mặc định 1 ngày, 3 giờ,
+  1 giờ và 15 phút trước), chỉnh được trong cài đặt (tối đa 6 mốc), cộng thêm mốc nhắc riêng của
+  mục nếu có, mỗi thời điểm chỉ nhắc một lần. Mục thường nhắc 1 mốc như FR-022. "Không nhắc" (FR-022)
+  luôn tắt mọi mốc. Task quan trọng chỉ có ngày hạn chót được nhắc vào giờ nhắc task chỉ có ngày của
+  ngày hạn và của từng ngày tương ứng với các mốc ≥ 1 ngày.
+- **FR-069**: Buổi thi quan trọng PHẢI được nhắc theo các mốc nhắc quan trọng cộng thêm các mốc riêng
+  cho buổi thi (mặc định 7 ngày trước), chỉnh được trong cài đặt; buổi thi không quan trọng nhắc 1
+  mốc (mặc định 1 giờ trước). Mốc nhắc riêng của từng buổi thi (FR-063) thay thế các mốc mặc định.
+- **FR-070**: Mục quan trọng PHẢI hiển thị nổi bật (dấu ★ và viền đậm) trên lịch ngày, tuần, tháng và
+  trang Hôm nay; khi đồng bộ, lời nhắc của task quan trọng có mức ưu tiên cao trong Lời nhắc.
 
 **Ca học**
 
@@ -633,8 +700,9 @@ tạo trùng.
   thúc; đánh dấu "Đã có trong lịch" và bỏ qua khi lưu các buổi trùng (cùng mã học phần hoặc tên học
   phần, cùng ngày, cùng giờ bắt đầu, cùng lần thi); vẫn cho sửa mọi ô và đánh dấu ô chưa chắc chắn
   như FR-032, FR-033.
-- **FR-063**: Ứng dụng PHẢI nhắc buổi thi mặc định 1 ngày trước và 1 giờ trước giờ thi; người dùng
-  chỉnh được các mốc mặc định trong cài đặt, chỉnh riêng hoặc tắt nhắc cho từng buổi thi.
+- **FR-063**: Ứng dụng PHẢI nhắc buổi thi theo các mốc mặc định của FR-069 (buổi thi mặc định quan
+  trọng: 7 ngày, 1 ngày, 3 giờ, 1 giờ, 15 phút trước); người dùng chỉnh được các mốc mặc định trong
+  cài đặt, chỉnh riêng hoặc tắt nhắc cho từng buổi thi.
 - **FR-064**: Buổi thi PHẢI được đồng bộ sang Lịch của Apple như buổi học (FR-051 đến FR-054), với
   tiêu đề "Thi: <tên học phần>", phòng thi, thời gian và các lời báo trước; KHÔNG ghi số báo danh hay
   hình thức thi vào bản sao (FR-052). Khi chưa bật đồng bộ, nhắc qua trình duyệt như FR-021.
@@ -656,14 +724,14 @@ tạo trùng.
 
 - **Danh sách**: nhóm task; có tên và màu. Một danh sách chứa nhiều task.
 - **Task**: việc cần làm; có tiêu đề, ghi chú, hạn chót (ngày, giờ tuỳ chọn), mức ưu tiên, trạng
-  thái hoàn thành, thời gian nhắc, các nhãn; thuộc đúng một danh sách. Task tự tạo có thêm cờ "Tự
+  thái hoàn thành, thời gian nhắc, mức "Quan trọng", các nhãn; thuộc đúng một danh sách. Task tự tạo có thêm cờ "Tự
   tạo", liên kết tới buổi học sinh ra nó và trạng thái "đã bị người dùng sửa".
 - **Học kỳ**: khoảng thời gian học; có tên, ngày bắt đầu, ngày kết thúc; không chồng lấn với học kỳ
   khác. Một học kỳ chứa nhiều môn học.
 - **Môn học**: quy tắc lặp lịch học; thuộc đúng một học kỳ; có tên, mã lớp, giảng viên, màu, các thứ
   trong tuần, ca học (một ca hoặc dãy ca liền nhau) hoặc giờ bắt đầu/kết thúc tuỳ chỉnh, phòng học,
-  ngày bắt đầu/kết thúc (nằm trong học kỳ; trùng nhau nếu chỉ học một lần), thời gian nhắc, các
-  nhãn.
+  ngày bắt đầu/kết thúc (nằm trong học kỳ; trùng nhau nếu chỉ học một lần), thời gian nhắc, mức
+  "Quan trọng", các nhãn.
 - **Ca học**: khung giờ cố định của trường; có tên (ví dụ "Ca 1"), giờ bắt đầu, giờ kết thúc, thứ tự.
 - **Nhãn**: có tên (duy nhất) và màu; gắn được cho nhiều task, môn học và buổi học. Nhãn hệ thống
   "E-Learning" không xoá được.
@@ -671,13 +739,19 @@ tạo trùng.
   có các trường như buổi học, mức độ chắc chắn và lý do cho từng trường, trạng thái "Đã có trong
   lịch", lựa chọn lặp ("chỉ một lần" hoặc "lặp hàng tuần đến ngày ...") và trạng thái được chọn.
 - **Buổi học**: một lần học cụ thể của môn học vào một ngày; được suy ra từ môn học, có thể có ngoại
-  lệ riêng (đã huỷ, giờ khác, phòng khác) và nhãn riêng; có tối đa một task tự tạo.
+  lệ riêng (đã huỷ, giờ khác, phòng khác), nhãn riêng và mức "Quan trọng" riêng (mặc định theo
+  môn); có tối đa một task tự tạo.
 - **Cài đặt nhắc**: thời gian nhắc mặc định cho buổi học, cho task có giờ, giờ nhắc cho task chỉ có
-  ngày (mặc định 08:00); bật/tắt "Đồng bộ với Lịch và Lời nhắc".
+  ngày (mặc định 08:00); các mốc nhắc cho mục quan trọng (mặc định 1 ngày, 3 giờ, 1 giờ, 15 phút);
+  bật/tắt và giờ gửi thông báo tổng hợp (mặc định bật, 05:00); bật/tắt "Đồng bộ với Lịch và Lời
+  nhắc".
+- **Bản tóm tắt hằng ngày** (suy ra, không lưu): ngày, các dòng tóm tắt (buổi thi, buổi học, số task
+  đến hạn và quá hạn), thời điểm gửi; không tồn tại với ngày trống.
 - **Buổi thi**: sự kiện một lần; có mã học phần, tên học phần, lần thi, ngày, giờ bắt đầu/kết thúc,
-  hình thức thi, phòng thi, số báo danh, các mốc nhắc riêng (hoặc theo mặc định / tắt), nhãn (luôn có
-  nhãn "Thi").
-- **Cài đặt nhắc thi**: các mốc nhắc mặc định cho buổi thi (mặc định 1 ngày và 1 giờ trước).
+  hình thức thi, phòng thi, số báo danh, mức "Quan trọng" (mặc định bật), các mốc nhắc riêng (hoặc
+  theo mặc định / tắt), nhãn (luôn có nhãn "Thi").
+- **Cài đặt nhắc thi**: các mốc thêm cho buổi thi quan trọng (mặc định 7 ngày trước) và mốc nhắc của
+  buổi thi không quan trọng (mặc định 1 giờ trước).
 - **Cài đặt tự tạo deadline**: mốc giờ buổi tối (mặc định 20:00), giờ deadline Chủ Nhật (mặc định
   08:00), danh sách tên môn ngoại lệ (mặc định "Giáo dục thể chất").
 
@@ -702,6 +776,11 @@ tạo trùng.
   trên iPhone trong vòng 1 phút so với thời điểm đã đặt.
 - **SC-018**: Sau khi sửa, huỷ hoặc xoá buổi học hay task, 100% bản trong Lịch/Lời nhắc trên Mac khớp
   với dữ liệu trong ứng dụng ngay khi lưu.
+- **SC-022**: Khi đồng bộ đã bật và Mac gập liên tục 3 ngày, iPhone nhận 100% bản tóm tắt của các
+  ngày không trống, mỗi bản trong vòng 1 phút so với giờ tổng hợp và khớp dữ liệu tại lúc Mac gập;
+  0 bản tóm tắt cho ngày trống.
+- **SC-023**: 100% mục quan trọng có đúng số mốc nhắc theo cài đặt (trừ mốc đã qua) và hiện nổi bật
+  trên lịch và trang Hôm nay; bật hoặc tắt "Quan trọng" mất không quá 2 lần bấm.
 - **SC-008**: 0 trường hợp mất dữ liệu khi tắt ứng dụng, tắt đột ngột hoặc khởi động lại máy trong
   kiểm thử.
 - **SC-009**: Người dùng tự hoàn thành các tác vụ chính (thêm task, thêm môn học, huỷ một buổi, xem
@@ -747,6 +826,8 @@ tạo trùng.
 - Người dùng có iPhone đăng nhập cùng Apple ID với Mac và đã bật iCloud cho Lịch và Lời nhắc; thời
   gian đồng bộ do Apple quyết định (thường vài phút khi cả hai thiết bị có mạng).
 - Khi Mac gập (ngủ) hoặc tắt, Mac không hiện thông báo; chỉ iPhone nhắc.
+- Bản tóm tắt hằng ngày trên iPhone là một sự kiện cả ngày trong lịch "Lịch Học Cá Nhân" có lời báo
+  đúng giờ tổng hợp; nội dung chính nằm ở tiêu đề để hiện trong thông báo.
 - Đổi giờ ca áp dụng cho mọi buổi học của các môn dùng ca đó (kể cả buổi đã qua), trừ buổi đã sửa
   giờ riêng.
 - "Buổi học bắt đầu sau 20:00" được hiểu là bắt đầu lúc 20:00 hoặc muộn hơn.

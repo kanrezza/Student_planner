@@ -43,8 +43,12 @@ chính máy (constitution IV).
  "start_at": "2026-11-16T07:30:00+07:00", "end_at": "2026-11-16T09:30:00+07:00",
  "room": "A101", "is_cancelled": false, "time_overridden": false, "room_overridden": false,
  "color": "c03", "tags": [{"id": 1, "name": "E-Learning", "color": "c05"}],
- "display_color": "c05", "shift_label": "Ca 1", "auto_task_id": 45}
+ "display_color": "c05", "shift_label": "Ca 1", "auto_task_id": 45,
+ "is_important": false, "important_override": null}
 ```
+
+`is_important` là mức quan trọng hiệu lực (FR-067, FR-070); task và buổi thi trong `/today`,
+`/calendar` cũng có `is_important` để giao diện tô nổi bật.
 
 `display_color` = màu của nhãn hiệu lực đầu tiên, nếu không có nhãn thì màu môn (FR-044).
 `tags` là nhãn hiệu lực (nhãn môn rồi nhãn riêng); `own_tag_ids` là nhãn riêng của buổi, dùng khi sửa.
@@ -60,7 +64,7 @@ chính máy (constitution IV).
 | PATCH | `/lists/{id}` | đổi tên hoặc màu |
 | DELETE | `/lists/{id}?move_to={id}` hoặc `?delete_tasks=true` | không có tham số mà danh sách còn task thì trả `409 {details: {task_count}}` |
 | GET | `/tasks?list_id=&tags=&include_completed=false` | sắp xếp theo `due_at` (task không hạn ở cuối), rồi `priority` (FR-005) |
-| POST | `/tasks` | `{title, notes?, due_date?, due_time?, priority?, list_id, tag_ids?, reminder_minutes?}` |
+| POST | `/tasks` | `{title, notes?, due_date?, due_time?, priority?, list_id, tag_ids?, reminder_minutes?, is_important?}` |
 | PATCH | `/tasks/{id}` | sửa một phần; với task tự tạo, sửa trường nào khác `completed` thì đặt `user_modified = true` |
 | POST | `/tasks/{id}/complete` · `/tasks/{id}/uncomplete` | FR-003 |
 | DELETE | `/tasks/{id}` | task tự tạo bị xoá thì đánh dấu buổi học để không tạo lại |
@@ -87,7 +91,7 @@ chính máy (constitution IV).
 | PATCH | `/subjects/{id}` | sinh lại buổi học, giữ ngoại lệ (FR-013) |
 | DELETE | `/subjects/{id}` | kèm buổi học (FR-014) |
 | GET | `/sessions/{id}` | một buổi học (dùng cho "Xem buổi học" từ task tự tạo, FR-050) |
-| PATCH | `/sessions/{id}` | `{start_time?, end_time?, room?, tag_ids?}`, chỉ áp dụng cho buổi này (FR-012) |
+| PATCH | `/sessions/{id}` | `{start_time?, end_time?, room?, tag_ids?, important_override?}`, chỉ áp dụng cho buổi này (FR-012); `important_override: null` = theo môn (FR-067) |
 | POST | `/sessions/{id}/cancel` · `/sessions/{id}/restore` | FR-011 |
 
 **SubjectInput**:
@@ -98,7 +102,7 @@ chính máy (constitution IV).
  "shift": {"start_shift_id": 1, "end_shift_id": 1},
  "start_time": null, "end_time": null,
  "start_date": "2026-09-07", "end_date": "2026-12-20",
- "tag_ids": [], "reminder_minutes": null}
+ "tag_ids": [], "reminder_minutes": null, "is_important": false}
 ```
 
 Chỉ được có một trong hai: `shift` hoặc cặp `start_time`/`end_time` (giờ tuỳ chỉnh).
@@ -122,7 +126,7 @@ Chỉ được có một trong hai: `shift` hoặc cặp `start_time`/`end_time`
 | Method | Path | Mô tả |
 |--------|------|-------|
 | GET | `/exams?from=&to=&include_past=false` | sắp theo `start_at` |
-| POST | `/exams` | `{course_name, course_code?, attempt?, date, start_time, end_time, exam_format?, room?, candidate_number?, tag_ids?, reminder_offsets?}`; trả `{exam, warnings}` (cảnh báo `time_conflict`, FR-058) |
+| POST | `/exams` | `{course_name, course_code?, attempt?, date, start_time, end_time, exam_format?, room?, candidate_number?, tag_ids?, reminder_offsets?, is_important? (mặc định true)}`; trả `{exam, warnings}` (cảnh báo `time_conflict`, FR-058) |
 | PATCH | `/exams/{id}` | sửa một phần; trả `{exam, warnings}` |
 | DELETE | `/exams/{id}` | `204` |
 | PUT | `/exams/{id}/tags` | `{tag_ids}`; nhãn "Thi" luôn được giữ ở vị trí đầu |
@@ -159,5 +163,6 @@ Chỉ được có một trong hai: `shift` hoặc cặp `start_time`/`end_time`
 | Method | Path | Mô tả |
 |--------|------|-------|
 | GET · PATCH | `/settings` | các trường trong bảng `settings` |
-| GET | `/reminders/upcoming?hours=24` | `[{sync_key, kind: "session"\|"task"\|"exam", title, body, fire_at}]`. Buổi thi có một mục cho mỗi mốc nhắc (`sync_key` dạng `exam:7:1440`). Chỉ dùng cho nhắc bằng trình duyệt; trả `[]` khi `calendar_sync_enabled = true` (FR-021) |
+| GET | `/reminders/upcoming?hours=24` | `[{sync_key, kind: "session"\|"task"\|"exam"\|"digest", title, body, fire_at, important}]`. Mục có nhiều mốc (buổi thi, mục quan trọng) có một phần tử cho mỗi mốc (`sync_key` dạng `exam:7:1440`, `task:45:180`, `session:123:15`); bản tóm tắt có `sync_key = "digest:YYYY-MM-DD"`, `body` = các dòng chi tiết. Chỉ dùng cho nhắc bằng trình duyệt; trả `[]` khi `calendar_sync_enabled = true` (FR-021, FR-066) |
+| GET | `/digest?date=YYYY-MM-DD` | Xem trước bản tóm tắt của một ngày (mặc định hôm nay): `{date, fire_at, title, lines[], is_important}` hoặc `{date, empty: true}` khi ngày trống (FR-065). Dùng ở Cài đặt và để kiểm thử |
 | GET | `/sync/status` | `agent_status` cộng `{revision, sync_enabled}`, để giao diện hiện cảnh báo |

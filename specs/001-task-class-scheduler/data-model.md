@@ -80,6 +80,7 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
 | start_date | date | bắt buộc, nằm trong học kỳ |
 | end_date | date | bắt buộc, `>= start_date`, nằm trong học kỳ |
 | reminder_minutes | integer | `NULL` = theo cài đặt mặc định; `-1` = tắt nhắc; ≥ 0 |
+| is_important | boolean | mặc định `false`; áp dụng cho mọi buổi của môn (FR-067) |
 
 - `start_shift_id` và `end_shift_id` cùng `NULL` hoặc cùng có giá trị.
 - `start_date = end_date` nghĩa là môn chỉ học một lần (dùng khi nhập "chỉ một lần" từ ảnh).
@@ -99,6 +100,7 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
 | time_overridden | boolean | `true` nếu người dùng sửa giờ riêng buổi này |
 | room_overridden | boolean | `true` nếu người dùng sửa phòng riêng buổi này |
 | auto_task_suppressed | boolean | `true` khi người dùng đã xoá task tự tạo của buổi này |
+| important_override | boolean | `NULL` = theo môn; `true`/`false` = đặt riêng buổi này (FR-067) |
 
 **Trạng thái**:
 
@@ -114,6 +116,7 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
   học thay đổi (FR-013).
 - Khôi phục buổi đã huỷ chỉ đặt `is_cancelled = false`; giờ và phòng đã sửa riêng giữ nguyên.
 - **Nhãn hiệu lực** của buổi học = nhãn của môn ∪ nhãn riêng của buổi.
+- **Quan trọng hiệu lực** của buổi học = `important_override ?? subjects.is_important`.
 
 ## task_lists — Danh sách (FR-004)
 
@@ -143,6 +146,7 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
 | source_session_id | bigint FK → class_sessions | có giá trị ⇔ task tự tạo; duy nhất; `ON DELETE SET NULL` |
 | is_auto | boolean | `true` nếu do quy tắc tạo ra |
 | user_modified | boolean | `true` sau khi người dùng sửa bất kỳ trường nào ngoài `completed_at` |
+| is_important | boolean | mặc định `false` (FR-067); đổi trường này cũng đặt `user_modified = true` |
 
 **Giá trị suy ra**:
 - `due_at` = `due_date + (due_time ?? 23:59)`, dùng để xét quá hạn và sắp xếp (FR-005).
@@ -150,6 +154,7 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
   - Task có `due_time`: `due_at − (reminder_minutes ?? settings.task_reminder_minutes)`.
   - Task chỉ có `due_date`: `due_date + settings.date_only_task_reminder_time` (mặc định 08:00).
   - `reminder_minutes = -1` thì không nhắc, bất kể task có giờ hay chỉ có ngày.
+  - Task quan trọng: nhiều mốc theo [Quy tắc mốc nhắc](#quy-tắc-mốc-nhắc-fr-022-fr-068-fr-069).
 - **Quá hạn** = chưa hoàn thành và `due_at < now()`.
 
 **Vòng đời task tự tạo**:
@@ -191,7 +196,11 @@ position)`, `task_tags(task_id, tag_id, position)`, `exam_tags(exam_id, tag_id, 
 | auto_deadline_evening_from | time | 20:00 (buổi bắt đầu `>=` giờ này thì thoả điều kiện) |
 | auto_deadline_due_time | time | 08:00 (giờ deadline Chủ Nhật) |
 | auto_deadline_excluded_keywords | text[] | `{'Giáo dục thể chất'}` |
-| exam_reminder_offsets | integer[] | `{1440, 60}` (phút trước giờ thi: 1 ngày và 1 giờ, FR-063) |
+| important_reminder_offsets | integer[] | `{1440, 180, 60, 15}` (mốc của mục quan trọng, 1–6 phần tử ≥ 0, FR-068) |
+| exam_extra_reminder_offsets | integer[] | `{10080}` (mốc thêm cho buổi thi quan trọng: 7 ngày, 0–3 phần tử, FR-069) |
+| exam_reminder_minutes | integer | 60 (1 mốc cho buổi thi không quan trọng, FR-069) |
+| daily_digest_enabled | boolean | `true` (FR-065) |
+| daily_digest_time | time | 05:00 |
 
 Đổi các cột `auto_deadline_*` thì reconcile mọi buổi học có hạn chót chưa qua.
 
@@ -208,7 +217,8 @@ position)`, `task_tags(task_id, tag_id, position)`, `exam_tags(exam_id, tag_id, 
 | exam_format | text | tuỳ chọn (hình thức thi, ví dụ "Trắc nghiệm trên máy 60p") |
 | room | text | tuỳ chọn (có thể trống) |
 | candidate_number | text | tuỳ chọn (số báo danh) |
-| reminder_offsets | integer[] | `NULL` = theo `settings.exam_reminder_offsets`; `{}` = tắt nhắc; mỗi phần tử ≥ 0 |
+| reminder_offsets | integer[] | `NULL` = theo mặc định (quy tắc mốc nhắc bên dưới); `{}` = tắt nhắc; mỗi phần tử ≥ 0 |
+| is_important | boolean | mặc định `true` (FR-067, FR-069) |
 
 - Buổi thi là sự kiện một lần: không liên kết học kỳ, môn học hay quy tắc lặp; không áp dụng tự tạo
   deadline (US10).
@@ -241,6 +251,46 @@ position)`, `task_tags(task_id, tag_id, position)`, `exam_tags(exam_id, tag_id, 
 
 Giao diện dùng `agent_status` để hiện cảnh báo: agent chưa chạy (`last_seen_at` cũ hơn 2 phút), bị
 từ chối quyền, hoặc không có iCloud.
+
+---
+
+## Quy tắc mốc nhắc (FR-022, FR-068, FR-069)
+
+Hàm thuần trong `services/reminders.py`, trả danh sách **phút trước** (đã bỏ trùng, sắp giảm dần):
+
+| Mục | Thường | Quan trọng |
+|-----|--------|------------|
+| Buổi học | `[m]` với `m = subject.reminder_minutes ?? settings.session_reminder_minutes` | `important_reminder_offsets ∪ {subject.reminder_minutes nếu ≥ 0}` |
+| Task có giờ | `[m]` với `m = task.reminder_minutes ?? settings.task_reminder_minutes` | `important_reminder_offsets ∪ {task.reminder_minutes nếu ≥ 0}` |
+| Buổi thi | `[settings.exam_reminder_minutes]` | `important_reminder_offsets ∪ exam_extra_reminder_offsets` |
+
+- `reminder_minutes = -1` (buổi học, task) hoặc `reminder_offsets = {}` (buổi thi) → `[]`, kể cả mục
+  quan trọng.
+- Buổi thi có `reminder_offsets` khác `NULL` → dùng đúng danh sách đó, bỏ qua bảng trên.
+- Task quan trọng **chỉ có ngày**: thời điểm nhắc = `due_date − k ngày` lúc
+  `date_only_task_reminder_time`, với `k = 0` và `k = phút // 1440` cho mỗi mốc ≥ 1440; mốc < 1440 bị
+  bỏ.
+- Thời điểm nhắc đã qua bị bỏ khi tính `upcoming` (nhắc trình duyệt). Trong feed vẫn gửi đủ, vì
+  Lịch/Lời nhắc tự không báo mốc đã qua.
+
+## Bản tóm tắt hằng ngày (suy ra, không lưu — FR-065, FR-066)
+
+Hàm thuần `services/digest.py: build_digest(day, exams, sessions, tasks, shifts) -> Digest | None`:
+
+| Trường | Mô tả |
+|--------|-------|
+| date | ngày của bản tóm tắt |
+| fire_at | `date + settings.daily_digest_time` |
+| title | một dòng, ví dụ `Hôm nay: Thi CSDL 07:30 A5-310 · Ca 1 Giải tích A101 · Ca 3 Vật lý B203 · 1 task đến hạn, 2 quá hạn` |
+| lines | các dòng chi tiết: buổi thi (giờ, tên học phần, phòng) → buổi học chưa huỷ theo `start_at` (nhãn ca nếu khớp ca, ngược lại `HH:MM`; tên môn; phòng hoặc "chưa có phòng") → `"Task: n đến hạn hôm nay, m quá hạn"` (bỏ dòng nếu cả hai bằng 0) |
+| is_important | `true` nếu có buổi thi hoặc mục quan trọng trong ngày (đánh dấu ★ ở đầu tiêu đề) |
+
+- Đến hạn hôm nay = task chưa hoàn thành có `due_date = date`. Quá hạn = task chưa hoàn thành có
+  `due_at < date 00:00` (tính theo dữ liệu hiện tại).
+- Trả `None` (không gửi) khi không có buổi thi, buổi học, task đến hạn và task quá hạn, hoặc khi
+  `daily_digest_enabled = false`.
+- Feed sinh bản tóm tắt cho `today … today + 13` (14 ngày, research R15).
+- Không có tiêu đề task, ghi chú, số báo danh, hình thức thi (FR-052, FR-065).
 
 ---
 
@@ -292,8 +342,12 @@ ImportPreview
 ## Quy tắc đánh dấu revision
 
 Các thao tác sau tăng `sync_state.revision` trong cùng transaction:
-- Thêm, sửa, xoá bảng `class_sessions`, `subjects`, `semesters`, `shifts`, `tasks`, `exams`.
-- Đổi `settings` ảnh hưởng nhắc hoặc đồng bộ.
+- Thêm, sửa, xoá bảng `class_sessions`, `subjects`, `semesters`, `shifts`, `tasks`, `exams` (kể cả
+  đổi `is_important`, `important_override`).
+- Đổi `settings` ảnh hưởng nhắc, bản tóm tắt hoặc đồng bộ.
+
+Bản tóm tắt còn phụ thuộc ngày hiện tại (cửa sổ 14 ngày trượt, số task quá hạn), nên agent tự đồng
+bộ lại khi sang ngày mới (contract calendar-sync §4).
 
 Cài đặt bằng một hàm `bump_revision(session)` gọi trong lớp service, không dùng trigger, để dễ đọc
 và dễ test.
