@@ -27,7 +27,11 @@ Cơ chế chi tiết xem [research R5](../research.md#r5-cơ-chế-đồng-bộ-
     {"sync_key": "session:123", "fingerprint": "9f2c…",
      "title": "Giải tích", "location": "A101",
      "start_at": "2026-11-16T07:30:00+07:00", "end_at": "2026-11-16T09:30:00+07:00",
-     "alarm_minutes_before": 15}
+     "alarms_minutes_before": [15]},
+    {"sync_key": "exam:7", "fingerprint": "c03d…",
+     "title": "Thi: Cơ sở dữ liệu", "location": "A5-310",
+     "start_at": "2027-01-05T07:30:00+07:00", "end_at": "2027-01-05T08:30:00+07:00",
+     "alarms_minutes_before": [1440, 60]}
   ],
   "reminders": [
     {"sync_key": "task:45", "fingerprint": "41ab…",
@@ -39,15 +43,17 @@ Cơ chế chi tiết xem [research R5](../research.md#r5-cơ-chế-đồng-bộ-
 ```
 
 **Phạm vi mục trong feed**:
-- `events`: buổi học **không bị huỷ**, `start_at >= đầu ngày hôm nay`, thuộc mọi học kỳ.
-  - `alarm_minutes_before` là `null` nếu môn đã tắt nhắc.
+- `events`: buổi học **không bị huỷ** và buổi thi (FR-064), `start_at >= đầu ngày hôm nay`.
+  - `alarms_minutes_before` là danh sách phút báo trước: buổi học có 1 phần tử (hoặc `[]` nếu môn
+    đã tắt nhắc); buổi thi có các mốc của nó (mặc định `[1440, 60]`, `[]` nếu tắt).
+  - Tiêu đề buổi thi là "Thi: <tên học phần>"; `location` là phòng thi (có thể `null`).
 - `reminders`: task **chưa hoàn thành** có `due_date`, kể cả quá hạn trong 7 ngày gần nhất.
   - `alarm_at` là `null` nếu task đã tắt nhắc.
   - `due_has_time = false` thì ghi hạn theo ngày, `alarm_at` = ngày đó lúc
     `date_only_task_reminder_time`.
 
 **Giới hạn nội dung** (FR-052, constitution IV): chỉ gồm tiêu đề, địa điểm (phòng), thời gian và
-báo trước. Không gửi ghi chú, giảng viên, mã lớp, nhãn hay ảnh.
+báo trước. Không gửi ghi chú, giảng viên, mã lớp, nhãn, số báo danh, hình thức thi hay ảnh.
 
 `fingerprint` = SHA-256 của các trường nội dung ở trên, để agent biết mục nào cần cập nhật.
 
@@ -79,6 +85,6 @@ Trả `204`. Backend ghi thêm `last_seen_at = now()`.
 
 | Feed | EventKit |
 |------|----------|
-| event | `EKEvent`: `title`, `location`, `startDate`, `endDate`, `URL = lichhoc://session/{id}`, `addAlarm(EKAlarm.alarmWithRelativeOffset_(-60 × phút))` |
+| event | `EKEvent`: `title`, `location`, `startDate`, `endDate`, `URL = lichhoc://session/{id}` hoặc `lichhoc://exam/{id}`, mỗi phần tử của `alarms_minutes_before` là một `addAlarm(EKAlarm.alarmWithRelativeOffset_(-60 × phút))` |
 | reminder | `EKReminder`: `title`, `dueDateComponents` (có hoặc không có giờ), `URL = lichhoc://task/{id}`, `addAlarm(EKAlarm.alarmWithAbsoluteDate_(alarm_at))` |
 | ghi | `saveEvent_span_commit_error_(…, EKSpanThisEvent, False, None)` / `saveReminder_commit_error_(…, False, None)`, sau cùng `commit_()` |

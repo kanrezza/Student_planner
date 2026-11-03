@@ -33,8 +33,8 @@ chính máy (constitution IV).
 
 | Method | Path | Mô tả |
 |--------|------|-------|
-| GET | `/today` | `{date, sessions[], tasks_due_today[], overdue_tasks[], notices[]}`. `notices` gồm cảnh báo quyền thông báo hoặc trạng thái agent (FR-019) |
-| GET | `/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD&tags=1,2` | `{sessions[], tasks[]}` trong khoảng ngày, lọc theo nhãn nếu có (FR-016, FR-017, FR-045) |
+| GET | `/today` | `{date, exams[], sessions[], tasks_due_today[], overdue_tasks[], notices[]}`. `notices` gồm cảnh báo quyền thông báo hoặc trạng thái agent (FR-019, FR-057) |
+| GET | `/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD&tags=1,2` | `{sessions[], tasks[], exams[]}` trong khoảng ngày, lọc theo nhãn nếu có (FR-016, FR-017, FR-045, FR-057) |
 
 **Session (đọc)**:
 
@@ -115,14 +115,38 @@ Chỉ được có một trong hai: `shift` hoặc cặp `start_time`/`end_time`
 
 ---
 
-## Nhập ảnh (FR-028 đến FR-035, FR-041, FR-046)
+## Lịch thi (FR-055 đến FR-058, FR-063)
 
 | Method | Path | Mô tả |
 |--------|------|-------|
-| POST | `/imports/recognize` | `multipart/form-data` với trường `image`. Đồng bộ, có thể mất tới ~60 giây. Trả `ImportPreview` ([data-model](../data-model.md#thực-thể-tạm-thời-không-lưu-importpreview-fr-028-đến-fr-035)). Ảnh không được lưu |
-| POST | `/imports/commit` | `{rows: [ImportRow đã chỉnh, selected=true]}`; trả `{created_subjects, created_sessions, skipped_duplicates, warnings}` |
+| GET | `/exams?from=&to=&include_past=false` | sắp theo `start_at` |
+| POST | `/exams` | `{course_name, course_code?, attempt?, date, start_time, end_time, exam_format?, room?, candidate_number?, tag_ids?, reminder_offsets?}`; trả `{exam, warnings}` (cảnh báo `time_conflict`, FR-058) |
+| PATCH | `/exams/{id}` | sửa một phần; trả `{exam, warnings}` |
+| DELETE | `/exams/{id}` | `204` |
+| PUT | `/exams/{id}/tags` | `{tag_ids}`; nhãn "Thi" luôn được giữ ở vị trí đầu |
 
-- `recognize` không ghi gì vào database.
+**Exam (đọc)**:
+
+```json
+{"id": 7, "course_code": "CSE2301", "course_name": "Cơ sở dữ liệu", "attempt": 1,
+ "date": "2027-01-05", "start_at": "2027-01-05T07:30:00+07:00", "end_at": "2027-01-05T08:30:00+07:00",
+ "exam_format": "Trắc nghiệm trên máy 60p", "room": "A5-310", "candidate_number": "125",
+ "is_past": false, "tags": [{"id": 2, "name": "Thi", "color": "c07", "system_key": "exam"}],
+ "display_color": "c07", "reminder_offsets": null,
+ "conflicts": [{"kind": "session", "id": 88, "title": "Giải tích 1", "start_at": "…"}]}
+```
+
+---
+
+## Nhập ảnh (FR-028 đến FR-035, FR-041, FR-046, FR-059 đến FR-062)
+
+| Method | Path | Mô tả |
+|--------|------|-------|
+| POST | `/imports/recognize?kind=` | `multipart/form-data` với trường `image`. `kind` (tuỳ chọn: `week_schedule` hoặc `exam_table`) ép loại ảnh khi lần nhận diện trước trả `"unknown"` (FR-059). Đồng bộ, có thể mất tới ~60 giây. Trả `ImportPreview` ([data-model](../data-model.md#thực-thể-tạm-thời-không-lưu-importpreview-fr-028-đến-fr-035)). Ảnh không được lưu |
+| POST | `/imports/commit` | Lịch học: `{kind: "week_schedule", rows: [ImportRow đã chỉnh, selected=true]}`; trả `{created_subjects, created_sessions, skipped_duplicates, warnings}`. Lịch thi: `{kind: "exam_table", exam_rows: [...]}`; trả `{created_exams, skipped_duplicates, warnings}` |
+
+- `recognize` không ghi gì vào database. Với lịch thi, phản hồi **không** chứa họ tên hay mã số sinh
+  viên (FR-061).
 - `commit` chạy trong một transaction duy nhất: dòng nào có lỗi thì cả lần lưu bị huỷ, trả `400`
   với `fields: {"rows[i].field": "..."}` để giao diện chỉ đúng dòng lỗi.
 
@@ -133,5 +157,5 @@ Chỉ được có một trong hai: `shift` hoặc cặp `start_time`/`end_time`
 | Method | Path | Mô tả |
 |--------|------|-------|
 | GET · PATCH | `/settings` | các trường trong bảng `settings` |
-| GET | `/reminders/upcoming?hours=24` | `[{sync_key, kind: "session"\|"task", title, body, fire_at}]`. Chỉ dùng cho nhắc bằng trình duyệt; trả `[]` khi `calendar_sync_enabled = true` (FR-021) |
+| GET | `/reminders/upcoming?hours=24` | `[{sync_key, kind: "session"\|"task"\|"exam", title, body, fire_at}]`. Buổi thi có một mục cho mỗi mốc nhắc (`sync_key` dạng `exam:7:1440`). Chỉ dùng cho nhắc bằng trình duyệt; trả `[]` khi `calendar_sync_enabled = true` (FR-021) |
 | GET | `/sync/status` | `agent_status` cộng `{revision, sync_enabled}`, để giao diện hiện cảnh báo |

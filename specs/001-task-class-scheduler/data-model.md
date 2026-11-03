@@ -14,7 +14,8 @@ semesters 1──* subjects 1──* class_sessions 0..1──0..1 tasks (auto)
                   │  └─ start_shift / end_shift ──> shifts
                   │
 subject_tags *──* tags *──* session_tags (class_sessions)
-                    └────*── task_tags *──* tasks *──1 task_lists
+                    ├────*── task_tags *──* tasks *──1 task_lists
+                    └────*── exam_tags *──* exams   (buổi thi: độc lập, không thuộc học kỳ/môn)
 
 settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
 ```
@@ -164,12 +165,14 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
 |-----|------|-----------|
 | name | text | bắt buộc, duy nhất theo `lower(name)` |
 | color | text | mã bảng màu (nhiều nhãn được trùng màu) |
-| system_key | text | `'e_learning'` cho nhãn hệ thống, ngược lại `NULL`; duy nhất |
+| system_key | text | `'e_learning'`, `'exam'` cho nhãn hệ thống, ngược lại `NULL`; duy nhất |
 
 - Nhãn có `system_key` không được đổi tên hay xoá; chỉ đổi màu.
 
 **Bảng nối**: `subject_tags(subject_id, tag_id, position)`, `session_tags(session_id, tag_id,
-position)`, `task_tags(task_id, tag_id, position)`.
+position)`, `task_tags(task_id, tag_id, position)`, `exam_tags(exam_id, tag_id, position)`.
+- Nhãn hệ thống "Thi" (`system_key='exam'`, màu mặc định `c07` đỏ) luôn là nhãn gắn đầu tiên của mọi
+  buổi thi (`position = 0`); service tự thêm khi tạo và không cho gỡ (FR-056).
 - Khoá chính ghép `(owner_id, tag_id)`. `position` giữ thứ tự gắn, nên "nhãn gắn đầu tiên" quyết
   định màu hiển thị (FR-044).
 - Thứ tự nhãn hiệu lực của buổi học: nhãn của môn trước, rồi nhãn riêng của buổi.
@@ -188,8 +191,35 @@ position)`, `task_tags(task_id, tag_id, position)`.
 | auto_deadline_evening_from | time | 20:00 (buổi bắt đầu `>=` giờ này thì thoả điều kiện) |
 | auto_deadline_due_time | time | 08:00 (giờ deadline Chủ Nhật) |
 | auto_deadline_excluded_keywords | text[] | `{'Giáo dục thể chất'}` |
+| exam_reminder_offsets | integer[] | `{1440, 60}` (phút trước giờ thi: 1 ngày và 1 giờ, FR-063) |
 
 Đổi các cột `auto_deadline_*` thì reconcile mọi buổi học có hạn chót chưa qua.
+
+## exams — Buổi thi (FR-055 đến FR-058, FR-063, FR-064)
+
+| Cột | Kiểu | Ràng buộc |
+|-----|------|-----------|
+| course_code | text | tuỳ chọn (mã học phần) |
+| course_name | text | bắt buộc, 1–200 ký tự |
+| attempt | smallint | ≥ 1, mặc định 1 (lần thi) |
+| date | date | bắt buộc |
+| start_at | timestamptz | bắt buộc (ngày thi + giờ bắt đầu) |
+| end_at | timestamptz | bắt buộc, `> start_at` |
+| exam_format | text | tuỳ chọn (hình thức thi, ví dụ "Trắc nghiệm trên máy 60p") |
+| room | text | tuỳ chọn (có thể trống) |
+| candidate_number | text | tuỳ chọn (số báo danh) |
+| reminder_offsets | integer[] | `NULL` = theo `settings.exam_reminder_offsets`; `{}` = tắt nhắc; mỗi phần tử ≥ 0 |
+
+- Buổi thi là sự kiện một lần: không liên kết học kỳ, môn học hay quy tắc lặp; không áp dụng tự tạo
+  deadline (US10).
+- Index `(date)`, `(start_at)`.
+- **Trùng giờ** (FR-058), tính khi đọc/lưu, không phải ràng buộc: buổi thi `E` trùng với buổi học `S`
+  chưa huỷ, hoặc với buổi thi khác `E'`, khi `start < other.end AND other.start < end`. API trả
+  `conflicts: [{kind: "session"|"exam", id, title, start_at}]`.
+- **Đã qua** = `end_at < now()`.
+- **Trùng khi nhập** (FR-062): cùng (`ci_key(course_code)` nếu cả hai có mã, ngược lại
+  `ci_key(course_name)`), cùng `date`, cùng giờ bắt đầu và cùng `attempt`.
+- Không có cột nào lưu họ tên hay mã số sinh viên (FR-061).
 
 ## sync_state và agent_status — Đồng bộ (FR-051 đến FR-054)
 
@@ -214,14 +244,25 @@ từ chối quyền, hoặc không có iCloud.
 
 ---
 
-## Thực thể tạm thời (không lưu): ImportPreview (FR-028 đến FR-035)
+## Thực thể tạm thời (không lưu): ImportPreview (FR-028 đến FR-035, FR-059 đến FR-062)
 
-Trả về từ `POST /api/imports/recognize`, chỉ tồn tại trong bộ nhớ của client:
+Trả về từ `POST /api/imports/recognize`, chỉ tồn tại trong bộ nhớ của client. Trường `kind` cho biết
+loại ảnh nhận diện được (FR-059):
 
 ```text
 ImportPreview
+├─ kind: "week_schedule" | "exam_table" | "unknown"   ("unknown" ⇒ giao diện hỏi người dùng chọn loại)
 ├─ month_year: {value: "2026-11", source: "grid_dates|week_header|mini_calendar|menu_bar", certain: bool}
-└─ rows[]: ImportRow
+│      (chỉ với kind = "week_schedule")
+├─ exam_rows[]: ExamRow   (chỉ với kind = "exam_table")
+│  ├─ fields: course_code, course_name, attempt, date, start_time, end_time, exam_format, room,
+│  │          candidate_number — mỗi field = {value, certain: bool, reason?: string}
+│  ├─ end_time_source: "image" | "format_duration" | null   (giờ kết thúc tính từ "60p" …)
+│  ├─ is_past: bool   ("Đã qua" — mặc định bỏ chọn)
+│  ├─ duplicate_of_exam_id: id | null   ("Đã có trong lịch" — mặc định bỏ chọn)
+│  └─ selected: bool
+│  (Không có trường nào chứa họ tên, mã số sinh viên, ngày sinh, lớp — FR-061.)
+└─ rows[]: ImportRow   (chỉ với kind = "week_schedule")
    ├─ fields: name, class_code, date, weekday, start_time, end_time, room, lecturer
    │    mỗi field = {value, certain: bool, reason?: string}
    ├─ shift: {start_shift_id, end_shift_id} | null   (+ note "không khớp ca nào")
@@ -243,13 +284,15 @@ ImportPreview
   - `once`: `start_date = end_date = date`.
 - Các dòng cùng `merge_group` có `merge_accepted = true` tạo **một** môn lặp hàng tuần, bắt đầu từ
   ngày sớm nhất trong nhóm; nếu `merge_accepted = false` thì mỗi dòng là một môn riêng.
+- Với `exam_rows`: mỗi dòng được chọn tạo một `exam`; từ chối dòng có `course_name`, `date`,
+  `start_time`, `end_time` còn `certain = false`; kiểm tra trùng lại phía server (FR-062).
 
 ---
 
 ## Quy tắc đánh dấu revision
 
 Các thao tác sau tăng `sync_state.revision` trong cùng transaction:
-- Thêm, sửa, xoá bảng `class_sessions`, `subjects`, `semesters`, `shifts`, `tasks`.
+- Thêm, sửa, xoá bảng `class_sessions`, `subjects`, `semesters`, `shifts`, `tasks`, `exams`.
 - Đổi `settings` ảnh hưởng nhắc hoặc đồng bộ.
 
 Cài đặt bằng một hàm `bump_revision(session)` gọi trong lớp service, không dùng trigger, để dễ đọc
