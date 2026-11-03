@@ -263,12 +263,35 @@ class EventKitStore:
         reminder.setTitle_(item["title"])
         reminder.setDueDateComponents_(comps)
         reminder.setURL_(NSURL.URLWithString_(url_from_key(item["sync_key"])))
+        reminder.setPriority_(1 if item.get("important") else 0)  # 1 = cao (FR-070)
         reminder.setAlarms_(None)
-        if item.get("alarm_at"):
-            reminder.addAlarm_(self.ek.EKAlarm.alarmWithAbsoluteDate_(_ns_date(item["alarm_at"])))
+        for at in item.get("alarms_at", []):
+            reminder.addAlarm_(self.ek.EKAlarm.alarmWithAbsoluteDate_(_ns_date(at)))
+
+    def _fill_digest(self, event, item: dict) -> None:
+        """Bản tóm tắt: sự kiện cả ngày, báo đúng giờ tổng hợp (research R15)."""
+        from Foundation import NSURL
+
+        day = datetime.fromisoformat(item["date"]).astimezone()
+        event.setAllDay_(True)
+        event.setTitle_(item["title"])
+        event.setNotes_(item.get("notes"))
+        event.setLocation_(None)
+        event.setStartDate_(_ns_date(day.isoformat()))
+        event.setEndDate_(_ns_date(day.isoformat()))
+        event.setURL_(NSURL.URLWithString_(url_from_key(item["sync_key"])))
+        event.setAlarms_(None)
+        event.addAlarm_(self.ek.EKAlarm.alarmWithAbsoluteDate_(_ns_date(item["alarm_at"])))
+
+    def _filler(self, kind: str):
+        return {
+            "event": self._fill_event,
+            "digest": self._fill_digest,
+            "reminder": self._fill_reminder,
+        }[kind]
 
     def _save(self, kind: str, obj) -> None:
-        if kind == "event":
+        if kind in ("event", "digest"):
             ok, err = self.store.saveEvent_span_commit_error_(
                 obj, self.ek.EKSpanThisEvent, False, None
             )
@@ -278,19 +301,18 @@ class EventKitStore:
             raise RuntimeError(f"Không lưu được {kind}: {err}")
 
     def create(self, kind: str, item: dict, state: State) -> str:
-        if kind == "event":
+        if kind in ("event", "digest"):
             obj = self.ek.EKEvent.eventWithEventStore_(self.store)
             obj.setCalendar_(self._calendar(state.calendar_id))
-            self._fill_event(obj, item)
         else:
             obj = self.ek.EKReminder.reminderWithEventStore_(self.store)
             obj.setCalendar_(self._calendar(state.reminder_list_id))
-            self._fill_reminder(obj, item)
+        self._filler(kind)(obj, item)
         self._save(kind, obj)
         return str(obj.calendarItemIdentifier())
 
     def update(self, handle: Any, kind: str, item: dict) -> None:
-        (self._fill_event if kind == "event" else self._fill_reminder)(handle, item)
+        self._filler(kind)(handle, item)
         self._save(kind, handle)
 
     def delete(self, handle: Any) -> None:

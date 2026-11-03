@@ -78,6 +78,26 @@ describe('ReminderScheduler', () => {
   });
 });
 
+describe('ReminderScheduler – nhiều mốc và bản tóm tắt', () => {
+  it('mỗi mốc của mục quan trọng và bản tóm tắt được hẹn riêng, mỗi mốc hiện một lần', () => {
+    const notify = vi.fn();
+    const ft = fakeTimers();
+    const s = new ReminderScheduler(notify, ft.fns);
+    const digest = { ...item('digest:2026-11-04', 1000), kind: 'digest' as const };
+    const items = [item('task:5:60', 2000), item('task:5:15', 3000), digest];
+    s.refresh(items, NOW);
+    expect(s.pending).toBe(3);
+    ft.fireAll();
+    s.refresh(items, NOW);
+    ft.fireAll();
+    expect(notify.mock.calls.map((c) => c[0].sync_key)).toEqual([
+      'task:5:60',
+      'task:5:15',
+      'digest:2026-11-04',
+    ]);
+  });
+});
+
 describe('shouldRunBrowserReminders', () => {
   it('chỉ chạy khi tắt đồng bộ và đã có quyền thông báo', () => {
     expect(shouldRunBrowserReminders(false, 'granted')).toBe(true);

@@ -3,7 +3,7 @@
 Trạng thái mong muốn (feed) và long-poll chờ thay đổi.
 
 Chỉ gồm các trường tối thiểu cho lời nhắc (FR-052, constitution IV): tiêu đề, phòng, thời gian,
-báo trước. Không có ghi chú, giảng viên, mã lớp, nhãn.
+báo trước, mức quan trọng và bản tóm tắt hằng ngày. Không có ghi chú, giảng viên, mã lớp, nhãn.
 """
 
 import hashlib
@@ -16,11 +16,13 @@ from sqlalchemy import select
 from app.extensions import db
 from app.lib.timeutil import TZ, combine, iso
 from app.models import ClassSession, SyncState, Task
-from app.services.reminders import get_settings, session_alarm_minutes, task_alarm_at
+from app.services.digest import DAYS_AHEAD, digests_for_range
+from app.services.reminders import get_settings, session_alarm_minutes, task_alarm_times
 from app.services.tasks import due_at
 
 CONTAINER_NAME = "Lịch Học Cá Nhân"
 OVERDUE_DAYS_KEPT = 7
+STAR = "★ "
 MAX_WAIT_SECONDS = 25
 
 
@@ -46,10 +48,11 @@ def build_feed(now: datetime) -> dict:
         _with_fingerprint(
             {
                 "sync_key": f"session:{s.id}",
-                "title": s.subject.name,
+                "title": _star(s.subject.name, s.is_important),
                 "location": s.room,
                 "start_at": iso(s.start_at),
                 "end_at": iso(s.end_at),
+                "important": s.is_important,
                 "alarms_minutes_before": session_alarm_minutes(s, settings),
             }
         )
@@ -66,7 +69,6 @@ def build_feed(now: datetime) -> dict:
     )
     reminders = []
     for task in tasks:
-        alarm = task_alarm_at(task, settings)
         reminders.append(
             _with_fingerprint(
                 {
@@ -74,10 +76,23 @@ def build_feed(now: datetime) -> dict:
                     "title": task.title,
                     "due_at": iso(due_at(task)),
                     "due_has_time": task.due_time is not None,
-                    "alarm_at": iso(alarm) if alarm else None,
+                    "important": task.is_important,
+                    "alarms_at": [iso(t) for t in task_alarm_times(task, settings)],
                 }
             )
         )
+    digests = [
+        _with_fingerprint(
+            {
+                "sync_key": f"digest:{d.date.isoformat()}",
+                "date": d.date.isoformat(),
+                "title": d.title,
+                "notes": "\n".join(d.lines),
+                "alarm_at": iso(d.fire_at),
+            }
+        )
+        for d in digests_for_range(start_of_today.date(), DAYS_AHEAD, settings)
+    ]
     return {
         "revision": current_revision(),
         "sync_enabled": settings.calendar_sync_enabled,
@@ -85,7 +100,12 @@ def build_feed(now: datetime) -> dict:
         "reminder_list_name": CONTAINER_NAME,
         "events": events,
         "reminders": reminders,
+        "digests": digests,
     }
+
+
+def _star(title: str, important: bool) -> str:
+    return STAR + title if important else title
 
 
 def current_revision() -> int:

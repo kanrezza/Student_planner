@@ -44,7 +44,7 @@ chính máy (constitution IV).
  "room": "A101", "is_cancelled": false, "time_overridden": false, "room_overridden": false,
  "color": "c03", "tags": [{"id": 1, "name": "E-Learning", "color": "c05"}],
  "display_color": "c05", "shift_label": "Ca 1", "auto_task_id": 45,
- "is_important": false, "important_override": null}
+ "is_important": false, "important_override": null, "subject_is_important": false}
 ```
 
 `is_important` là mức quan trọng hiệu lực (FR-067, FR-070); task và buổi thi trong `/today`,

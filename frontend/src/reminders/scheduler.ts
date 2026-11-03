@@ -2,10 +2,11 @@
 
 export type UpcomingReminder = {
   sync_key: string;
-  kind: 'session' | 'task' | 'exam';
+  kind: 'session' | 'task' | 'exam' | 'digest';
   title: string;
   body: string;
   fire_at: string;
+  important?: boolean;
 };
 
 /** Nhắc đã quá giờ hơn 1 phút thì bỏ — không hiện dồn khi mở lại tab. */

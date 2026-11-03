@@ -43,6 +43,8 @@ class ClassSession(IdMixin, TimestampMixin, db.Model):
     auto_task_suppressed: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=false()
     )
+    # NULL = theo môn; True/False = đặt riêng buổi này (FR-067).
+    important_override: Mapped[bool | None] = mapped_column(Boolean)
 
     subject = relationship("Subject", back_populates="sessions")
     tag_links = relationship(
@@ -56,6 +58,12 @@ class ClassSession(IdMixin, TimestampMixin, db.Model):
     @property
     def has_exception(self) -> bool:
         return self.is_cancelled or self.time_overridden or self.room_overridden
+
+    @property
+    def is_important(self) -> bool:
+        if self.important_override is not None:
+            return self.important_override
+        return self.subject.is_important
 
     @property
     def effective_tags(self):

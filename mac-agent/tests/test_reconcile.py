@@ -63,3 +63,26 @@ def test_force_rewrites_all():
     current = [Item(key="session:1", kind="event", handle="h1")]
     plan = plan_changes(feed(events=[EV1]), current, {"session:1": "a"}, force=True)
     assert [h for h, _, _ in plan.update] == ["h1"]
+
+
+DG1 = {"sync_key": "digest:2026-11-16", "fingerprint": "d", "title": "Hôm nay: Ca 1 Giải tích"}
+
+
+def test_digests_are_reconciled_like_events():
+    data = {**feed(events=[EV1]), "digests": [DG1]}
+    plan = plan_changes(data, None, {})
+    assert ("digest", DG1) in plan.create
+
+    current = [
+        Item(key="session:1", kind="event", handle="h1"),
+        Item(key="digest:2026-11-16", kind="event", handle="hd"),
+        Item(key="digest:2026-11-15", kind="event", handle="old"),  # ngày đã qua → xoá
+    ]
+    saved = {"session:1": "a", "digest:2026-11-16": "OLD"}
+    plan = plan_changes(data, current, saved)
+    assert plan.update == [("hd", "digest", DG1)]
+    assert plan.delete == ["old"]
+
+
+def test_feed_without_digests_still_works():
+    assert plan_changes(feed(events=[EV1]), [], {}).create == [("event", EV1)]

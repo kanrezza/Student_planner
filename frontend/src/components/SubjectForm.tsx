@@ -10,6 +10,7 @@ import { blankToNull } from '../lib/format';
 import { ColorPicker } from './ColorPicker';
 import { ConfirmDialog } from './ConfirmDialog';
 import { FormField, fieldError } from './FormField';
+import { ImportantToggle } from './ImportantToggle';
 import { ShiftPicker, timeChoiceToInput, type TimeChoice } from './ShiftPicker';
 import { TagPicker } from './TagPicker';
 import { FormActions } from './TaskForm';
@@ -51,6 +52,7 @@ export function SubjectForm({
   });
   const [tagIds, setTagIds] = useState<number[]>(subject?.tags.map((tag) => tag.id) ?? []);
   const [reminder, setReminder] = useState<number | null>(subject?.reminder_minutes ?? null);
+  const [important, setImportant] = useState(subject?.is_important ?? false);
   const settings = useSettings().data;
   const [conflicts, setConflicts] = useState<ExceptionConflict[] | null>(null);
   const save = useSaveSubject();
@@ -75,6 +77,7 @@ export function SubjectForm({
       ...timeChoiceToInput(timeChoice),
       tag_ids: tagIds,
       reminder_minutes: reminder,
+      is_important: important,
       start_date: form.start_date || null,
       end_date: form.end_date || null,
       ...(color ? { color } : {}),
@@ -157,6 +160,9 @@ export function SubjectForm({
       <FormField label={t('subjects.fieldLecturer')} name="lecturer" error={error}>
         <input value={form.lecturer} onChange={(e) => set('lecturer')(e.target.value)} />
       </FormField>
+      <div className="field">
+        <ImportantToggle value={important} onChange={setImportant} />
+      </div>
       <FormField label={t('tags.pick')} name="tag_ids" error={error}>
         <TagPicker value={tagIds} onChange={setTagIds} />
       </FormField>

@@ -24,6 +24,7 @@ class TaskIn(ApiModel):
     tag_ids: list[int] = []
     # None = theo mặc định; -1 = tắt nhắc; ≥ 0 = số phút trước hạn (chỉ với task có giờ).
     reminder_minutes: int | None = Field(default=None, ge=-1)
+    is_important: bool = False
 
     @field_validator("due_time")
     @classmethod
@@ -44,6 +45,7 @@ class TaskPatch(ApiModel):
     list_id: int | None = None
     tag_ids: list[int] | None = None
     reminder_minutes: int | None = Field(default=None, ge=-1)
+    is_important: bool | None = None
 
 
 class ListIn(ApiModel):
@@ -56,11 +58,16 @@ class ListPatch(ApiModel):
     color: str | None = None
 
 
-def _reminder_at(task) -> str | None:
-    from app.services.reminders import get_settings, task_alarm_at  # tránh import vòng
+def _reminder_times(task) -> list[str]:
+    from app.services.reminders import get_settings, task_alarm_times  # tránh import vòng
 
-    alarm = task_alarm_at(task, get_settings())
-    return iso(alarm) if alarm else None
+    return [iso(t) for t in task_alarm_times(task, get_settings())]
+
+
+def _reminder_fields(task) -> dict:
+    times = _reminder_times(task)
+    # `reminder_at` = mốc sớm nhất (giữ tương thích), `reminder_times` = mọi mốc (FR-068).
+    return {"reminder_at": times[0] if times else None, "reminder_times": times}
 
 
 def serialize_task(task, now) -> dict:
@@ -85,7 +92,8 @@ def serialize_task(task, now) -> dict:
         "tags": serialize_tags(tags),
         "display_color": display_color([t.color for t in tags], task.list.color),
         "reminder_minutes": task.reminder_minutes,
-        "reminder_at": _reminder_at(task),
+        "is_important": task.is_important,
+        **_reminder_fields(task),
     }
 
 

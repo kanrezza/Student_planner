@@ -22,7 +22,8 @@ def first_event(client):
 
 
 def upcoming(client):
-    return client.get("/api/reminders/upcoming?hours=24").get_json()
+    items = client.get("/api/reminders/upcoming?hours=24").get_json()
+    return [i for i in items if i["kind"] != "digest"]
 
 
 def test_subject_reminder_override_and_off(client):
@@ -49,8 +50,8 @@ def test_task_reminder_override(client, db_session):
     )
     assert date_only["reminder_at"] is None
     reminders = {r["title"]: r for r in client.get("/api/sync/feed").get_json()["reminders"]}
-    assert reminders["Có giờ"]["alarm_at"] == "2026-11-09T16:50:00+07:00"
-    assert reminders["Chỉ ngày"]["alarm_at"] is None
+    assert reminders["Có giờ"]["alarms_at"] == ["2026-11-09T16:50:00+07:00"]
+    assert reminders["Chỉ ngày"]["alarms_at"] == []
 
 
 def test_default_session_minutes_change(client, db_session):

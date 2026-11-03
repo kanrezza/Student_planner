@@ -2,6 +2,7 @@ from datetime import date, time
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     Date,
     ForeignKey,
@@ -9,6 +10,7 @@ from sqlalchemy import (
     SmallInteger,
     Text,
     Time,
+    false,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -62,6 +64,7 @@ class Subject(IdMixin, TimestampMixin, db.Model):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     reminder_minutes: Mapped[int | None] = mapped_column(Integer)
+    is_important: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
 
     semester = relationship("Semester", back_populates="subjects")
     sessions = relationship(

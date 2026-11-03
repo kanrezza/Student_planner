@@ -1,17 +1,18 @@
 """/api/sync/* cho mac-agent (contracts/calendar-sync.md) và /api/reminders/upcoming (FR-021)."""
 
-from datetime import timedelta
+from datetime import date, timedelta
 
 from flask import Blueprint, request
 from pydantic import Field
 
+from app.api.errors import ApiError
 from app.api.params import int_arg
 from app.extensions import db
 from app.lib import timeutil
 from app.lib.timeutil import iso
 from app.models import AgentStatus
 from app.schemas.common import ApiModel
-from app.services import reminders, sync_feed
+from app.services import digest, reminders, sync_feed
 
 bp = Blueprint("sync", __name__)
 
@@ -71,6 +72,43 @@ def sync_status():
         "last_synced_revision": status.last_synced_revision,
         "last_error": status.last_error,
     }
+
+
+@bp.get("/digest")
+def digest_preview():
+    """Xem trước bản tóm tắt của một ngày (mặc định hôm nay), FR-065."""
+    raw = request.args.get("date")
+    try:
+        day = date.fromisoformat(raw) if raw else timeutil.today()
+    except ValueError:
+        raise ApiError(
+            400, "validation_error", "Dữ liệu chưa hợp lệ", {"date": "Ngày không hợp lệ"}
+        ) from None
+    # Xem trước luôn tính nội dung, kể cả khi đang tắt thông báo tổng hợp.
+    settings = reminders.get_settings()
+    found = digest.digest_for_day(day, _EnabledView(settings))
+    if found is None:
+        return {"date": day.isoformat(), "empty": True}
+    return {
+        "date": day.isoformat(),
+        "empty": False,
+        "fire_at": iso(found.fire_at),
+        "title": found.title,
+        "lines": found.lines,
+        "is_important": found.is_important,
+    }
+
+
+class _EnabledView:
+    """Bọc cài đặt, coi như thông báo tổng hợp đang bật (chỉ dùng cho xem trước)."""
+
+    def __init__(self, settings):
+        self._settings = settings
+
+    daily_digest_enabled = True
+
+    def __getattr__(self, name):
+        return getattr(self._settings, name)
 
 
 @bp.get("/reminders/upcoming")

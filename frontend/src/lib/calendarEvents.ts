@@ -14,18 +14,19 @@ export type CalendarEventProps = {
  * - Buổi học: có giờ; buổi đã huỷ có class `is-cancelled`.
  * - Task có giờ: sự kiện có giờ; task chỉ có ngày: sự kiện cả ngày; task đã xong có class `is-done`.
  * - Màu = `display_color` (màu nhãn đầu tiên, hoặc màu môn/danh sách).
+ * - Mục quan trọng: tiền tố "★ " và class `is-important` (viền đậm), FR-070.
  */
 export function toCalendarEvents(data: CalendarData): EventInput[] {
   const sessions: EventInput[] = data.sessions.map((s) => ({
     id: `session-${s.id}`,
-    title: s.room ? `${s.subject_name} · ${s.room}` : s.subject_name,
+    title: star(s.is_important) + (s.room ? `${s.subject_name} · ${s.room}` : s.subject_name),
     start: s.start_at,
     end: s.end_at,
     allDay: false,
     backgroundColor: colorHex(s.display_color),
     borderColor: colorHex(s.display_color),
     textColor: '#ffffff',
-    classNames: s.is_cancelled ? ['is-cancelled'] : [],
+    classNames: classes({ 'is-cancelled': s.is_cancelled, 'is-important': s.is_important }),
     extendedProps: {
       kind: 'session',
       id: s.id,
@@ -34,13 +35,13 @@ export function toCalendarEvents(data: CalendarData): EventInput[] {
   }));
   const tasks: EventInput[] = data.tasks.map((task) => ({
     id: `task-${task.id}`,
-    title: task.title,
+    title: star(task.is_important) + task.title,
     start: task.due_time ? (task.due_at ?? undefined) : (task.due_date ?? undefined),
     allDay: !task.due_time,
     backgroundColor: colorHex(task.display_color),
     borderColor: colorHex(task.display_color),
     textColor: '#ffffff',
-    classNames: task.completed ? ['is-done'] : [],
+    classNames: classes({ 'is-done': task.completed, 'is-important': task.is_important }),
     extendedProps: {
       kind: 'task',
       id: task.id,
@@ -48,4 +49,14 @@ export function toCalendarEvents(data: CalendarData): EventInput[] {
     } satisfies CalendarEventProps,
   }));
   return [...sessions, ...tasks];
+}
+
+export function star(important: boolean): string {
+  return important ? '★ ' : '';
+}
+
+function classes(flags: Record<string, boolean>): string[] {
+  return Object.entries(flags)
+    .filter(([, on]) => on)
+    .map(([name]) => name);
 }

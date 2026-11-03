@@ -31,6 +31,11 @@ cd mac-agent && ./scripts/install.sh   # build LichHocAgent.app, cài LaunchAgen
 
 Vào **Cài đặt → Đồng bộ với Lịch và Lời nhắc → Bật**, rồi cho phép khi macOS hỏi quyền.
 
+**Cập nhật agent**: khi backend đổi định dạng feed (ví dụ bản 0.2.0 thêm bản tóm tắt hằng ngày và
+`alarms_at`), chạy lại `./scripts/install.sh` sau `docker compose up -d --build`. Script thay app cũ
+và khởi động lại LaunchAgent; macOS thường không hỏi lại quyền vì bundle id giữ nguyên. Xem phiên
+bản đang chạy ở dòng `LichHocAgent khởi động` trong `~/Library/Logs/LichHocAgent/agent.log`.
+
 ## Chạy test
 
 **Một lệnh cho toàn bộ** lint + test (constitution Nguyên tắc II), gồm cả test lưu trữ qua khởi

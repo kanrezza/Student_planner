@@ -130,6 +130,7 @@ def resolve_subject(
         "start_date": start,
         "end_date": end,
         "reminder_minutes": data.get("reminder_minutes"),
+        "is_important": bool(data.get("is_important")),
     }
     return Resolved(values, data.get("tag_ids") or [])
 
@@ -327,6 +328,7 @@ def update_subject(subject_id: int, changes: dict, confirm: bool) -> tuple[Subje
         "weekdays": list(subject.weekdays),
         "color": subject.color,
         "reminder_minutes": subject.reminder_minutes,
+        "is_important": subject.is_important,
         "tag_ids": [t.id for t in subject.tags],
         "start_date": subject.start_date,
         "end_date": subject.end_date,

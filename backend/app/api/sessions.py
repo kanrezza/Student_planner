@@ -14,6 +14,7 @@ class SessionPatch(ApiModel):
     start_time: HHMM | None = None
     end_time: HHMM | None = None
     room: OptionalText = None
+    important_override: bool | None = None  # null = theo môn (FR-067)
 
 
 @bp.get("/sessions/<int:session_id>")

@@ -13,6 +13,7 @@ from sqlalchemy import (
     Time,
     false,
     text,
+    true,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
@@ -28,7 +29,20 @@ class Settings(_SingleRow, db.Model):
     """Cài đặt nhắc và tự tạo deadline (FR-022, FR-048, FR-051)."""
 
     __tablename__ = "settings"
-    __table_args__ = (CheckConstraint("id = 1", name="ck_settings_single_row"),)
+    __table_args__ = (
+        CheckConstraint("id = 1", name="ck_settings_single_row"),
+        CheckConstraint(
+            "cardinality(important_reminder_offsets) BETWEEN 1 AND 6 "
+            "AND 0 <= ALL(important_reminder_offsets)",
+            name="ck_settings_important_offsets",
+        ),
+        CheckConstraint(
+            "cardinality(exam_extra_reminder_offsets) <= 3 "
+            "AND 0 <= ALL(exam_extra_reminder_offsets)",
+            name="ck_settings_exam_extra_offsets",
+        ),
+        CheckConstraint("exam_reminder_minutes >= 0", name="ck_settings_exam_reminder_minutes"),
+    )
 
     session_reminder_minutes: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("15")
@@ -53,6 +67,26 @@ class Settings(_SingleRow, db.Model):
     )
     auto_deadline_excluded_keywords: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, server_default=text("ARRAY['Giáo dục thể chất']::text[]")
+    )
+    # Mức "Quan trọng" (FR-068, FR-069): phút báo trước.
+    important_reminder_offsets: Mapped[list[int]] = mapped_column(
+        ARRAY(Integer), nullable=False, server_default=text("'{1440,180,60,15}'::integer[]")
+    )
+    exam_extra_reminder_offsets: Mapped[list[int]] = mapped_column(
+        ARRAY(Integer), nullable=False, server_default=text("'{10080}'::integer[]")
+    )
+    exam_reminder_minutes: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("60")
+    )
+    # Thông báo tổng hợp hằng ngày (FR-065, FR-066).
+    daily_digest_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=true()
+    )
+    daily_digest_time: Mapped[time] = mapped_column(
+        Time, nullable=False, server_default=text("'05:00'")
+    )
+    daily_digest_overdue_only: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=true()
     )
 
 

@@ -50,6 +50,7 @@ class Task(IdMixin, TimestampMixin, db.Model):
     )
     is_auto: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
     user_modified: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
+    is_important: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
 
     list = relationship("TaskList", back_populates="tasks")
     source_session = relationship("ClassSession", back_populates="auto_task")
