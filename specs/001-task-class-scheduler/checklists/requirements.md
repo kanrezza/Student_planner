@@ -45,3 +45,12 @@
   FR, AI-service/API-key assumption; FR-029 now requires on-device recognition; FR-025 states
   the whole app is offline; SC-013 = no data or images leave the machine. FR-036 renumbered
   to FR-035. Re-validated: all items pass, no references to internet/AI services remain.
+- 2026-11-04: Added User Story 8 (Ca học, P2), 9 (Nhãn, P2), 10 (Tự tạo deadline, P3) with
+  FR-038–FR-050 and SC-014–SC-016. Reminders scoped to browser notifications while the app tab
+  is open; iPhone reminders (former FR-038–FR-041, SC-014, never committed) removed and their
+  IDs reused. "Trình duyệt" is a user-stated product constraint, not an implementation leak.
+  Re-validated: all items pass.
+- 2026-11-04: Restored sync to Apple Calendar/Reminders via the user's iCloud (constitution
+  v2.2.0): FR-051–FR-054, SC-017–SC-018, User Story 7 scenarios 6–10, related edge cases and
+  assumptions. Browser notifications kept only as a fallback when sync is off (FR-021).
+  User Stories 8–10 unchanged. Re-validated: all items pass.
