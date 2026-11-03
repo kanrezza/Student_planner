@@ -4,6 +4,7 @@ from app.api.errors import ApiError, not_found
 from app.extensions import db
 from app.lib.timeutil import TZ, combine
 from app.models import ClassSession, SessionTag
+from app.services import auto_deadlines
 from app.services.revision import bump_revision
 from app.services.tag_links import replace_tag_links
 
@@ -19,6 +20,7 @@ def set_cancelled(session_id: int, cancelled: bool) -> ClassSession:
     """Huỷ hoặc khôi phục; khôi phục giữ nguyên giờ/phòng đã sửa riêng."""
     session = get_session(session_id)
     session.is_cancelled = cancelled
+    auto_deadlines.reconcile(session_ids=[session_id])
     bump_revision(db.session)
     db.session.commit()
     return session
@@ -43,6 +45,7 @@ def update_session(session_id: int, changes: dict) -> ClassSession:
     if "room" in changes:
         session.room = changes["room"]
         session.room_overridden = True
+    auto_deadlines.reconcile(session_ids=[session_id])
     bump_revision(db.session)
     db.session.commit()
     return session
@@ -52,6 +55,7 @@ def set_session_tags(session_id: int, tag_ids: list[int]) -> ClassSession:
     """Nhãn riêng của buổi, cộng thêm vào nhãn của môn (FR-043)."""
     session = get_session(session_id)
     replace_tag_links(SessionTag, "session_id", session.id, tag_ids)
+    auto_deadlines.reconcile(session_ids=[session_id])
     bump_revision(db.session)
     db.session.commit()
     db.session.expire(session, ["tag_links"])

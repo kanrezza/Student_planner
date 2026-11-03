@@ -86,6 +86,7 @@ chính máy (constitution IV).
 | POST | `/subjects/bulk` | `{semester_id, start_date, end_date, rows: [SubjectInput…]}`; lỗi theo dòng: `fields: {"rows[2].end_time": "..."}` (FR-009, FR-010) |
 | PATCH | `/subjects/{id}` | sinh lại buổi học, giữ ngoại lệ (FR-013) |
 | DELETE | `/subjects/{id}` | kèm buổi học (FR-014) |
+| GET | `/sessions/{id}` | một buổi học (dùng cho "Xem buổi học" từ task tự tạo, FR-050) |
 | PATCH | `/sessions/{id}` | `{start_time?, end_time?, room?, tag_ids?}`, chỉ áp dụng cho buổi này (FR-012) |
 | POST | `/sessions/{id}/cancel` · `/sessions/{id}/restore` | FR-011 |
 

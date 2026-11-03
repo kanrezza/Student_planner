@@ -56,6 +56,13 @@ class ListPatch(ApiModel):
     color: str | None = None
 
 
+def _reminder_at(task) -> str | None:
+    from app.services.reminders import get_settings, task_alarm_at  # tránh import vòng
+
+    alarm = task_alarm_at(task, get_settings())
+    return iso(alarm) if alarm else None
+
+
 def serialize_task(task, now) -> dict:
     due = task_rules.due_at(task)
     tags = task.tags
@@ -78,7 +85,7 @@ def serialize_task(task, now) -> dict:
         "tags": serialize_tags(tags),
         "display_color": display_color([t.color for t in tags], task.list.color),
         "reminder_minutes": task.reminder_minutes,
-        "reminder_at": None,  # được tính ở User Story 7 (nhắc lịch)
+        "reminder_at": _reminder_at(task),
     }
 
 

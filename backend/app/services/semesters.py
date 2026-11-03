@@ -8,6 +8,7 @@ from app.api.errors import ApiError, not_found
 from app.extensions import db
 from app.lib import timeutil
 from app.models import Semester, Subject
+from app.services import auto_deadlines
 from app.services.revision import bump_revision
 
 
@@ -57,6 +58,7 @@ def create_semester(name: str, start: date, end: date) -> Semester:
     _check_overlap(start, end)
     semester = Semester(name=name, start_date=start, end_date=end)
     db.session.add(semester)
+    bump_revision(db.session)
     db.session.commit()
     return semester
 
@@ -107,13 +109,17 @@ def update_semester(semester_id: int, changes: dict, clamp_subjects: bool) -> Se
     if changes.get("name"):
         semester.name = changes["name"]
     semester.start_date, semester.end_date = start, end
+    kept = []
     for subject in affected:
         if subject.end_date < start or subject.start_date > end:
+            auto_deadlines.drop_for_subjects([subject.id])
             db.session.delete(subject)
             continue
+        kept.append(subject.id)
         subject.start_date = max(subject.start_date, start)
         subject.end_date = min(subject.end_date, end)
         subject_service.regenerate_sessions(subject, force=True)
+    auto_deadlines.reconcile(subject_ids=kept)
     bump_revision(db.session)
     db.session.commit()
     return semester
@@ -129,6 +135,7 @@ def delete_semester(semester_id: int, confirm: bool) -> None:
             f"Xoá học kỳ sẽ xoá {count} môn học cùng mọi buổi học",
             details={"subject_count": count},
         )
+    auto_deadlines.drop_for_subjects(auto_deadlines.subject_ids_of_semester(semester_id))
     db.session.delete(semester)
     bump_revision(db.session)
     db.session.commit()

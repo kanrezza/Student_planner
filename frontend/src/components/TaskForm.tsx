@@ -4,6 +4,9 @@ import type { Priority, Task, TaskList } from '../api/types';
 import { t } from '../i18n/vi';
 import { PRIORITIES, blankToNull, priorityLabel } from '../lib/format';
 import { FormField } from './FormField';
+import { useSettings } from '../api/settings';
+import { minutesLabel, ReminderSelect } from './ReminderSelect';
+import { SessionLink } from './SessionLink';
 import { TagPicker } from './TagPicker';
 
 /** Thêm hoặc sửa một công việc (FR-001, FR-002). Lỗi từ API hiện ngay dưới ô tương ứng. */
@@ -26,6 +29,9 @@ export function TaskForm({
   const [listId, setListId] = useState(task?.list_id ?? defaultListId);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [tagIds, setTagIds] = useState<number[]>(task?.tags.map((tag) => tag.id) ?? []);
+  const [reminder, setReminder] = useState<number | null>(task?.reminder_minutes ?? null);
+  const settings = useSettings().data;
+  const dateOnly = Boolean(dueDate) && !dueTime;
 
   const create = useCreateTask();
   const update = useUpdateTask();
@@ -47,6 +53,8 @@ export function TaskForm({
       priority,
       list_id: listId,
       tag_ids: tagIds,
+      // Task chỉ có ngày chỉ nhận "mặc định" hoặc "không nhắc".
+      reminder_minutes: dateOnly && reminder !== null && reminder >= 0 ? null : reminder,
     };
     const options = { onSuccess: onDone };
     if (task) update.mutate({ id: task.id, input }, options);
@@ -55,6 +63,12 @@ export function TaskForm({
 
   return (
     <form onSubmit={submit} noValidate>
+      {task?.is_auto && (
+        <p className="muted">
+          {t('tasks.autoNote')}{' '}
+          {task.source_session_id && <SessionLink sessionId={task.source_session_id} />}
+        </p>
+      )}
       <FormField label={t('tasks.fieldTitle')} name="title" error={error}>
         <input
           autoFocus
@@ -111,6 +125,26 @@ export function TaskForm({
       <FormField label={t('tags.pick')} name="tag_ids" error={error}>
         <TagPicker value={tagIds} onChange={setTagIds} />
       </FormField>
+      {dueDate && (
+        <FormField label={t('reminders.field')} name="reminder_minutes" error={error}>
+          <ReminderSelect
+            value={dateOnly && reminder !== null && reminder >= 0 ? null : reminder}
+            onChange={setReminder}
+            dateOnly={dateOnly}
+            defaultLabel={
+              settings
+                ? dateOnly
+                  ? t('reminders.defaultDateOnly', { time: settings.date_only_task_reminder_time })
+                  : t('reminders.defaultSession', {
+                      time: t('reminders.before', {
+                        time: minutesLabel(settings.task_reminder_minutes),
+                      }).toLowerCase(),
+                    })
+                : t('reminders.defaultTask')
+            }
+          />
+        </FormField>
+      )}
       <FormActions saving={saving} onCancel={onDone} />
     </form>
   );

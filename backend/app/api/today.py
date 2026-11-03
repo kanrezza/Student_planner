@@ -2,6 +2,7 @@
 
 from flask import Blueprint
 
+from app.api.sync import sync_notices
 from app.schemas.subjects import serialize_session
 from app.schemas.tasks import serialize_task
 from app.services.today import today_view
@@ -17,5 +18,5 @@ def today():
         "sessions": [serialize_session(s) for s in sessions],
         "tasks_due_today": [serialize_task(t, now) for t in due_today],
         "overdue_tasks": [serialize_task(t, now) for t in overdue],
-        "notices": [],  # cảnh báo quyền thông báo / trạng thái đồng bộ: User Story 7
+        "notices": sync_notices(),
     }

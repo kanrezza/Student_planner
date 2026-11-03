@@ -16,6 +16,11 @@ class SessionPatch(ApiModel):
     room: OptionalText = None
 
 
+@bp.get("/sessions/<int:session_id>")
+def get_session(session_id: int):
+    return serialize_session(service.get_session(session_id))
+
+
 @bp.patch("/sessions/<int:session_id>")
 def update_session(session_id: int):
     patch = SessionPatch.model_validate(request.get_json(silent=True) or {})

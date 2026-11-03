@@ -13,6 +13,7 @@ from app.api.errors import ApiError, not_found
 from app.extensions import db
 from app.lib.timeutil import combine
 from app.models import ClassSession, Shift, Subject, SubjectTag
+from app.services import auto_deadlines
 from app.services import semesters as semester_service
 from app.services.colors import is_palette_color, next_color
 from app.services.recurrence import ExistingSession, generate_dates, plan_regeneration
@@ -178,7 +179,9 @@ def regenerate_sessions(subject: Subject, force: bool = False) -> list[ClassSess
             details={"sessions": [{"id": s.id, "date": s.date.isoformat()} for s in conflicts]},
         )
 
-    for session_id in plan.to_delete + (plan.exception_conflicts if force else []):
+    removed = plan.to_delete + (plan.exception_conflicts if force else [])
+    auto_deadlines.drop_for_sessions(removed)
+    for session_id in removed:
         db.session.delete(by_id[session_id])
     for update in plan.to_update:
         session = by_id[update.id]
@@ -262,6 +265,7 @@ def create_subject(data: dict) -> tuple[Subject, list[dict]]:
     except FieldErrors as e:
         _raise_fields(e.fields)
     subject = _insert(resolved)
+    auto_deadlines.reconcile(subject_ids=[subject.id])
     warnings = _warnings(subject)
     bump_revision(db.session)
     db.session.commit()
@@ -291,6 +295,7 @@ def create_bulk(data: dict) -> tuple[list[Subject], list[dict]]:
         _raise_fields(errors)
 
     subjects = [_insert(r) for r in resolved_rows]
+    auto_deadlines.reconcile(subject_ids=[s.id for s in subjects])
     warnings = [w for s in subjects for w in _warnings(s)]
     bump_revision(db.session)
     db.session.commit()
@@ -358,7 +363,7 @@ def update_subject(subject_id: int, changes: dict, confirm: bool) -> tuple[Subje
         replace_tag_links(SubjectTag, "subject_id", subject.id, resolved.tag_ids)
     db.session.flush()
     regenerate_sessions(subject, force=confirm)
-    db.session.refresh(subject)
+    auto_deadlines.reconcile(subject_ids=[subject.id])
     warnings = _warnings(subject)
     bump_revision(db.session)
     db.session.commit()
@@ -366,6 +371,7 @@ def update_subject(subject_id: int, changes: dict, confirm: bool) -> tuple[Subje
 
 
 def delete_subject(subject_id: int) -> None:
+    auto_deadlines.drop_for_subjects([subject_id])
     db.session.delete(get_subject(subject_id))
     bump_revision(db.session)
     db.session.commit()

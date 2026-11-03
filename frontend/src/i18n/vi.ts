@@ -42,6 +42,9 @@ export const vi = {
     noDueDate: 'Không có hạn chót',
     overdue: 'Quá hạn',
     auto: 'Tự tạo',
+    viewSession: 'Xem buổi học',
+    autoNote:
+      'Công việc tự tạo theo quy tắc. Sửa công việc này thì ứng dụng sẽ không tự cập nhật nó nữa.',
     deleteTask: 'Xoá công việc “{title}”?',
     markDone: 'Đánh dấu hoàn thành',
     markUndone: 'Bỏ đánh dấu hoàn thành',
@@ -151,6 +154,54 @@ export const vi = {
     confirmDelete:
       'Xoá ca “{name}”? {count} môn học đang dùng ca này sẽ chuyển sang giờ tuỳ chỉnh.',
     deleteConfirm: 'Xoá ca “{name}”?',
+  },
+  reminders: {
+    title: 'Nhắc lịch',
+    sessionDefault: 'Nhắc buổi học (mặc định)',
+    taskDefault: 'Nhắc công việc có giờ (mặc định)',
+    dateOnlyTime: 'Giờ nhắc công việc chỉ có ngày',
+    minutes: '{n} phút',
+    hours: '{n} giờ',
+    days: '{n} ngày',
+    before: 'Trước {time}',
+    off: 'Không nhắc',
+    defaultSession: 'Theo mặc định ({time})',
+    defaultTask: 'Theo mặc định',
+    defaultDateOnly: 'Theo mặc định ({time})',
+    field: 'Nhắc',
+    syncTitle: 'Nhắc trên Mac và iPhone',
+    syncToggle: 'Đồng bộ với Lịch và Lời nhắc',
+    syncHelp:
+      'Buổi học và công việc được ghi vào lịch "Lịch Học Cá Nhân" trong ứng dụng Lịch và Lời nhắc, iCloud tự đồng bộ sang iPhone nên vẫn nhắc khi Mac đang gập. Chỉ ghi tên, giờ, phòng và giờ báo trước.',
+    agentOffline:
+      'Chưa thấy trình đồng bộ (LichHocAgent) chạy trên Mac. Cài một lần bằng lệnh sau trong thư mục dự án:',
+    agentDenied:
+      'LichHocAgent bị từ chối quyền. Mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Lịch và Lời nhắc, bật cho LichHocAgent.',
+    noIcloud: 'Lịch đang lưu trên máy, chưa có iCloud: iPhone sẽ không nhận được nhắc.',
+    agentOk: 'Trình đồng bộ đang chạy, lần liên lạc gần nhất {time}.',
+    browserTitle: 'Nhắc bằng thông báo trình duyệt',
+    browserHelp:
+      'Khi chưa bật đồng bộ, ứng dụng nhắc bằng thông báo của trình duyệt trong lúc tab đang mở.',
+    browserEnable: 'Bật thông báo trình duyệt',
+    browserOn: 'Đã bật thông báo trình duyệt.',
+    browserDenied:
+      'Trình duyệt đang chặn thông báo của trang này. Mở cài đặt trang web của trình duyệt và cho phép "Thông báo".',
+    browserUnsupported: 'Trình duyệt này không hỗ trợ thông báo.',
+    promptTitle: 'Nhắc lịch trên Mac và iPhone?',
+    promptBody:
+      'Bật đồng bộ với Lịch và Lời nhắc để được nhắc buổi học và hạn chót trên cả Mac và iPhone.',
+    promptEnable: 'Bật đồng bộ',
+    promptLater: 'Để sau',
+  },
+  autoDeadline: {
+    title: 'Tự tạo deadline',
+    help: 'Môn có nhãn E-Learning hoặc buổi học bắt đầu từ mốc giờ dưới đây: mỗi buổi tự có một công việc hạn Chủ Nhật kế tiếp.',
+    eveningFrom: 'Buổi bắt đầu từ',
+    dueTime: 'Giờ deadline Chủ Nhật',
+    excluded: 'Môn ngoại lệ (tên chứa)',
+    keywordPlaceholder: 'Ví dụ: GDTC',
+    add: 'Thêm',
+    remove: 'Bỏ “{keyword}”',
   },
   tags: {
     title: 'Nhãn',

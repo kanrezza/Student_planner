@@ -126,6 +126,10 @@ def update_shift(shift_id: int, changes: dict, confirm: bool) -> Shift:
     for subject in users:
         subject.start_time, subject.end_time = resolve_range(subject.start_shift, subject.end_shift)
         regenerate_sessions(subject)
+    if users:
+        from app.services import auto_deadlines
+
+        auto_deadlines.reconcile(subject_ids=[s.id for s in users])
     if times_changed:
         bump_revision(db.session)
     db.session.commit()
