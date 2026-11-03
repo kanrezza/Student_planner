@@ -1,5 +1,7 @@
 # Lịch Học Cá Nhân — chạy bằng: docker compose up -d --build (lần đầu), sau đó: docker compose up -d
 # Chỉ service `web` mở cổng, và chỉ trên 127.0.0.1 (constitution Nguyên tắc IV: chỉ kết nối localhost).
+name: lichhoc
+
 services:
   db:
     image: postgres:16-alpine
@@ -28,6 +30,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      # Sẵn sàng khi migration đã chạy xong và gunicorn trả lời /api/health.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+      start_period: 5s
     restart: unless-stopped
     # Không mở cổng: nginx của `web` chuyển tiếp /api sang đây.
 
@@ -36,7 +45,8 @@ services:
     ports:
       - "127.0.0.1:8080:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

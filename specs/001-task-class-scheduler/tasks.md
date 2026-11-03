@@ -134,41 +134,41 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
 
 **⚠️ CRITICAL**: Không user story nào bắt đầu được trước khi phase này xong.
 
-- [ ] T012 Tạo `backend/app/config.py` (đọc `DATABASE_URL`, `TEST_DATABASE_URL`,
+- [X] T012 Tạo `backend/app/config.py` (đọc `DATABASE_URL`, `TEST_DATABASE_URL`,
   `EASYOCR_MODEL_DIR`; hằng `TIMEZONE = "Asia/Ho_Chi_Minh"`, `MAX_IMAGE_BYTES = 20 * 1024 * 1024`)
   và `backend/app/extensions.py` (`db = SQLAlchemy()`, `migrate = Migrate()`).
-- [ ] T013 Tạo `backend/app/__init__.py` với `create_app(config_overrides=None)`: khởi tạo `db`,
+- [X] T013 Tạo `backend/app/__init__.py` với `create_app(config_overrides=None)`: khởi tạo `db`,
   `migrate`; đăng ký mọi blueprint dưới tiền tố `/api` (thêm dần theo story); đăng ký error handler
   từ T014; đặt `app.json.ensure_ascii = False`.
-- [ ] T014 Tạo `backend/app/api/errors.py`:
+- [X] T014 Tạo `backend/app/api/errors.py`:
   - Lớp `ApiError(status, code, message, fields=None, details=None)`.
   - Handler trả JSON `{"error": {"code", "message", "fields"?, "details"?}}` đúng
     contracts/rest-api.md.
   - Ánh xạ `pydantic.ValidationError` → `400 validation_error`; `fields` dùng đường dẫn kiểu
     `rows[2].end_time` và thông điệp tiếng Việt.
   - `404 not_found`; lỗi không bắt được → `500` với thông điệp "Đã có lỗi xảy ra, vui lòng thử lại".
-- [ ] T015 [P] Tạo `backend/app/schemas/common.py`:
+- [X] T015 [P] Tạo `backend/app/schemas/common.py`:
   - `ApiModel(BaseModel)` với `model_config = ConfigDict(str_strip_whitespace=True)`.
   - Kiểu `HHMM` (giờ dạng `HH:MM`) và hàm `vi_error_messages(errors)` chuyển lỗi pydantic sang câu
     tiếng Việt, ví dụ "Trường này là bắt buộc", "Phải dài từ 1 đến 300 ký tự".
-- [ ] T016 [P] Tạo `backend/app/lib/timeutil.py`:
+- [X] T016 [P] Tạo `backend/app/lib/timeutil.py`:
   - `TZ = ZoneInfo("Asia/Ho_Chi_Minh")`, `now()`.
   - `combine(d: date, t: time) -> datetime` có tzinfo.
   - `iso(dt)` trả chuỗi ISO có offset `+07:00`.
   - `weekday_vn(d)` trả 1 = Thứ Hai … 7 = Chủ Nhật.
   Test trong `backend/tests/unit/test_timeutil.py`.
-- [ ] T017 [P] Tạo `backend/app/lib/text.py`: `nfc(s)` (chuẩn hoá Unicode NFC, bỏ khoảng trắng hai
+- [X] T017 [P] Tạo `backend/app/lib/text.py`: `nfc(s)` (chuẩn hoá Unicode NFC, bỏ khoảng trắng hai
   đầu), `ci_key(s)` (NFC + `casefold()`), `contains_ci(haystack, needle)`. Test trong
   `backend/tests/unit/test_text.py`, gồm chuỗi tiếng Việt có dấu tổ hợp (NFD) và dựng sẵn (NFC).
-- [ ] T018 [P] Tạo model `Semester` trong `backend/app/models/semester.py` theo data-model.md:
+- [X] T018 [P] Tạo model `Semester` trong `backend/app/models/semester.py` theo data-model.md:
   - `name text` bắt buộc, "1–100 ký tự".
   - `start_date date`, `end_date date` với CHECK `end_date >= start_date`.
   - Các cột `id`, `created_at`, `updated_at` chung.
-- [ ] T019 [P] Tạo model `Shift` trong `backend/app/models/shift.py`:
+- [X] T019 [P] Tạo model `Shift` trong `backend/app/models/shift.py`:
   - `name` bắt buộc, duy nhất.
   - `start_time time`, `end_time time` với CHECK `end_time > start_time`.
   - `position smallint` duy nhất.
-- [ ] T020 [P] Tạo model `Subject` trong `backend/app/models/subject.py`:
+- [X] T020 [P] Tạo model `Subject` trong `backend/app/models/subject.py`:
   - `semester_id` FK `ON DELETE CASCADE`.
   - `name` "1–200 ký tự"; `class_code`, `lecturer`, `room` tuỳ chọn.
   - `color` (`c01`…`c12`).
@@ -178,7 +178,7 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
   - `start_date`, `end_date` với CHECK `end_date >= start_date`.
   - `reminder_minutes integer` ("`NULL` = theo mặc định; `-1` = tắt nhắc; ≥ 0", CHECK
     `reminder_minutes IS NULL OR reminder_minutes >= -1`).
-- [ ] T021 [P] Tạo model `ClassSession` trong `backend/app/models/class_session.py`:
+- [X] T021 [P] Tạo model `ClassSession` trong `backend/app/models/class_session.py`:
   - `subject_id` FK `ON DELETE CASCADE`.
   - `date`, `start_at timestamptz`, `end_at timestamptz` với CHECK `end_at > start_at`; UNIQUE
     `(subject_id, date, start_at)`.
@@ -186,12 +186,12 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
   - Các cờ boolean mặc định `false`: `is_cancelled`, `time_overridden`, `room_overridden`,
     `auto_task_suppressed`.
   - Index `(date)`, `(start_at)`.
-- [ ] T022 [P] Tạo model `TaskList` trong `backend/app/models/task_list.py`:
+- [X] T022 [P] Tạo model `TaskList` trong `backend/app/models/task_list.py`:
   - `name` duy nhất theo `lower(name)`.
   - `color`.
   - `is_default_study boolean`: "đúng một dòng `true`", dùng partial unique index `WHERE
     is_default_study`.
-- [ ] T023 [P] Tạo model `Task` trong `backend/app/models/task.py`:
+- [X] T023 [P] Tạo model `Task` trong `backend/app/models/task.py`:
   - `list_id` FK bắt buộc.
   - `title` "1–300 ký tự sau khi bỏ khoảng trắng hai đầu"; `notes`.
   - `due_date`, `due_time` với CHECK `due_time IS NULL OR due_date IS NOT NULL`.
@@ -200,21 +200,21 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
   - `source_session_id` FK `ON DELETE SET NULL`, UNIQUE.
   - `is_auto`, `user_modified` boolean mặc định `false`.
   - Index `(due_date)`, `(list_id)`.
-- [ ] T024 [P] Tạo model `Tag` và ba bảng nối trong `backend/app/models/tag.py`:
+- [X] T024 [P] Tạo model `Tag` và ba bảng nối trong `backend/app/models/tag.py`:
   - `tags`: `name` duy nhất theo `lower(name)`; `color`; `system_key` duy nhất, nullable.
   - `subject_tags(subject_id, tag_id, position)`, `session_tags(session_id, tag_id, position)`,
     `task_tags(task_id, tag_id, position)`: khoá chính ghép `(owner_id, tag_id)`, cả hai FK
     `ON DELETE CASCADE`.
-- [ ] T025 [P] Tạo model một-dòng trong `backend/app/models/settings.py`:
+- [X] T025 [P] Tạo model một-dòng trong `backend/app/models/settings.py`:
   - `Settings`: các cột và mặc định đúng bảng `settings` trong data-model.md (15, 60, 08:00,
     `false`, `false`, 20:00, 08:00, `{'Giáo dục thể chất'}`).
   - `SyncState(revision bigint)`.
   - `AgentStatus(last_seen_at, permission, icloud_source, last_synced_revision, last_error)`.
   - Cả ba bảng có CHECK `id = 1`.
-- [ ] T026 Tạo `backend/app/models/__init__.py` import mọi model, và quan hệ ORM: `Semester.subjects`,
+- [X] T026 Tạo `backend/app/models/__init__.py` import mọi model, và quan hệ ORM: `Semester.subjects`,
   `Subject.sessions`, `Subject.tags` (theo `position`), `ClassSession.tags`, `Task.tags`,
   `Task.list`, `Task.source_session`.
-- [ ] T027 Tạo migration đầu tiên `backend/migrations/versions/0001_initial.py` (khởi tạo bằng
+- [X] T027 Tạo migration đầu tiên `backend/migrations/versions/0001_initial.py` (khởi tạo bằng
   `flask db init` rồi viết tay):
   - `CREATE EXTENSION IF NOT EXISTS btree_gist`; tạo mọi bảng ở T018–T025.
   - Ràng buộc học kỳ không chồng lấn: `EXCLUDE USING gist (daterange(start_date, end_date, '[]')
@@ -224,52 +224,52 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
     - 3 danh sách: "Học tập" (`is_default_study`), "Cá nhân", "Công việc", màu c01, c02, c03.
     - Nhãn hệ thống "E-Learning" (`system_key='e_learning'`, màu c05).
     - Một dòng `settings`, `sync_state(revision=0)`, `agent_status(permission='unknown')`.
-- [ ] T028 [P] Tạo `backend/app/services/revision.py`: `bump_revision(session)` chạy `UPDATE
+- [X] T028 [P] Tạo `backend/app/services/revision.py`: `bump_revision(session)` chạy `UPDATE
   sync_state SET revision = revision + 1 WHERE id = 1` trong transaction hiện tại.
-- [ ] T029 [P] Tạo `backend/app/services/colors.py`:
+- [X] T029 [P] Tạo `backend/app/services/colors.py`:
   - `PALETTE = ["c01", …, "c12"]`.
   - `next_color(used: list[str])`: chọn màu ít dùng nhất, ưu tiên thứ tự.
   - `display_color(tag_colors: list[str], fallback: str)`: màu nhãn đầu tiên, nếu không có thì
     `fallback`.
   Test trong `backend/tests/unit/test_colors.py`.
-- [ ] T030 Tạo `backend/tests/conftest.py` và `backend/tests/factories.py`:
+- [X] T030 Tạo `backend/tests/conftest.py` và `backend/tests/factories.py`:
   - Fixture `app` dùng `TEST_DATABASE_URL`, chạy `flask db upgrade` một lần mỗi phiên test.
   - Fixture `db_session`: mỗi test chạy trong transaction rồi rollback, dùng SQLAlchemy 2
     `join_transaction_mode="create_savepoint"`.
   - Fixture `client`.
   - Hàm tạo dữ liệu nhanh: `make_semester`, `make_subject`, `make_task`, `make_tag`.
-- [ ] T031 Tạo `backend/app/schemas/settings.py` và `backend/app/api/settings.py`: `GET/PATCH
+- [X] T031 Tạo `backend/app/schemas/settings.py` và `backend/app/api/settings.py`: `GET/PATCH
   /api/settings` cho mọi trường của `settings`.
   - Validate: phút nhắc ≥ 0; giờ dạng `HH:MM`; `auto_deadline_excluded_keywords` là danh sách chuỗi
     không rỗng, đã chuẩn hoá NFC.
   - Mọi PATCH gọi `bump_revision`.
   - Thêm `GET /api/health`.
   Test trong `backend/tests/integration/test_settings_api.py`.
-- [ ] T032 [P] Tạo `frontend/src/i18n/vi.ts`: object `vi` chứa mọi chuỗi giao diện theo nhóm
+- [X] T032 [P] Tạo `frontend/src/i18n/vi.ts`: object `vi` chứa mọi chuỗi giao diện theo nhóm
   (`nav`, `today`, `tasks`, `subjects`, `calendar`, `import`, `settings`, `errors`, `confirm`) và
   hàm `t(path, params?)`.
-- [ ] T033 [P] Tạo `frontend/src/lib/dates.ts`:
+- [X] T033 [P] Tạo `frontend/src/lib/dates.ts`:
   - `formatDayLong(iso)` → "Thứ Hai, 16/11/2026".
   - `formatDate(iso)` → "16/11/2026"; `formatTime(iso)` → "07:30" (24h).
   - `WEEKDAYS_VN` = ["Thứ Hai", …, "Chủ Nhật"]; `toIsoDate(d)`.
   Test trong `frontend/tests/dates.test.ts`.
-- [ ] T034 [P] Tạo `frontend/src/lib/colors.ts`: ánh xạ `c01`…`c12` sang 12 mã hex dễ phân biệt, đủ
+- [X] T034 [P] Tạo `frontend/src/lib/colors.ts`: ánh xạ `c01`…`c12` sang 12 mã hex dễ phân biệt, đủ
   tương phản với chữ trắng; hàm `colorHex(code)`.
-- [ ] T035 Tạo `frontend/src/api/client.ts`:
+- [X] T035 Tạo `frontend/src/api/client.ts`:
   - `apiFetch<T>(path, init)` gọi `/api…`.
   - Phân tích lỗi thành lớp `ApiError {status, code, message, fields, details}`.
   - Trả `{data, warnings}` khi phản hồi có `warnings`.
-- [ ] T036 Tạo `frontend/src/main.tsx`, `frontend/src/App.tsx`, `frontend/src/routes.tsx`:
+- [X] T036 Tạo `frontend/src/main.tsx`, `frontend/src/App.tsx`, `frontend/src/routes.tsx`:
   - `QueryClientProvider`.
   - Layout có thanh điều hướng tiếng Việt: Hôm nay, Lịch, Công việc, Môn học, Nhập ảnh, Cài đặt.
   - Route `/` là trang Hôm nay (FR-020); các trang khác tạm là placeholder.
-- [ ] T037 [P] Tạo component dùng chung:
+- [X] T037 [P] Tạo component dùng chung:
   - `frontend/src/components/ConfirmDialog.tsx`: tiêu đề, nội dung, nút "Huỷ"/"Xoá" (FR-027).
   - `frontend/src/components/FormField.tsx`: hiển thị lỗi theo `fields` của `ApiError`.
   - `frontend/src/components/WarningToast.tsx`: hiển thị `warnings`.
   - `frontend/src/components/ColorPicker.tsx`: chọn 1 trong 12 màu.
 
-- [ ] T038 Tạo `scripts/test.sh` (và `Makefile` với đích `test` gọi script này) để **toàn bộ** lint
+- [X] T038 Tạo `scripts/test.sh` (và `Makefile` với đích `test` gọi script này) để **toàn bộ** lint
   và test chạy bằng một lệnh duy nhất (constitution Nguyên tắc II). Script dùng `set -euo pipefail`
   và chạy lần lượt:
   1. Backend: `docker compose run --rm backend ruff check .`, `ruff format --check .`, `pytest`.

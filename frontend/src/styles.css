@@ -1,0 +1,159 @@
+/* Giao diện đơn giản, nhất quán (constitution Nguyên tắc III). Font hệ thống, không tải tài nguyên ngoài. */
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --primary: #1d4ed8;
+  --danger: #b91c1c;
+  --sidebar: #183463;
+  --radius: 8px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 1rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--sidebar);
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar__brand {
+  color: #fff;
+  font-weight: 700;
+  padding: 0 1.25rem 1rem;
+}
+
+.sidebar__link {
+  color: #dbe4f5;
+  text-decoration: none;
+  padding: 0.6rem 1.25rem;
+}
+
+.sidebar__link:hover,
+.sidebar__link.is-active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.content {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  min-width: 0;
+}
+
+button {
+  font: inherit;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.button--danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.dialog {
+  border: none;
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  max-width: 420px;
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.field__label {
+  font-weight: 600;
+}
+
+.field--error input,
+.field--error select,
+.field--error textarea {
+  border-color: var(--danger);
+}
+
+.field__error {
+  color: var(--danger);
+  font-size: 0.875rem;
+}
+
+.toast {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  max-width: 360px;
+}
+
+.toast ul {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+}
+
+.color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.color-picker__swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+
+.color-picker__swatch.is-selected {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--surface) inset;
+}

@@ -36,6 +36,7 @@ select = ["E", "F", "I", "B", "UP"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = [
     "ocr: chạy EasyOCR thật trên ảnh mẫu (chậm)",
 ]
