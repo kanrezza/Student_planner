@@ -79,6 +79,7 @@ class SubjectFields(ApiModel):
     color: str | None = None
     tag_ids: list[int] = []
     reminder_minutes: int | None = Field(default=None, ge=-1)
+    is_important: bool = False
 
     @field_validator("weekdays")
     @classmethod
@@ -104,6 +105,7 @@ class SubjectPatch(ApiModel):
     color: str | None = None
     tag_ids: list[int] | None = None
     reminder_minutes: int | None = Field(default=None, ge=-1)
+    is_important: bool | None = None
     start_date: date | None = None
     end_date: date | None = None
 
@@ -142,6 +144,7 @@ def serialize_subject(subject, session_count: int | None = None) -> dict:
         "start_date": subject.start_date.isoformat(),
         "end_date": subject.end_date.isoformat(),
         "reminder_minutes": subject.reminder_minutes,
+        "is_important": subject.is_important,
         "tags": serialize_tags(tags),
     }
     if session_count is not None:
@@ -174,4 +177,7 @@ def serialize_session(session) -> dict:
             None if session.time_overridden else shift_label(subject.start_shift, subject.end_shift)
         ),
         "auto_task_id": session.auto_task.id if session.auto_task else None,
+        "is_important": session.is_important,
+        "important_override": session.important_override,
+        "subject_is_important": subject.is_important,
     }

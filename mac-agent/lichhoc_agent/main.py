@@ -10,11 +10,13 @@ Chạy: LichHocAgent.app (do launchd khởi động). `--once`: đồng bộ m�
 import logging
 import sys
 import time
+from datetime import date
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import requests
 
+from lichhoc_agent import __version__
 from lichhoc_agent.backend_client import BackendClient
 from lichhoc_agent.reconcile import plan_changes
 from lichhoc_agent.state import State
@@ -72,7 +74,8 @@ def sync_once(backend, store, state: State, force: bool = False) -> int:
         state.item_keys[store.create(kind, item, state)] = item["sync_key"]
     store.commit()
 
-    wanted = {i["sync_key"]: i["fingerprint"] for i in feed["events"] + feed["reminders"]}
+    all_items = feed["events"] + feed["reminders"] + feed.get("digests", [])
+    wanted = {i["sync_key"]: i["fingerprint"] for i in all_items}
     state.fingerprints = wanted
     state.item_keys = {k: v for k, v in state.item_keys.items() if v in wanted}
     state.last_revision = revision
@@ -93,6 +96,12 @@ def sync_once(backend, store, state: State, force: bool = False) -> int:
     return revision
 
 
+def needs_full_sync(now: float, last_full: float, today: date, last_day: date | None) -> bool:
+    """Đồng bộ toàn phần định kỳ, và khi sang ngày mới để cửa sổ bản tóm tắt trượt theo
+    (contracts/calendar-sync.md §4)."""
+    return today != last_day or now - last_full > FULL_RESYNC_SECONDS
+
+
 def _setup_logging() -> None:
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     handler = RotatingFileHandler(LOG_PATH, maxBytes=1_000_000, backupCount=3, encoding="utf-8")
@@ -104,19 +113,20 @@ def _setup_logging() -> None:
 def run_forever(backend, store, state: State) -> None:
     retry = RETRY_START
     last_full = last_heartbeat = 0.0
+    last_day: date | None = None
     first = True
     while True:
         try:
             changes = backend.changes(
                 after=state.last_revision, wait=0 if first else LONG_POLL_SECONDS
             )
-            now = time.monotonic()
-            force = now - last_full > FULL_RESYNC_SECONDS
+            now, today = time.monotonic(), date.today()
+            force = needs_full_sync(now, last_full, today, last_day)
             if first or force or changes["revision"] != state.last_revision:
                 sync_once(backend, store, state, force=force and not first)
                 last_heartbeat = now
                 if force:
-                    last_full = now
+                    last_full, last_day = now, today
             elif changes["sync_enabled"] and now - last_heartbeat > HEARTBEAT_SECONDS:
                 backend.put_status(
                     permission="granted",
@@ -150,7 +160,7 @@ def main() -> None:
 
     _setup_logging()
     backend, store, state = BackendClient(), EventKitStore(), State.load()
-    log.info("LichHocAgent khởi động (state: %s)", state.path)
+    log.info("LichHocAgent %s khởi động (state: %s)", __version__, state.path)
     if "--once" in sys.argv:
         sync_once(backend, store, state, force=True)
         return

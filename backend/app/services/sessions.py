@@ -45,6 +45,8 @@ def update_session(session_id: int, changes: dict) -> ClassSession:
     if "room" in changes:
         session.room = changes["room"]
         session.room_overridden = True
+    if "important_override" in changes:
+        session.important_override = changes["important_override"]
     auto_deadlines.reconcile(session_ids=[session_id])
     bump_revision(db.session)
     db.session.commit()

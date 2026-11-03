@@ -1,5 +1,7 @@
+from datetime import date
+
 from lichhoc_agent.calendar_store import FakeCalendarStore
-from lichhoc_agent.main import sync_once
+from lichhoc_agent.main import needs_full_sync, sync_once
 from lichhoc_agent.state import State
 
 
@@ -15,8 +17,19 @@ class FakeBackend:
         self.statuses.append(status)
 
 
-def make_feed(enabled=True, events=None, reminders=None, revision=3):
+DIGEST = {
+    "sync_key": "digest:2026-11-16",
+    "fingerprint": "d",
+    "date": "2026-11-16",
+    "title": "Hôm nay: Ca 1 Giải tích 1 A2-301",
+    "notes": "Ca 1 (06:45): Giải tích 1 – A2-301",
+    "alarm_at": "2026-11-16T05:00:00+07:00",
+}
+
+
+def make_feed(enabled=True, events=None, reminders=None, revision=3, digests=None):
     return {
+        "digests": digests if digests is not None else [],
         "revision": revision,
         "sync_enabled": enabled,
         "calendar_name": "Lịch Học Cá Nhân",
@@ -43,7 +56,8 @@ def make_feed(enabled=True, events=None, reminders=None, revision=3):
                 "title": "Nộp bài",
                 "due_at": "2026-11-17T17:00:00+07:00",
                 "due_has_time": True,
-                "alarm_at": "2026-11-17T16:00:00+07:00",
+                "important": False,
+                "alarms_at": ["2026-11-17T16:00:00+07:00"],
             },
         ],
     }
@@ -88,3 +102,34 @@ def test_permission_denied_writes_nothing(tmp_path):
     backend = FakeBackend(make_feed())
     sync_once(backend, store, state)
     assert store.items == {} and backend.statuses[-1]["permission"] == "denied"
+
+
+def test_digest_and_important_reminder_written(tmp_path):
+    store, state = FakeCalendarStore(), State(path=tmp_path / "state.json")
+    important = {
+        "sync_key": "task:6",
+        "fingerprint": "i",
+        "title": "Ôn thi",
+        "due_at": "2026-11-18T17:00:00+07:00",
+        "due_has_time": True,
+        "important": True,
+        "alarms_at": ["2026-11-17T17:00:00+07:00", "2026-11-18T16:45:00+07:00"],
+    }
+    sync_once(FakeBackend(make_feed(reminders=[important], digests=[DIGEST])), store, state)
+    by_key = {i["sync_key"]: i for i in store.items.values()}
+    assert by_key["digest:2026-11-16"]["kind"] == "digest"
+    assert by_key["digest:2026-11-16"]["notes"] == DIGEST["notes"]
+    assert by_key["task:6"]["alarms_at"] == important["alarms_at"]
+    assert by_key["task:6"]["important"] is True
+    assert state.fingerprints["digest:2026-11-16"] == "d"
+
+    # Ngày đã qua: bản tóm tắt không còn trong feed → bị xoá.
+    sync_once(FakeBackend(make_feed(reminders=[important], revision=4)), store, state)
+    assert "digest:2026-11-16" not in {i["sync_key"] for i in store.items.values()}
+
+
+def test_needs_full_sync_on_new_day_or_after_interval():
+    day = date(2026, 11, 16)
+    assert needs_full_sync(now=100.0, last_full=0.0, today=day, last_day=day) is False
+    assert needs_full_sync(now=100.0, last_full=0.0, today=date(2026, 11, 17), last_day=day)
+    assert needs_full_sync(now=7 * 3600.0, last_full=0.0, today=day, last_day=day)

@@ -11,6 +11,7 @@ from sqlalchemy import select
 from app.extensions import db
 from app.lib.timeutil import TZ, combine
 from app.models import ClassSession, Settings, Task
+from app.services.digest import digests_for_range
 from app.services.tasks import due_at
 
 OFF = -1
@@ -21,25 +22,56 @@ def get_settings() -> Settings:
     return db.session.get(Settings, 1)
 
 
+def alarm_offsets(
+    item_minutes: int | None, is_important: bool, default: int, settings
+) -> list[int]:
+    """Phút báo trước theo data-model "Quy tắc mốc nhắc" (FR-022, FR-068); giảm dần, không trùng.
+
+    `item_minutes`: mốc riêng của mục (None = mặc định, -1 = tắt mọi mốc).
+    """
+    if item_minutes == OFF:
+        return []
+    if not is_important:
+        return [default if item_minutes is None else item_minutes]
+    offsets = set(settings.important_reminder_offsets)
+    if item_minutes is not None:
+        offsets.add(item_minutes)
+    return sorted(offsets, reverse=True)
+
+
 def session_alarm_minutes(session, settings) -> list[int]:
     """Danh sách số phút báo trước của một buổi học (rỗng = không nhắc)."""
     if session.is_cancelled:
         return []
-    minutes = session.subject.reminder_minutes
-    if minutes == OFF:
-        return []
-    return [settings.session_reminder_minutes if minutes is None else minutes]
-
-
-def task_alarm_at(task, settings) -> datetime | None:
-    if task.completed_at is not None or task.due_date is None or task.reminder_minutes == OFF:
-        return None
-    if task.due_time is None:
-        return combine(task.due_date, settings.date_only_task_reminder_time)
-    minutes = (
-        settings.task_reminder_minutes if task.reminder_minutes is None else task.reminder_minutes
+    return alarm_offsets(
+        session.subject.reminder_minutes,
+        session.is_important,
+        settings.session_reminder_minutes,
+        settings,
     )
-    return due_at(task) - timedelta(minutes=minutes)
+
+
+def task_alarm_times(task, settings) -> list[datetime]:
+    """Các thời điểm nhắc của task, tăng dần (rỗng = không nhắc)."""
+    if task.completed_at is not None or task.due_date is None or task.reminder_minutes == OFF:
+        return []
+    if task.due_time is None:
+        # Task chỉ có ngày: nhắc lúc giờ cố định; mục quan trọng thêm các ngày ứng với mốc ≥ 1 ngày.
+        morning = combine(task.due_date, settings.date_only_task_reminder_time)
+        days = {0}
+        if task.is_important:
+            days |= {m // 1440 for m in settings.important_reminder_offsets if m >= 1440}
+        return sorted(morning - timedelta(days=d) for d in days)
+    offsets = alarm_offsets(
+        task.reminder_minutes, task.is_important, settings.task_reminder_minutes, settings
+    )
+    deadline = due_at(task)
+    return sorted(deadline - timedelta(minutes=m) for m in offsets)
+
+
+def _key(kind: str, item_id: int, minutes: int, count: int) -> str:
+    """`session:12`, hoặc `session:12:1440` khi mục có nhiều mốc (contracts/rest-api.md)."""
+    return f"{kind}:{item_id}:{minutes}" if count > 1 else f"{kind}:{item_id}"
 
 
 def _fmt_time(dt: datetime) -> str:
@@ -62,17 +94,19 @@ def upcoming(now: datetime, hours: int) -> list[dict]:
         )
     )
     for s in sessions:
-        for minutes in session_alarm_minutes(s, settings):
+        offsets = session_alarm_minutes(s, settings)
+        for minutes in offsets:
             fire = s.start_at - timedelta(minutes=minutes)
             if now - CATCH_UP <= fire <= window_end:
                 room = f" · Phòng {s.room}" if s.room else ""
                 items.append(
                     {
-                        "sync_key": f"session:{s.id}",
+                        "sync_key": _key("session", s.id, minutes, len(offsets)),
                         "kind": "session",
                         "title": s.subject.name,
                         "body": f"{_fmt_time(s.start_at)} – {_fmt_time(s.end_at)}{room}",
                         "fire_at": fire.astimezone(TZ).isoformat(timespec="seconds"),
+                        "important": s.is_important,
                     }
                 )
 
@@ -85,16 +119,36 @@ def upcoming(now: datetime, hours: int) -> list[dict]:
         )
     )
     for task in tasks:
-        fire = task_alarm_at(task, settings)
-        if fire is not None and now - CATCH_UP <= fire <= window_end:
-            when = due_at(task).astimezone(TZ)
+        times = task_alarm_times(task, settings)
+        when = due_at(task).astimezone(TZ) if times else None
+        for fire in times:
+            if not (now - CATCH_UP <= fire <= window_end):
+                continue
+            minutes = int((due_at(task) - fire).total_seconds() // 60)
             items.append(
                 {
-                    "sync_key": f"task:{task.id}",
+                    "sync_key": _key("task", task.id, minutes, len(times)),
                     "kind": "task",
                     "title": task.title,
                     "body": f"Hạn {when:%d/%m}" + (f" lúc {when:%H:%M}" if task.due_time else ""),
                     "fire_at": fire.astimezone(TZ).isoformat(timespec="seconds"),
+                    "important": task.is_important,
+                }
+            )
+
+    # Bản tóm tắt hằng ngày (FR-065) của các ngày trong cửa sổ.
+    first_day = (now - CATCH_UP).astimezone(TZ).date()
+    days = (window_end.astimezone(TZ).date() - first_day).days + 1
+    for digest in digests_for_range(first_day, days, settings):
+        if now - CATCH_UP <= digest.fire_at <= window_end:
+            items.append(
+                {
+                    "sync_key": f"digest:{digest.date.isoformat()}",
+                    "kind": "digest",
+                    "title": digest.title,
+                    "body": "\n".join(digest.lines),
+                    "fire_at": digest.fire_at.astimezone(TZ).isoformat(timespec="seconds"),
+                    "important": digest.is_important,
                 }
             )
     return sorted(items, key=lambda i: i["fire_at"])

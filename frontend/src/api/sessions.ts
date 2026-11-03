@@ -7,6 +7,7 @@ export type SessionPatch = {
   start_time?: string;
   end_time?: string;
   room?: string | null;
+  important_override?: boolean | null;
 };
 
 /** Sửa, huỷ, khôi phục, gắn nhãn một buổi học (US4, FR-011, FR-012, FR-043). */

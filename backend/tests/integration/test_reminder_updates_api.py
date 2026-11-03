@@ -55,7 +55,7 @@ def test_changes_reflect_immediately(client, db_session):
     assert feed_keys(client)[key]["start_at"] == "2026-11-09T08:00:00+07:00"
 
     step(lambda: client.patch(f"/api/tasks/{task['id']}", json={"due_time": "21:00"}))
-    assert feed_keys(client)[task_key]["alarm_at"] == "2026-11-09T20:00:00+07:00"
+    assert feed_keys(client)[task_key]["alarms_at"] == ["2026-11-09T20:00:00+07:00"]
 
     step(lambda: client.post(f"/api/tasks/{task['id']}/complete"))
     assert task_key not in keys_upcoming(client) and task_key not in feed_keys(client)

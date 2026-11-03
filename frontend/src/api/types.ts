@@ -24,6 +24,8 @@ export type Task = {
   display_color: string;
   reminder_minutes: number | null;
   reminder_at: string | null;
+  reminder_times: string[];
+  is_important: boolean;
 };
 
 export type TaskInput = {
@@ -35,6 +37,7 @@ export type TaskInput = {
   priority: Priority;
   list_id: number;
   reminder_minutes?: number | null;
+  is_important?: boolean;
 };
 
 export type TaskList = {
@@ -69,6 +72,7 @@ export type Subject = {
   start_date: string;
   end_date: string;
   reminder_minutes: number | null;
+  is_important: boolean;
   tags: Tag[];
   session_count?: number;
 };
@@ -95,6 +99,7 @@ export type SubjectInput = {
   end_time: string | null;
   color?: string | null;
   reminder_minutes?: number | null;
+  is_important?: boolean;
 };
 
 export type ClassSession = {
@@ -116,6 +121,10 @@ export type ClassSession = {
   display_color: string;
   shift_label: string | null;
   auto_task_id: number | null;
+  /** Mức quan trọng hiệu lực (theo môn hoặc đặt riêng), FR-067. */
+  is_important: boolean;
+  important_override: boolean | null;
+  subject_is_important: boolean;
 };
 
 export type TodayData = {

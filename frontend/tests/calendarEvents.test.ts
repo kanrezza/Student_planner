@@ -26,6 +26,9 @@ const session = (over: Partial<ClassSession> = {}): ClassSession => ({
   display_color: 'c01',
   shift_label: 'Ca 1',
   auto_task_id: null,
+  is_important: false,
+  important_override: null,
+  subject_is_important: false,
   ...over,
 });
 
@@ -48,6 +51,8 @@ const task = (over: Partial<Task> = {}): Task => ({
   tags: [],
   display_color: 'c02',
   reminder_minutes: null,
+  reminder_times: [],
+  is_important: false,
   reminder_at: null,
   ...over,
 });
@@ -116,5 +121,20 @@ describe('dãy ca', () => {
       ['Ca 1–2', '06:45', '12:10'],
       ['Ca 2', '09:35', '12:10'],
     ]);
+  });
+});
+
+describe('toCalendarEvents – mục quan trọng (FR-070)', () => {
+  it('thêm dấu ★ và class is-important', () => {
+    const events = toCalendarEvents({
+      sessions: [session({ is_important: true }), session({ id: 2 })],
+      tasks: [task({ is_important: true, completed: true })],
+    });
+    expect(events[0].title).toBe('★ Giải tích 1 · A2-301');
+    expect(events[0].classNames).toEqual(['is-important']);
+    expect(events[1].title).toBe('Giải tích 1 · A2-301');
+    expect(events[1].classNames).toEqual([]);
+    expect(events[2].title).toBe('★ Nộp bài');
+    expect(events[2].classNames).toEqual(['is-done', 'is-important']);
   });
 });

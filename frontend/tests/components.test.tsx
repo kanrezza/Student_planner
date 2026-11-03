@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ClassSession } from '../src/api/types';
+import { ImportantToggle } from '../src/components/ImportantToggle';
 import { SessionDetail } from '../src/components/SessionDetail';
 import { ShiftPicker, timeChoiceToInput, type TimeChoice } from '../src/components/ShiftPicker';
 
@@ -32,7 +33,10 @@ function wrap(ui: ReactNode) {
   return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 const session: ClassSession = {
   id: 9,
@@ -53,6 +57,9 @@ const session: ClassSession = {
   display_color: 'c05',
   shift_label: 'Ca 1',
   auto_task_id: null,
+  is_important: true,
+  important_override: null,
+  subject_is_important: true,
 };
 
 describe('SessionDetail', () => {
@@ -105,5 +112,31 @@ describe('ShiftPicker', () => {
       start_time: '06:45',
       end_time: '12:10',
     });
+  });
+});
+
+describe('Quan trọng (FR-067)', () => {
+  it('ImportantToggle bật/tắt bằng một lần bấm', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(<ImportantToggle value={false} onChange={onChange} />);
+    const button = screen.getByRole('button', { name: /Quan trọng/ });
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(button);
+    expect(onChange).toHaveBeenLastCalledWith(true);
+    rerender(<ImportantToggle value={true} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: /Quan trọng/ }));
+    expect(onChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it('SessionDetail gửi important_override khi đặt riêng buổi này', async () => {
+    const fetchMock = mockApi();
+    const onClose = vi.fn();
+    wrap(<SessionDetail session={session} onClose={onClose} />);
+    const select = screen.getByDisplayValue('Theo môn (Quan trọng)');
+    fireEvent.change(select, { target: { value: 'no' } });
+    fireEvent.click(screen.getByText('Lưu'));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const patch = fetchMock.mock.calls.find(([url]) => url === '/api/sessions/9');
+    expect(JSON.parse(String(patch?.[1]?.body))).toEqual({ important_override: false });
   });
 });

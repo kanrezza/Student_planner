@@ -4,6 +4,7 @@ import type { Priority, Task, TaskList } from '../api/types';
 import { t } from '../i18n/vi';
 import { PRIORITIES, blankToNull, priorityLabel } from '../lib/format';
 import { FormField } from './FormField';
+import { ImportantToggle } from './ImportantToggle';
 import { useSettings } from '../api/settings';
 import { minutesLabel, ReminderSelect } from './ReminderSelect';
 import { SessionLink } from './SessionLink';
@@ -30,6 +31,7 @@ export function TaskForm({
   const [titleError, setTitleError] = useState<string | null>(null);
   const [tagIds, setTagIds] = useState<number[]>(task?.tags.map((tag) => tag.id) ?? []);
   const [reminder, setReminder] = useState<number | null>(task?.reminder_minutes ?? null);
+  const [important, setImportant] = useState(task?.is_important ?? false);
   const settings = useSettings().data;
   const dateOnly = Boolean(dueDate) && !dueTime;
 
@@ -55,6 +57,7 @@ export function TaskForm({
       tag_ids: tagIds,
       // Task chỉ có ngày chỉ nhận "mặc định" hoặc "không nhắc".
       reminder_minutes: dateOnly && reminder !== null && reminder >= 0 ? null : reminder,
+      is_important: important,
     };
     const options = { onSuccess: onDone };
     if (task) update.mutate({ id: task.id, input }, options);
@@ -121,6 +124,9 @@ export function TaskForm({
             ))}
           </select>
         </FormField>
+      </div>
+      <div className="field">
+        <ImportantToggle value={important} onChange={setImportant} />
       </div>
       <FormField label={t('tags.pick')} name="tag_ids" error={error}>
         <TagPicker value={tagIds} onChange={setTagIds} />

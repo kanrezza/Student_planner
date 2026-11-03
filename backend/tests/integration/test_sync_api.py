@@ -18,9 +18,18 @@ EVENT_KEYS = {
     "location",
     "start_at",
     "end_at",
+    "important",
     "alarms_minutes_before",
 }
-REMINDER_KEYS = {"sync_key", "fingerprint", "title", "due_at", "due_has_time", "alarm_at"}
+REMINDER_KEYS = {
+    "sync_key",
+    "fingerprint",
+    "title",
+    "due_at",
+    "due_has_time",
+    "important",
+    "alarms_at",
+}
 
 
 @pytest.fixture(autouse=True)
@@ -105,11 +114,11 @@ def test_feed_content_is_minimal_and_filtered(client, db_session):
     reminders = {r["title"]: r for r in data["reminders"]}
     assert set(reminders) == {"Có giờ", "Chỉ ngày"}
     assert all(set(r) == REMINDER_KEYS for r in reminders.values())
-    assert reminders["Có giờ"]["alarm_at"] == "2026-11-10T16:00:00+07:00"
+    assert reminders["Có giờ"]["alarms_at"] == ["2026-11-10T16:00:00+07:00"]
     assert reminders["Chỉ ngày"] == {
         **reminders["Chỉ ngày"],
         "due_has_time": False,
-        "alarm_at": "2026-11-11T08:00:00+07:00",
+        "alarms_at": ["2026-11-11T08:00:00+07:00"],
     }
     assert "ghi chú" not in str(data) and "Nguyễn Văn An" not in str(data)
 
@@ -164,6 +173,7 @@ def test_agent_status_and_today_notices(client, db_session):
 def test_browser_reminders_only_when_sync_off(client, db_session):
     create_task(client, db_session, "Sắp tới", due_date="2026-11-09", due_time="09:00")
     upcoming = client.get("/api/reminders/upcoming?hours=24").get_json()
+    upcoming = [r for r in upcoming if r["kind"] != "digest"]
     assert [(r["kind"], r["title"], r["fire_at"]) for r in upcoming] == [
         ("task", "Sắp tới", "2026-11-09T08:00:00+07:00")
     ]

@@ -19,7 +19,9 @@ export function TaskItem({
 }) {
   const complete = useCompleteTask();
   return (
-    <li className={`task-item${task.completed ? ' is-done' : ''}`}>
+    <li
+      className={`task-item${task.completed ? ' is-done' : ''}${task.is_important ? ' is-important' : ''}`}
+    >
       <span className="color-bar" style={{ backgroundColor: colorHex(task.display_color) }} />
       <input
         type="checkbox"
@@ -29,7 +31,14 @@ export function TaskItem({
         onChange={() => complete.mutate({ id: task.id, completed: !task.completed })}
       />
       <div className="task-item__body">
-        <div className="task-item__title">{task.title}</div>
+        <div className="task-item__title">
+          {task.is_important && (
+            <span className="star" aria-label={t('important.label')}>
+              ★{' '}
+            </span>
+          )}
+          {task.title}
+        </div>
         <div className="task-item__meta">
           <span className={task.is_overdue ? 'text-danger' : undefined}>{formatDue(task)}</span>
           <span className={`badge badge--p${task.priority}`}>{priorityLabel(task.priority)}</span>

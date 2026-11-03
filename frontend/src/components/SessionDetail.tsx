@@ -5,6 +5,12 @@ import { t } from '../i18n/vi';
 import { formatDayLong, formatTime } from '../lib/dates';
 import { blankToNull, sessionTimeRange } from '../lib/format';
 import { FormField } from './FormField';
+import {
+  choiceToOverride,
+  ImportanceSelect,
+  overrideToChoice,
+  type ImportanceChoice,
+} from './ImportantToggle';
 import { Modal } from './Modal';
 import { TagPicker } from './TagPicker';
 import { FormActions } from './TaskForm';
@@ -25,6 +31,8 @@ export function SessionDetail({
   const [endTime, setEndTime] = useState(formatTime(session.end_at));
   const [room, setRoom] = useState(session.room ?? '');
   const [ownTags, setOwnTags] = useState<number[]>(session.own_tag_ids);
+  const initialChoice = overrideToChoice(session.important_override);
+  const [importance, setImportance] = useState<ImportanceChoice>(initialChoice);
   const subjectTagIds = session.tags
     .map((tag) => tag.id)
     .filter((id) => !session.own_tag_ids.includes(id));
@@ -36,6 +44,7 @@ export function SessionDetail({
     if (startTime !== formatTime(session.start_at)) patch.start_time = startTime;
     if (endTime !== formatTime(session.end_at)) patch.end_time = endTime;
     if (blankToNull(room) !== session.room) patch.room = blankToNull(room);
+    if (importance !== initialChoice) patch.important_override = choiceToOverride(importance);
     const tagsChanged = ownTags.join(',') !== session.own_tag_ids.join(',');
     const saveTags = () =>
       tagsChanged
@@ -89,6 +98,13 @@ export function SessionDetail({
             <input value={room} onChange={(e) => setRoom(e.target.value)} />
           </FormField>
         </div>
+        <FormField label={t('important.label')} name="important_override" error={update.error}>
+          <ImportanceSelect
+            value={importance}
+            onChange={setImportance}
+            subjectImportant={session.subject_is_important}
+          />
+        </FormField>
         <FormField label={t('session.tags')} name="tag_ids" error={setTags.error}>
           <TagPicker value={ownTags} onChange={setOwnTags} exclude={subjectTagIds} />
         </FormField>

@@ -14,7 +14,7 @@ class Item:
     """Một mục đang có trong lịch/danh sách của app. `key` = None nếu không có URL lichhoc://."""
 
     key: str | None
-    kind: str  # "event" | "reminder"
+    kind: str  # "event" | "reminder" (bản tóm tắt nằm trong lịch nên là "event")
     handle: Any
 
 
@@ -30,6 +30,8 @@ class Plan:
 def _wanted(feed: dict) -> dict[str, tuple[str, dict]]:
     wanted = {e["sync_key"]: ("event", e) for e in feed["events"]}
     wanted.update({r["sync_key"]: ("reminder", r) for r in feed["reminders"]})
+    # Bản tóm tắt hằng ngày: sự kiện cả ngày trong lịch của app (research R15).
+    wanted.update({d["sync_key"]: ("digest", d) for d in feed.get("digests", [])})
     return wanted
 
 

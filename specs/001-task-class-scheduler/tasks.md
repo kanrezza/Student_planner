@@ -1166,7 +1166,7 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
 Bổ sung sau khi T118–T138 đã xong. ID tiếp nối T146 để không phải đánh số lại. Phần buổi thi nằm ở
 T146 (Phase 10).
 
-- [ ] T147 [US7] Migration `backend/migrations/versions/0002_important_digest.py` và model:
+- [X] T147 [US7] Migration `backend/migrations/versions/0002_important_digest.py` và model:
   - `subjects.is_important boolean NOT NULL DEFAULT false`; `tasks.is_important boolean NOT NULL
     DEFAULT false`; `class_sessions.important_override boolean NULL`.
   - `settings`: `important_reminder_offsets integer[] DEFAULT '{1440,180,60,15}'` (CHECK 1–6 phần tử,
@@ -1176,14 +1176,14 @@ T146 (Phase 10).
   - Cập nhật `schemas/settings.py` (mảng mốc: bỏ trùng, sắp giảm dần, ≥ 0), `schemas/tasks.py`,
     `schemas/subjects.py`, `schemas/sessions.py` (`is_important`; buổi học trả `is_important` hiệu lực
     và `important_override`). `test_migrations_match_models` vẫn pass.
-- [ ] T148 [P] [US7] Test thuần mốc nhắc trong `backend/tests/unit/test_reminders.py` (FR-068):
+- [X] T148 [P] [US7] Test thuần mốc nhắc trong `backend/tests/unit/test_reminders.py` (FR-068):
   - Buổi học thường `[15]`; môn quan trọng `[1440, 180, 60, 15]`; môn quan trọng + `reminder_minutes
     = 30` → `[1440, 180, 60, 30, 15]`; `reminder_minutes = 15` không nhân đôi; `-1` → `[]`.
   - `important_override = false` trên buổi của môn quan trọng → `[15]`; `true` trên môn thường →
     nhiều mốc.
   - Task có giờ quan trọng → 4 thời điểm; task chỉ có ngày quan trọng → 08:00 ngày hạn và 08:00 ngày
     trước; `important_reminder_offsets = [2880, 60]` → 08:00 ngày hạn và 2 ngày trước.
-- [ ] T149 [P] [US7] Test thuần trong `backend/tests/unit/test_digest.py` (FR-065):
+- [X] T149 [P] [US7] Test thuần trong `backend/tests/unit/test_digest.py` (FR-065):
   - Ngày có 2 buổi học (Ca 3 và giờ tuỳ chỉnh 14:00) + 2 task đến hạn + 3 quá hạn → `title` và
     `lines` đúng thứ tự (buổi theo giờ; 2 task đến hạn theo `due_at`; 1 task quá hạn lâu nhất;
     "+2 việc khác"); buổi không có phòng → "chưa có phòng".
@@ -1194,7 +1194,7 @@ T146 (Phase 10).
   - Ngày trống → `None`; chỉ có task quá hạn → có bản tóm tắt khi `daily_digest_overdue_only = true`,
     `None` khi `false`.
   - Không có ghi chú task; có mục quan trọng → tiền tố "★ ".
-- [ ] T150 [P] [US7] Test API trong `backend/tests/integration/test_digest_important_api.py`:
+- [X] T150 [P] [US7] Test API trong `backend/tests/integration/test_digest_important_api.py`:
   - PATCH `is_important` của task, môn, `important_override` của buổi → `revision` tăng; feed có
     `important`, tiền tố "★ ", `alarms_minutes_before` nhiều mốc; reminder có `alarms_at` dạng
     danh sách và `important`.
@@ -1206,7 +1206,7 @@ T146 (Phase 10).
   - `GET /api/digest?date=` trả bản xem trước hoặc `{empty: true}`.
   - `GET /api/reminders/upcoming` khi tắt đồng bộ có mục `digest:YYYY-MM-DD` và một mục cho mỗi mốc
     của mục quan trọng; PATCH các trường cài đặt mới → `revision` tăng.
-- [ ] T151 [US7] Backend:
+- [X] T151 [US7] Backend:
   - `services/reminders.py`: hàm thuần `alarm_offsets(kind, item_reminder, is_important, settings)`
     theo data-model "Quy tắc mốc nhắc"; `session_alarm_minutes`, `task_alarm_times` (danh sách) dùng
     nó; `upcoming` sinh một mục cho mỗi mốc (`sync_key="{kind}:{id}:{phút}"` khi nhiều mốc) và mục
@@ -1216,34 +1216,34 @@ T146 (Phase 10).
   - `services/sync_feed.py`: thêm `important`, tiền tố "★ ", `alarms_at`, mảng `digests` (contracts/
     calendar-sync.md §2); fingerprint gồm các trường mới.
   - `api/digest.py`: `GET /api/digest`; đăng ký trong `create_app`. Contract rest-api đã có dòng.
-- [ ] T152 [US7] API ghi: `tasks`, `subjects`, `sessions` nhận `is_important` / `important_override`
+- [X] T152 [US7] API ghi: `tasks`, `subjects`, `sessions` nhận `is_important` / `important_override`
   và gọi `bump_revision`; sửa `is_important` của task tự tạo đặt `user_modified = true`; `/today` và
   `/calendar` trả `is_important` cho buổi học và task.
-- [ ] T153 [P] [US7] Test agent trong `mac-agent/tests/`:
+- [X] T153 [P] [US7] Test agent trong `mac-agent/tests/`:
   - `test_reconcile.py`: `digests` được tạo/cập nhật/xoá như sự kiện (key `digest:YYYY-MM-DD`);
     reminder đổi `alarms_at` hoặc `important` → update.
   - `test_main.py`: sang ngày mới (giả lập đồng hồ) → buộc lấy feed và đối chiếu toàn phần;
     `FakeCalendarStore` ghi nhận `all_day`, `notes`, nhiều alarm, `priority`.
-- [ ] T154 [US7] mac-agent:
+- [X] T154 [US7] mac-agent:
   - `calendar_store.py`: digest → `EKEvent` cả ngày (`setAllDay_(True)`, `notes`, `URL =
     lichhoc://digest/{date}`, alarm tuyệt đối `alarm_at`); reminder thêm mọi phần tử `alarms_at` và
     `setPriority_(1 if important else 0)`; đọc khoá `digest` từ URL khi liệt kê.
   - `main.py`: lưu ngày của lần đồng bộ cuối, sang ngày mới thì `sync_once(force=True)`.
   - `__version__ = "0.2.0"`; README/hướng dẫn: chạy lại `mac-agent/scripts/install.sh` sau khi cập
     nhật backend (feed đổi `alarm_at` → `alarms_at`).
-- [ ] T155 [P] [US7] Test frontend:
+- [X] T155 [P] [US7] Test frontend:
   - `frontend/tests/calendarEvents.test.ts`: mục quan trọng có class `is-important` và tiền tố "★".
   - `frontend/tests/reminders.test.ts`: mục `digest` và nhiều mốc của cùng mục được hẹn riêng, mỗi
     mốc hiện một lần.
   - `frontend/tests/components.test.tsx`: `ImportantToggle` bật/tắt trong tối đa 2 lần bấm; ô "Theo
     môn / Quan trọng / Không quan trọng" của buổi học gửi `important_override` đúng.
-- [ ] T156 [US7] Frontend "Quan trọng" (FR-067, FR-070):
+- [X] T156 [US7] Frontend "Quan trọng" (FR-067, FR-070):
   - `components/ImportantToggle.tsx` dùng trong `TaskForm`, `SubjectForm`; `SessionDetail` có ô
     chọn ba trạng thái.
   - `lib/calendarEvents.ts`: thêm class `is-important` và "★ " vào tiêu đề; `TaskItem` và các thẻ buổi
     học trên `TodayPage` có ★ và viền đậm; CSS `.is-important` trong `styles.css`.
   - Cập nhật `api/types.ts` (`is_important`, `important_override`).
-- [ ] T157 [US7] Frontend tóm tắt và cài đặt (FR-065, FR-066, FR-068):
+- [X] T157 [US7] Frontend tóm tắt và cài đặt (FR-065, FR-066, FR-068):
   - `ReminderSettings.tsx`: công tắc "Thông báo tổng hợp hằng ngày", ô giờ gửi, công tắc "Gửi tóm
     tắt khi chỉ có việc quá hạn" (bật sẵn, ẩn khi tắt tổng hợp), nút "Xem trước hôm nay" (gọi
     `GET /api/digest`); danh sách mốc nhắc cho mục quan trọng (thêm/bớt, tối đa 6, dạng
@@ -1251,9 +1251,10 @@ T146 (Phase 10).
   - `reminders/scheduler.ts`: kiểu `kind` thêm `'digest'`; thông báo trình duyệt của bản tóm tắt có
     `body` nhiều dòng.
   - Chuỗi tiếng Việt trong `i18n/vi.ts`.
-- [ ] T158 [US7] Cập nhật `README.md`/hướng dẫn và `quickstart.md` nếu có thay đổi khi làm; chạy
+- [X] T158 [US7] Cập nhật `README.md`/hướng dẫn và `quickstart.md` nếu có thay đổi khi làm; chạy
   `./scripts/test.sh`.
-- [ ] T159 [US7] Kiểm chứng thủ công trên iPhone (research R15, R16) và ghi kết quả vào
+- [ ] T159 [US7] (Chờ người dùng thử trên iPhone; phía Mac đã kiểm tra: đối tượng EventKit nhận
+  đủ 4–5 alarm, sự kiện cả ngày và priority.) Kiểm chứng thủ công trên iPhone (research R15, R16) và ghi kết quả vào
   `research.md`:
   - Sự kiện cả ngày có alarm tuyệt đối báo đúng giờ khi Mac gập; tiêu đề dài hiện đủ hay bị cắt.
   - Một sự kiện có 5 `EKAlarm` và một lời nhắc có 4 alarm: iPhone báo đủ mọi mốc. Nếu không, áp

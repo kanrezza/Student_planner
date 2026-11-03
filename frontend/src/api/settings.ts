@@ -11,7 +11,24 @@ export type AppSettings = {
   auto_deadline_evening_from: string;
   auto_deadline_due_time: string;
   auto_deadline_excluded_keywords: string[];
+  important_reminder_offsets: number[];
+  exam_extra_reminder_offsets: number[];
+  exam_reminder_minutes: number;
+  daily_digest_enabled: boolean;
+  daily_digest_time: string;
+  daily_digest_overdue_only: boolean;
 };
+
+export type DigestPreview =
+  | { date: string; empty: true }
+  | {
+      date: string;
+      empty: false;
+      fire_at: string;
+      title: string;
+      lines: string[];
+      is_important: boolean;
+    };
 
 export type SyncStatus = {
   sync_enabled: boolean;

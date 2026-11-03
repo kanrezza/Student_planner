@@ -193,6 +193,26 @@ export const vi = {
     promptEnable: 'Bật đồng bộ',
     promptLater: 'Để sau',
   },
+  important: {
+    label: 'Quan trọng',
+    yes: 'Quan trọng',
+    no: 'Không quan trọng',
+    inherit: 'Theo môn ({value})',
+    offsetsTitle: 'Mốc nhắc cho mục quan trọng',
+    offsetsHelp:
+      'Task, buổi học và buổi thi được đánh dấu Quan trọng sẽ được nhắc ở mọi mốc dưới đây (tối đa 6 mốc).',
+    removeOffset: 'Bỏ mốc {time}',
+    newOffset: 'Mốc mới',
+  },
+  digest: {
+    title: 'Thông báo tổng hợp hằng ngày',
+    enable: 'Gửi bản tóm tắt mỗi ngày',
+    time: 'Giờ gửi',
+    overdueOnly: 'Gửi tóm tắt khi chỉ có việc quá hạn',
+    help: 'Tóm tắt buổi thi, buổi học và tối đa 3 việc của ngày. Ngày không có gì thì không gửi. Khi bật đồng bộ, bản tóm tắt 14 ngày tới được ghi sẵn vào Lịch nên iPhone vẫn nhận khi Mac gập.',
+    preview: 'Xem trước hôm nay',
+    empty: 'Hôm nay không có gì để tóm tắt.',
+  },
   autoDeadline: {
     title: 'Tự tạo deadline',
     help: 'Môn có nhãn E-Learning hoặc buổi học bắt đầu từ mốc giờ dưới đây: mỗi buổi tự có một công việc hạn Chủ Nhật kế tiếp.',

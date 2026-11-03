@@ -74,7 +74,7 @@ export function TodayPage() {
 function SessionRow({ session, onOpen }: { session: ClassSession; onOpen: () => void }) {
   return (
     <li
-      className={`task-item task-item--clickable${session.is_cancelled ? ' is-done' : ''}`}
+      className={`task-item task-item--clickable${session.is_cancelled ? ' is-done' : ''}${session.is_important ? ' is-important' : ''}`}
       role="button"
       tabIndex={0}
       onClick={onOpen}
@@ -83,7 +83,14 @@ function SessionRow({ session, onOpen }: { session: ClassSession; onOpen: () => 
       <span className="color-bar" style={{ backgroundColor: colorHex(session.display_color) }} />
       <div className="session-time">{sessionTimeRange(session)}</div>
       <div className="task-item__body">
-        <div className="task-item__title">{session.subject_name}</div>
+        <div className="task-item__title">
+          {session.is_important && (
+            <span className="star" aria-label={t('important.label')}>
+              ★{' '}
+            </span>
+          )}
+          {session.subject_name}
+        </div>
         <div className="task-item__meta">
           {session.room && <span>{session.room}</span>}
           {session.lecturer && <span>{session.lecturer}</span>}
