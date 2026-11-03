@@ -349,6 +349,50 @@ tương ứng cho Triết học và không có task nào cho Giáo dục thể c
 
 ---
 
+### User Story 11 - Lịch thi (Priority: P2)
+
+Người dùng quản lý lịch thi: mỗi buổi thi có mã học phần, tên học phần, lần thi, ngày thi, giờ bắt
+đầu và kết thúc, hình thức thi (ví dụ "Trắc nghiệm trên máy 60p", "Bài tập lớn"), phòng thi (có thể
+trống) và số báo danh. Buổi thi là sự kiện một lần, không lặp. Người dùng nhập tay hoặc đưa ảnh chụp
+bảng "Lịch thi cá nhân" trên cổng sinh viên; hệ thống tự nhận biết ảnh là lịch học dạng tuần hay lịch
+thi dạng bảng. Buổi thi hiện trên lịch và trang Hôm nay với nhãn "Thi" màu nổi bật, được cảnh báo khi
+trùng giờ với buổi học, được nhắc trước 1 ngày và trước 1 giờ, và đồng bộ sang Lịch/Lời nhắc của
+Apple như buổi học.
+
+**Why this priority**: Lịch thi là mốc quan trọng nhất của học kỳ; quên giờ hoặc phòng thi gây hậu
+quả lớn. Tính năng dựa trên phần nhập ảnh (US6) và lịch (US5) nên xếp cùng nhóm P2.
+
+**Independent Test**: Thêm tay một buổi thi; nhập một ảnh bảng lịch thi có 6 môn (2 môn đã qua);
+kiểm tra bảng xem trước đánh dấu 2 môn "Đã qua" và bỏ chọn, không có họ tên hay mã số sinh viên;
+lưu, rồi xem buổi thi trên trang Hôm nay và lịch tuần với nhãn "Thi"; nhập lại cùng ảnh thì không
+tạo trùng.
+
+**Acceptance Scenarios**:
+
+1. **Given** trang Lịch thi, **When** người dùng thêm buổi thi "Cơ sở dữ liệu", mã CSE2301, lần 1,
+   ngày 05/01/2027, 07:30–08:30, "Trắc nghiệm trên máy 60p", phòng A5-310, SBD 125, **Then** buổi
+   thi được lưu và hiện trên lịch ngày 05/01/2027 với nhãn "Thi".
+2. **Given** buổi thi không có phòng, **When** lưu, **Then** được chấp nhận và hiển thị "Chưa có
+   phòng".
+3. **Given** buổi thi trùng giờ với một buổi học (chưa huỷ) hoặc một buổi thi khác, **When** lưu,
+   **Then** vẫn lưu được nhưng hiện cảnh báo nêu rõ buổi bị trùng; trên lịch và trang Hôm nay buổi
+   thi có dấu "Trùng giờ".
+4. **Given** ảnh chụp bảng "Lịch thi cá nhân", **When** người dùng nhập ảnh, **Then** hệ thống nhận
+   ra đây là lịch thi (không phải lịch học dạng tuần) và hiện bảng xem trước theo các cột của buổi
+   thi; cột họ tên, mã số sinh viên bị bỏ qua và không xuất hiện ở bất kỳ đâu.
+5. **Given** bảng lịch thi có môn đã thi xong, **When** hiện bảng xem trước, **Then** các dòng đó
+   có nhãn "Đã qua" và mặc định không được chọn.
+6. **Given** một buổi thi trong ảnh đã có trong ứng dụng (cùng mã học phần hoặc tên học phần, cùng
+   ngày và giờ bắt đầu), **When** hiện bảng xem trước, **Then** dòng đó có nhãn "Đã có trong lịch",
+   mặc định bỏ chọn và không bị tạo trùng khi lưu.
+7. **Given** buổi thi sắp tới với nhắc mặc định, **When** tới 1 ngày trước và 1 giờ trước giờ thi,
+   **Then** có thông báo gồm tên học phần, giờ và phòng thi; khi đồng bộ đang bật, buổi thi có trong
+   lịch "Lịch Học Cá Nhân" kèm hai lời báo trước đó.
+8. **Given** trang Hôm nay vào ngày có thi, **When** mở trang, **Then** buổi thi hiện ở khối "Buổi
+   thi" phía trên buổi học, gồm giờ, phòng, hình thức thi, số báo danh.
+
+---
+
 ### Edge Cases
 
 - Ngày bắt đầu học kỳ không rơi vào thứ của môn học: buổi đầu tiên là ngày đúng thứ đó gần nhất sau
@@ -400,6 +444,14 @@ tương ứng cho Triết học và không có task nào cho Giáo dục thể c
 - Tạo học kỳ có ngày chồng lấn với học kỳ đã có: ứng dụng từ chối và chỉ rõ học kỳ bị chồng lấn.
 - Tiêu đề, ghi chú, tên môn và phòng học có dấu tiếng Việt và ký tự đặc biệt được lưu và hiển thị
   đúng.
+- Bảng lịch thi chỉ ghi giờ bắt đầu (không có giờ kết thúc): giờ kết thúc được tính từ thời lượng
+  trong hình thức thi (ví dụ "60p", "90 phút"); không suy ra được thì ô giờ kết thúc bị đánh dấu chưa
+  chắc chắn.
+- Ảnh không xác định được là lịch học hay lịch thi: bảng xem trước hỏi người dùng chọn loại trước khi
+  hiện kết quả.
+- Buổi thi trùng giờ với buổi học đã huỷ: không cảnh báo.
+- Sửa hoặc xoá buổi thi khi đồng bộ đang bật: bản trong Lịch được cập nhật hoặc xoá như buổi học.
+- Lần thi lại (lần 2) của cùng học phần: là buổi thi riêng, không bị coi là trùng với lần 1.
 
 ## Requirements *(mandatory)*
 
@@ -558,6 +610,35 @@ tương ứng cho Triết học và không có task nào cho Giáo dục thể c
 - **FR-050**: Task tự tạo PHẢI được đánh dấu rõ là "Tự tạo" và mở được buổi học sinh ra nó; ngoài ra
   nó là task bình thường (sửa, hoàn thành, xoá, nhắc như task khác).
 
+**Lịch thi**
+
+- **FR-055**: Người dùng PHẢI thêm, sửa, xoá được buổi thi với: tên học phần (bắt buộc), mã học phần,
+  lần thi (số nguyên ≥ 1, mặc định 1), ngày thi (bắt buộc), giờ bắt đầu và giờ kết thúc (bắt buộc,
+  kết thúc sau bắt đầu), hình thức thi, phòng thi (có thể trống), số báo danh. Buổi thi là sự kiện
+  một lần, không lặp, không thuộc học kỳ hay môn học nào.
+- **FR-056**: Ứng dụng PHẢI có sẵn nhãn hệ thống "Thi" (màu nổi bật mặc định, đổi được màu, không xoá
+  hay đổi tên được), luôn gắn đầu tiên cho mọi buổi thi; người dùng gắn thêm được nhãn khác.
+- **FR-057**: Lịch (ngày, tuần, tháng) và trang Hôm nay PHẢI hiển thị buổi thi theo màu nhãn "Thi";
+  trang Hôm nay có khối "Buổi thi" riêng phía trên khối buổi học.
+- **FR-058**: Khi buổi thi trùng giờ với buổi học chưa huỷ hoặc với buổi thi khác, ứng dụng PHẢI cảnh
+  báo (không chặn) lúc lưu và hiển thị dấu "Trùng giờ" trên lịch và trang Hôm nay.
+- **FR-059**: Khi nhập ảnh, ứng dụng PHẢI tự nhận biết ảnh là lịch học dạng tuần hay bảng lịch thi;
+  không nhận biết được thì hỏi người dùng chọn loại.
+- **FR-060**: Với bảng lịch thi, ứng dụng PHẢI nhận diện các cột: mã học phần, tên học phần, lần thi,
+  ngày thi (ngày đầy đủ), giờ thi, hình thức thi, phòng thi, số báo danh; giờ kết thúc thiếu thì
+  tính từ thời lượng trong hình thức thi (ví dụ "60p").
+- **FR-061**: Cột thông tin sinh viên (họ tên, mã số sinh viên, ngày sinh, lớp) PHẢI bị bỏ qua: không
+  có trong kết quả nhận diện, bảng xem trước hay database.
+- **FR-062**: Bảng xem trước lịch thi PHẢI đánh dấu "Đã qua" và mặc định bỏ chọn các buổi thi đã kết
+  thúc; đánh dấu "Đã có trong lịch" và bỏ qua khi lưu các buổi trùng (cùng mã học phần hoặc tên học
+  phần, cùng ngày, cùng giờ bắt đầu, cùng lần thi); vẫn cho sửa mọi ô và đánh dấu ô chưa chắc chắn
+  như FR-032, FR-033.
+- **FR-063**: Ứng dụng PHẢI nhắc buổi thi mặc định 1 ngày trước và 1 giờ trước giờ thi; người dùng
+  chỉnh được các mốc mặc định trong cài đặt, chỉnh riêng hoặc tắt nhắc cho từng buổi thi.
+- **FR-064**: Buổi thi PHẢI được đồng bộ sang Lịch của Apple như buổi học (FR-051 đến FR-054), với
+  tiêu đề "Thi: <tên học phần>", phòng thi, thời gian và các lời báo trước; KHÔNG ghi số báo danh hay
+  hình thức thi vào bản sao (FR-052). Khi chưa bật đồng bộ, nhắc qua trình duyệt như FR-021.
+
 **Dữ liệu và ràng buộc chung**
 
 - **FR-024**: Mọi dữ liệu PHẢI được lưu cục bộ trên máy ngay khi thay đổi và còn nguyên sau khi tắt
@@ -568,8 +649,8 @@ tương ứng cho Triết học và không có task nào cho Giáo dục thể c
   nhiệm, không phải ứng dụng.
 - **FR-026**: Mọi chữ hiển thị PHẢI là tiếng Việt; ngày giờ theo định dạng Việt Nam
   (ví dụ `Thứ Hai, 16/11/2026`, giờ 24h).
-- **FR-027**: Mọi thao tác xoá (task, danh sách, môn học, học kỳ, ca học, nhãn) PHẢI yêu cầu xác
-  nhận.
+- **FR-027**: Mọi thao tác xoá (task, danh sách, môn học, học kỳ, ca học, nhãn, buổi thi) PHẢI yêu
+  cầu xác nhận.
 
 ### Key Entities
 
@@ -593,6 +674,10 @@ tương ứng cho Triết học và không có task nào cho Giáo dục thể c
   lệ riêng (đã huỷ, giờ khác, phòng khác) và nhãn riêng; có tối đa một task tự tạo.
 - **Cài đặt nhắc**: thời gian nhắc mặc định cho buổi học, cho task có giờ, giờ nhắc cho task chỉ có
   ngày (mặc định 08:00); bật/tắt "Đồng bộ với Lịch và Lời nhắc".
+- **Buổi thi**: sự kiện một lần; có mã học phần, tên học phần, lần thi, ngày, giờ bắt đầu/kết thúc,
+  hình thức thi, phòng thi, số báo danh, các mốc nhắc riêng (hoặc theo mặc định / tắt), nhãn (luôn có
+  nhãn "Thi").
+- **Cài đặt nhắc thi**: các mốc nhắc mặc định cho buổi thi (mặc định 1 ngày và 1 giờ trước).
 - **Cài đặt tự tạo deadline**: mốc giờ buổi tối (mặc định 20:00), giờ deadline Chủ Nhật (mặc định
   08:00), danh sách tên môn ngoại lệ (mặc định "Giáo dục thể chất").
 
@@ -633,6 +718,12 @@ tương ứng cho Triết học và không có task nào cho Giáo dục thể c
   với ảnh có giờ đúng theo bảng ca, 100% dòng nhận diện đúng giờ được gán đúng ca.
 - **SC-015**: Với một học kỳ mẫu, 100% buổi học thoả quy tắc có đúng một task tự tạo với hạn 08:00
   Chủ Nhật đúng tuần, và 0 task tự tạo cho môn ngoại lệ hoặc buổi đã huỷ.
+- **SC-019**: Với ảnh bảng lịch thi rõ nét, ít nhất 80% buổi thi được nhận diện đúng mọi trường; 100%
+  ảnh lịch thi được nhận đúng loại (không nhầm thành lịch học dạng tuần).
+- **SC-020**: 0 giá trị họ tên hay mã số sinh viên xuất hiện trong kết quả nhận diện, bảng xem trước
+  hay database sau khi nhập ảnh lịch thi.
+- **SC-021**: 100% buổi thi đã qua trong ảnh được đánh dấu "Đã qua" và bỏ chọn; 100% buổi thi trùng
+  giờ với buổi học chưa huỷ có cảnh báo.
 - **SC-016**: Lọc theo nhãn cập nhật lịch và danh sách gần như tức thì (dưới 1 giây) và chỉ hiện đúng
   các mục có nhãn đã chọn.
 
@@ -664,5 +755,10 @@ tương ứng cho Triết học và không có task nào cho Giáo dục thể c
 - Thời gian nhắc chọn từ các mốc sẵn (ví dụ 5, 10, 15, 30 phút, 1 giờ, 1 ngày) hoặc nhập số phút
   tuỳ ý.
 - Màu sắc chọn từ một bảng màu cố định khoảng 10–12 màu dễ phân biệt.
+- Bảng "Lịch thi cá nhân" trên cổng sinh viên có dạng bảng, mỗi dòng một buổi thi, với tiêu đề cột
+  tiếng Việt (ví dụ "Mã học phần", "Tên học phần", "Lần thi", "Ngày thi", "Giờ thi", "Hình thức thi",
+  "Phòng thi", "SBD") và ngày thi đầy đủ dạng dd/mm/yyyy. Mỗi lần nhập một ảnh, một loại lịch.
+- Buổi thi không gắn với môn học hay học kỳ; không áp dụng quy tắc tự tạo deadline (US10) cho buổi
+  thi.
 - Không có tính năng tìm kiếm, thống kê, xuất/nhập dữ liệu trong phiên bản này; người dùng tự sao
   lưu bằng cách sao chép thư mục dữ liệu (vị trí ghi trong README).

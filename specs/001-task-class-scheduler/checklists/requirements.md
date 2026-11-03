@@ -54,3 +54,8 @@
   v2.2.0): FR-051–FR-054, SC-017–SC-018, User Story 7 scenarios 6–10, related edge cases and
   assumptions. Browser notifications kept only as a fallback when sync is off (FR-021).
   User Stories 8–10 unchanged. Re-validated: all items pass.
+- 2026-11-04: Added User Story 11 "Lịch thi" (P2) with FR-055–FR-064, SC-019–SC-021, 6 edge cases,
+  2 assumptions; FR-027 now includes exams. Exam reminders reuse the Calendar/Reminders sync
+  (FR-064) with minimal fields (no candidate number / exam format). Student-info columns in exam
+  screenshots are dropped and never stored (FR-061). Requirements describe the exam table
+  generically ("cổng sinh viên"), without naming a specific school. Re-validated: all items pass.

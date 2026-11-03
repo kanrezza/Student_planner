@@ -6,7 +6,7 @@
 
 ## Summary
 
-Ứng dụng cá nhân quản lý task và lịch học, giao diện tiếng Việt. Ứng dụng chạy trên Mac qua Docker
+Ứng dụng cá nhân quản lý task, lịch học và lịch thi, giao diện tiếng Việt. Ứng dụng chạy trên Mac qua Docker
 Compose (OrbStack), gồm:
 - `db`: PostgreSQL, lưu trong named volume.
 - `backend`: Flask REST API; nhận diện ảnh offline bằng EasyOCR, model được tải sẵn vào image lúc
@@ -14,7 +14,8 @@ Compose (OrbStack), gồm:
 - `web`: React + Vite, phục vụ bằng nginx, chỉ mở trên `127.0.0.1`.
 
 Ngoài Docker có `mac-agent` (Python + PyObjC, đóng gói `.app`, tự chạy khi đăng nhập). Agent
-long-poll backend và đối chiếu buổi học/task vào Lịch và Lời nhắc của Apple kèm báo trước, để iCloud
+long-poll backend và đối chiếu buổi học, buổi thi và task vào Lịch và Lời nhắc của Apple kèm báo
+trước (buổi thi mặc định 1 ngày và 1 giờ), để iCloud
 đồng bộ sang iPhone. Thông báo trình duyệt chỉ là dự phòng khi chưa bật đồng bộ.
 
 Lõi nghiệp vụ được viết thành các hàm thuần, có test pytest:
@@ -22,7 +23,7 @@ Lõi nghiệp vụ được viết thành các hàm thuần, có test pytest:
 - Ca học.
 - Phát hiện trùng.
 - Quy tắc deadline tự tạo.
-- Phân tích bố cục ảnh.
+- Phân tích bố cục ảnh: lưới tuần của lịch học và bảng lịch thi, tự nhận biết loại ảnh (R14).
 - Đối chiếu đồng bộ.
 
 Hai rủi ro lớn nhất được kiểm chứng bằng spike trước: độ chính xác EasyOCR tiếng Việt, và quyền
@@ -66,7 +67,8 @@ Chrome trên Mac; iPhone nhận nhắc qua iCloud.
 **Scale/Scope**:
 - 1 người dùng.
 - Khoảng 2 học kỳ/năm × 6–8 môn × 15 tuần ≈ 100 buổi mỗi học kỳ; vài trăm task.
-- Khoảng 10 màn hình: Hôm nay, Lịch, Task, Môn học, Nhập ảnh, Học kỳ, Ca, Nhãn, Danh sách, Cài đặt.
+- Khoảng 11 màn hình: Hôm nay, Lịch, Task, Môn học, Lịch thi, Nhập ảnh, Học kỳ, Ca, Nhãn, Danh
+  sách, Cài đặt. Vài chục buổi thi mỗi học kỳ.
 
 ## Constitution Check
 
@@ -79,7 +81,7 @@ Chrome trên Mac; iPhone nhận nhắc qua iCloud.
 | **I. Code dễ đọc** | Lõi nghiệp vụ là hàm thuần nhỏ trong `services/` và `ocr/`; ruff (lint + format), ESLint + Prettier bắt buộc; tên tiếng Anh rõ nghĩa | PASS |
 | **II. Test chức năng chính** | pytest cho sinh buổi, ca, trùng, deadline tự tạo, parser ảnh, API; test đối chiếu của agent với `CalendarStore` giả; Vitest cho nhắc dự phòng; ảnh mẫu trong `backend/tests/fixtures/timetables/`. **Toàn bộ** lint + test chạy bằng một lệnh duy nhất `./scripts/test.sh` (hoặc `make test`) | PASS |
 | **III. Giao diện đơn giản** | Hôm nay là màn hình mặc định; mỗi màn hình một mục đích; bảng 12 màu cố định; không dùng UI kit lớn; FullCalendar chỉ cho lịch | PASS |
-| **IV. Chạy offline trên Mac** | Mọi thứ chạy trên Mac. Kết nối chỉ trên localhost (`127.0.0.1:8080`; `db` và `backend` không mở cổng ra ngoài). EasyOCR `download_enabled=False`, model nằm trong image. Không dùng CDN hay font ngoài. iCloud chỉ qua Lịch/Lời nhắc do agent ghi, khi người dùng bật, chỉ các trường tối thiểu, chỉ trong lịch và danh sách riêng (contract calendar-sync §2, §4) | PASS, có ghi chú ¹ |
+| **IV. Chạy offline trên Mac** | Mọi thứ chạy trên Mac. Kết nối chỉ trên localhost (`127.0.0.1:8080`; `db` và `backend` không mở cổng ra ngoài). EasyOCR `download_enabled=False`, model nằm trong image. Không dùng CDN hay font ngoài. iCloud chỉ qua Lịch/Lời nhắc do agent ghi, khi người dùng bật, chỉ các trường tối thiểu (buổi thi không gửi số báo danh, hình thức thi), chỉ trong lịch và danh sách riêng (contract calendar-sync §2, §4). Ảnh lịch thi: cột họ tên, mã số sinh viên bị loại ngay ở bước bố cục, không log, không lưu (R14, FR-061) | PASS, có ghi chú ¹ |
 | **V. Dữ liệu bền vững** | PostgreSQL với transaction, `fsync` bật, named volume; README ghi vị trí volume và cách sao lưu/khôi phục (`scripts/backup.sh`, `restore.sh`). Lưu trữ có **test tự động** `scripts/test-persistence.sh` (lưu → `down`/`up` → đọc lại; tắt đột ngột bằng `kill` → đọc lại), được `scripts/test.sh` gọi | PASS, có ghi chú ² |
 | **VI. Giao diện tiếng Việt** | Chuỗi tiếng Việt tập trung trong `frontend/src/i18n/vi.ts`; `Intl` vi-VN; FullCalendar locale `vi`, tuần bắt đầu Thứ Hai, 24h; lỗi API trả `message` tiếng Việt | PASS |
 | **Ràng buộc bổ sung (YAGNI, ít phụ thuộc, README)** | Docker + PostgreSQL + agent riêng nặng hơn mức tối thiểu cho app một người: xem Complexity Tracking | PASS khi có lý do |
@@ -138,22 +140,25 @@ backend/
 ├── app/
 │   ├── __init__.py           # create_app()
 │   ├── config.py
-│   ├── models/               # semester, shift, subject, class_session, task, task_list, tag, settings, sync
+│   ├── models/               # semester, shift, subject, class_session, task, task_list, tag, exam,
+│   │                         #   settings, sync
 │   ├── api/                  # blueprints: today, calendar, tasks, lists, semesters, shifts,
-│   │                         #   subjects, sessions, tags, imports, settings, reminders, sync
+│   │                         #   subjects, sessions, tags, exams, imports, settings, reminders, sync
 │   ├── schemas/              # pydantic request/response
 │   ├── services/
 │   │   ├── recurrence.py     # sinh buổi học (hàm thuần)
 │   │   ├── shifts.py         # khớp ca, áp giờ ca
 │   │   ├── duplicates.py     # phát hiện trùng
 │   │   ├── auto_deadlines.py # quy tắc + reconcile
+│   │   ├── exams.py          # buổi thi: CRUD, trùng giờ, nhãn "Thi" (US11)
 │   │   ├── reminders.py      # tính thời điểm nhắc
 │   │   ├── sync_feed.py      # feed + revision + long-poll
 │   │   └── colors.py         # display_color, bảng màu
 │   ├── ocr/
 │   │   ├── reader.py         # EasyOCR singleton, offline
 │   │   ├── preprocess.py     # HEIC, resize, tương phản
-│   │   ├── layout.py         # lọc vùng, nhận dạng lưới/danh sách, gom ô
+│   │   ├── layout.py         # lọc vùng, nhận biết loại ảnh (lưới tuần / bảng thi), gom ô
+│   │   ├── exam_table.py     # phân tích bảng lịch thi, loại cột thông tin sinh viên (R14)
 │   │   ├── fields.py         # regex trích trường
 │   │   ├── month_year.py     # xác định tháng/năm + nguồn
 │   │   └── preview.py        # ráp ImportPreview
@@ -175,7 +180,8 @@ frontend/
 │   ├── lib/                  # dates (định dạng vi), colors (bảng màu)
 │   ├── reminders/            # nhắc dự phòng: scheduler + Web Locks
 │   ├── components/           # TaskForm, SubjectForm, ShiftPicker, TagPicker, TagFilter, ConfirmDialog...
-│   └── pages/                # Today, Calendar, Tasks, Subjects, Import, Semesters, Shifts, Tags, Lists, Settings
+│   └── pages/                # Today, Calendar, Tasks, Subjects, Exams, Import, Semesters, Shifts, Tags,
+│                             #   Lists, Settings
 └── tests/                    # Vitest: reminders, dates, tag filter
 
 mac-agent/
@@ -211,11 +217,12 @@ LichHocAgent.app.
    - US5 lịch ngày/tuần/tháng.
    - US9 nhãn + lọc.
    - US8 đổi/xoá ca.
-   - US6 nhập ảnh (sau S1).
+   - US6 nhập ảnh lịch học (sau S1) cùng nhóm với US11 lịch thi (quản lý, nhập ảnh bảng lịch thi,
+     hiển thị trên lịch và trang Hôm nay). Migration `0002_exams` thêm bảng mới.
 5. **P3**:
    - US10 deadline tự tạo.
-   - US7: nhắc dự phòng, rồi mac-agent đồng bộ (sau S2).
-6. **Hoàn thiện**: README, backup/restore, kịch bản V1–V17, đo hiệu năng.
+   - US7: nhắc dự phòng, rồi mac-agent đồng bộ (sau S2); gồm cả buổi thi với nhiều mốc báo trước.
+6. **Hoàn thiện**: README, backup/restore, kịch bản V1–V18, đo hiệu năng.
 
 ## Complexity Tracking
 

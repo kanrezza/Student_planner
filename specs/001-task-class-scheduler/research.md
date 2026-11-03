@@ -217,7 +217,7 @@ executable + Info.plist), giữ nguyên hợp đồng API ở [contracts/calenda
     mọi buổi còn lại của học kỳ, nên trường hợp thông thường không bị ảnh hưởng. Riêng buổi học hoặc
     task tạo sát giờ (trong khoảng 1–2 phút trước giờ báo) có thể không kịp nhắc trên iPhone. Đây là
     giới hạn của iCloud, cần ghi vào README.
-- **Phát hiện cần đưa vào T122 (`calendar_store.py`) và T124 (`install.sh`)**:
+- **Phát hiện cần đưa vào T136 (`calendar_store.py`) và T138 (`install.sh`)**:
   1. **Nguồn Lời nhắc khác nguồn Lịch.** Tạo danh sách lời nhắc trong cùng nguồn CalDAV với Lịch bị lỗi
      `EKErrorDomain Code=24 "That account does not support reminders"`. Phải lấy nguồn từ
      `defaultCalendarForNewReminders().source()`.
@@ -436,6 +436,41 @@ người dùng đã chọn PostgreSQL (xem Complexity Tracking trong plan).
 **Ảnh mẫu**: Cần 3–5 ảnh chụp màn hình thật từ cổng thông tin của người dùng. Che hoặc xoá thông tin
 cá nhân (họ tên, mã sinh viên) trước khi commit. Bổ sung 2–3 ảnh tổng hợp do script Pillow vẽ (lưới
 tuần chuẩn) để test ổn định.
+
+---
+
+## R14. Lịch thi: nhận biết loại ảnh và phân tích bảng lịch thi
+
+**Quyết định**:
+- **Nhận biết loại ảnh** (FR-059) trong `ocr/layout.py`, chấm điểm theo từ khoá tiêu đề:
+  - Lưới tuần: ≥ 5 tiêu đề "Thứ 2…CN" xếp ngang.
+  - Bảng lịch thi: ≥ 3 trong các tiêu đề "Mã học phần", "Tên học phần", "Lần thi", "Ngày thi", "Giờ
+    thi", "Ca thi", "Hình thức thi", "Phòng thi", "SBD/Số báo danh" trên cùng một hàng; và cột ngày có
+    giá trị `dd/mm/yyyy` đầy đủ.
+  - Không đạt cả hai, hoặc đạt cả hai → `kind = "unknown"`, giao diện hỏi người dùng chọn loại.
+- **Phân tích bảng** (`ocr/exam_table.py`):
+  - Hàng tiêu đề xác định khoảng x của từng cột. Các khối chữ bên dưới gán vào cột theo tâm x và gom
+    thành hàng theo y; ô nhiều dòng (tên học phần dài, xuống dòng) được ghép.
+  - Ánh xạ tiêu đề → trường theo từ điển đồng nghĩa (ví dụ "Giờ thi"/"Thời gian"/"Ca thi" →
+    `start_time`, `end_time`), so khớp mờ (rapidfuzz ≥ 85) để chịu lỗi OCR mất dấu.
+  - Giờ: `HH:MM - HH:MM`, hoặc một giờ bắt đầu cộng thời lượng lấy từ "Hình thức thi" (`(\d+)\s*(p|phút)`).
+    Không suy ra được giờ kết thúc → `certain=false`.
+- **Bảo vệ thông tin sinh viên** (FR-061): cột có tiêu đề khớp "Họ tên", "Họ và tên", "Mã SV", "Mã sinh
+  viên", "Ngày sinh", "Lớp" bị **loại bỏ ngay sau khi phân tích bố cục**, trước khi tạo bất kỳ trường
+  nào. Khối chữ trong các cột đó không được ghi log và không có trong phản hồi API. Test kiểm tra
+  phản hồi không chứa các giá trị này.
+- **Đã qua** (FR-062): `end_at < now()` → `is_past = true`, `selected = false`.
+
+**Lý do**: Bảng lịch thi có cấu trúc đơn giản hơn lưới tuần (ngày đầy đủ, mỗi dòng một buổi), nên
+dùng chung OCR và pipeline nhưng tách bộ phân tích riêng để dễ đọc và dễ test. Loại bỏ cột cá nhân
+ngay ở bước bố cục là cách chắc chắn nhất để dữ liệu đó không lọt ra ngoài.
+
+**Kiểm chứng**: thêm 1–2 ảnh bảng lịch thi **giả lập** vào `samples/synthetic/` (có cột họ tên, mã SV
+bịa, có môn đã qua, có môn thiếu phòng, có "Trắc nghiệm trên máy 60p" không ghi giờ kết thúc) và chạy
+lại `ocr_spike.py --parsed` cho loại ảnh này. Kết quả **phải kiểm chứng lại bằng ảnh thật**, như R2.
+
+**Phương án đã cân nhắc**: dùng chung bộ phân tích dạng danh sách của lịch học: bố cục cột khác
+nhiều, gộp sẽ làm code khó đọc và khó bảo đảm loại bỏ cột cá nhân.
 
 ---
 

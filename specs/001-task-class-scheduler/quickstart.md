@@ -75,6 +75,7 @@ và tỉ lệ này phải ≥ 80% (SC-011).
 | V14 | Tắt đồng bộ | Tắt đồng bộ trong cài đặt | Lịch và danh sách "Lịch Học Cá Nhân" bị xoá; nhắc bằng trình duyệt hoạt động khi tab mở | FR-054, FR-021 |
 | V15 | Offline | Tắt Wi-Fi rồi lặp lại V1, V7, V11 | Mọi thứ hoạt động; agent và backend không có kết nối ra ngoài | FR-025, SC-013 |
 | V16 | Chỉ localhost | Từ máy khác cùng mạng LAN truy cập `http://<ip-mac>:8080` | Không kết nối được | Constitution IV |
+| V18 | Lịch thi | Thêm tay 1 buổi thi trùng giờ một buổi học; nhập `samples/synthetic/exam-01.png` (bảng lịch thi giả lập có 2 môn đã qua) | Cảnh báo trùng giờ; bảng xem trước loại "Lịch thi", 2 dòng "Đã qua" bỏ chọn, không có họ tên/mã SV; buổi thi hiện trên Hôm nay và lịch với nhãn "Thi"; nhập lại không tạo trùng | US11, SC-019 đến SC-021 |
 | V17 | Hiệu năng | Seed 6 môn + 200 task (`docker compose run --rm backend flask seed-demo`); mở trang Hôm nay | Hiện trong dưới 2 giây; chuyển chế độ xem dưới 1 giây | SC-005, SC-006 |
 
 ## Sao lưu & khôi phục
