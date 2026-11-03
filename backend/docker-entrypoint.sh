@@ -1,8 +1,13 @@
 #!/bin/sh
-# Chờ PostgreSQL sẵn sàng bằng cách thử chạy migration, rồi khởi động gunicorn.
+# Có tham số (ví dụ `docker compose run --rm backend pytest`): chạy đúng lệnh đó.
+# Không có tham số: chờ PostgreSQL, chạy migration, rồi khởi động gunicorn.
 set -e
 
 export FLASK_APP="app:create_app"
+
+if [ "$#" -gt 0 ]; then
+    exec "$@"
+fi
 
 attempt=1
 until flask db upgrade; do
