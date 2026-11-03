@@ -76,10 +76,10 @@ Chrome trên Mac; iPhone nhận nhắc qua iCloud.
 | Nguyên tắc | Cách plan đáp ứng | Kết quả |
 |------------|-------------------|---------|
 | **I. Code dễ đọc** | Lõi nghiệp vụ là hàm thuần nhỏ trong `services/` và `ocr/`; ruff (lint + format), ESLint + Prettier bắt buộc; tên tiếng Anh rõ nghĩa | PASS |
-| **II. Test chức năng chính** | pytest cho sinh buổi, ca, trùng, deadline tự tạo, parser ảnh, API, lưu trữ; test đối chiếu của agent với `CalendarStore` giả; Vitest cho nhắc dự phòng; ảnh mẫu trong `backend/tests/fixtures/timetables/`. Mỗi lệnh test chạy bằng một lệnh (quickstart) | PASS |
+| **II. Test chức năng chính** | pytest cho sinh buổi, ca, trùng, deadline tự tạo, parser ảnh, API; test đối chiếu của agent với `CalendarStore` giả; Vitest cho nhắc dự phòng; ảnh mẫu trong `backend/tests/fixtures/timetables/`. **Toàn bộ** lint + test chạy bằng một lệnh duy nhất `./scripts/test.sh` (hoặc `make test`) | PASS |
 | **III. Giao diện đơn giản** | Hôm nay là màn hình mặc định; mỗi màn hình một mục đích; bảng 12 màu cố định; không dùng UI kit lớn; FullCalendar chỉ cho lịch | PASS |
 | **IV. Chạy offline trên Mac** | Mọi thứ chạy trên Mac. Kết nối chỉ trên localhost (`127.0.0.1:8080`; `db` và `backend` không mở cổng ra ngoài). EasyOCR `download_enabled=False`, model nằm trong image. Không dùng CDN hay font ngoài. iCloud chỉ qua Lịch/Lời nhắc do agent ghi, khi người dùng bật, chỉ các trường tối thiểu, chỉ trong lịch và danh sách riêng (contract calendar-sync §2, §4) | PASS, có ghi chú ¹ |
-| **V. Dữ liệu bền vững** | PostgreSQL với transaction, `fsync` bật, named volume; README ghi vị trí volume và cách sao lưu/khôi phục (`scripts/backup.sh`, `restore.sh`); kịch bản V2 kiểm chứng | PASS, có ghi chú ² |
+| **V. Dữ liệu bền vững** | PostgreSQL với transaction, `fsync` bật, named volume; README ghi vị trí volume và cách sao lưu/khôi phục (`scripts/backup.sh`, `restore.sh`). Lưu trữ có **test tự động** `scripts/test-persistence.sh` (lưu → `down`/`up` → đọc lại; tắt đột ngột bằng `kill` → đọc lại), được `scripts/test.sh` gọi | PASS, có ghi chú ² |
 | **VI. Giao diện tiếng Việt** | Chuỗi tiếng Việt tập trung trong `frontend/src/i18n/vi.ts`; `Intl` vi-VN; FullCalendar locale `vi`, tuần bắt đầu Thứ Hai, 24h; lỗi API trả `message` tiếng Việt | PASS |
 | **Ràng buộc bổ sung (YAGNI, ít phụ thuộc, README)** | Docker + PostgreSQL + agent riêng nặng hơn mức tối thiểu cho app một người: xem Complexity Tracking | PASS khi có lý do |
 | **Quy trình (lint + test trước khi merge)** | Lệnh lint/test liệt kê trong quickstart; thêm hook `pre-commit` tuỳ chọn | PASS |
@@ -97,6 +97,8 @@ bộ vẫn là lưu trữ cục bộ, với vị trí cố định được ghi 
 - `contracts/calendar-sync.md` giới hạn đúng các trường tối thiểu và phạm vi lịch riêng (IV).
 - `data-model.md` dùng transaction và `bump_revision` trong service, không dùng trigger ẩn (I, V).
 - Quickstart có kịch bản kiểm chứng offline (V15) và chỉ-localhost (V16).
+- Sau `/speckit-analyze` (2026-11-04): bổ sung script chạy toàn bộ test bằng một lệnh và test tự động
+  cho lưu trữ (trước đây thiếu, vi phạm Nguyên tắc II và V); tasks.md đã có task tương ứng.
 - Không phát sinh vi phạm mới.
 
 ## Project Structure
@@ -121,7 +123,10 @@ specs/001-task-class-scheduler/
 docker-compose.yml            # db, backend, web; chỉ web mở 127.0.0.1:8080
 docker-compose.dev.yml        # tuỳ chọn: Vite dev server + mount code
 README.md                     # chạy 1 lệnh, vị trí dữ liệu, sao lưu, cài agent
+Makefile                      # make test → scripts/test.sh
 scripts/
+├── test.sh                   # toàn bộ lint + test bằng một lệnh (constitution II)
+├── test-persistence.sh       # test lưu trữ qua khởi động lại / tắt đột ngột (constitution V)
 ├── backup.sh
 └── restore.sh
 

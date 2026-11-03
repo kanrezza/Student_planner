@@ -32,7 +32,18 @@ Vào **Cài đặt → Đồng bộ với Lịch và Lời nhắc → Bật**, r
 
 ## Chạy test
 
+**Một lệnh cho toàn bộ** lint + test (constitution Nguyên tắc II), gồm cả test lưu trữ qua khởi
+động lại:
+
 ```bash
+./scripts/test.sh          # hoặc: make test
+./scripts/test.sh --ocr    # thêm bộ OCR với ảnh mẫu (chậm)
+```
+
+Chạy riêng từng phần khi cần:
+
+```bash
+./scripts/test-persistence.sh                          # lưu → down/up → đọc lại; kill → đọc lại
 docker compose run --rm backend pytest                 # unit + integration (không chạy OCR)
 docker compose run --rm backend pytest -m ocr          # OCR với ảnh mẫu (chậm)
 docker compose run --rm backend ruff check . && docker compose run --rm backend ruff format --check .
@@ -48,7 +59,7 @@ và tỉ lệ này phải ≥ 80% (SC-011).
 | # | Kịch bản | Bước | Kết quả mong đợi | Liên quan |
 |---|----------|------|------------------|-----------|
 | V1 | Task cơ bản | Tạo task "Nộp bài Toán", hạn 10/11 17:00, Cao, Học tập; sửa; hoàn thành; xoá | Hiển thị đúng ở danh sách, Hôm nay, lịch | US1, SC-001 |
-| V2 | Không mất dữ liệu | Tạo dữ liệu → `docker compose down` → `up -d` → khởi động lại Mac | Dữ liệu còn nguyên | FR-024, SC-008 |
+| V2 | Không mất dữ liệu | `./scripts/test-persistence.sh` (tự động); thêm thủ công: khởi động lại Mac | Script pass; dữ liệu còn nguyên sau khi khởi động lại máy | FR-024, SC-008 |
 | V3 | Học kỳ + nhiều môn | Tạo học kỳ "HK1 2026–2027" 07/09–20/12; nhập 6 môn một lần, chọn ca | Mỗi môn có đúng 15 buổi, đúng thứ, đúng giờ ca | US2, US8, SC-002, SC-003 |
 | V4 | Ngoại lệ buổi học | Huỷ buổi 16/11, đổi phòng buổi 23/11, rồi đổi phòng chung của môn | Hai buổi ngoại lệ giữ nguyên, các buổi khác cập nhật | US4, FR-013 |
 | V5 | Đổi giờ ca | Đổi Ca 2 thành 09:30–12:05, xác nhận | Môn dùng Ca 2 cập nhật, trừ buổi đã sửa giờ riêng | FR-040 |
