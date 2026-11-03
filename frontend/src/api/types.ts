@@ -27,6 +27,7 @@ export type Task = {
 };
 
 export type TaskInput = {
+  tag_ids?: number[];
   title: string;
   notes: string | null;
   due_date: string | null;
@@ -71,7 +72,19 @@ export type Subject = {
   session_count?: number;
 };
 
+export type ShiftRef = { start_shift_id: number; end_shift_id: number };
+
+export type Shift = {
+  id: number;
+  name: string;
+  start_time: string;
+  end_time: string;
+  position: number;
+};
+
 export type SubjectInput = {
+  shift?: ShiftRef | null;
+  tag_ids?: number[];
   name: string;
   class_code: string | null;
   lecturer: string | null;
@@ -97,6 +110,7 @@ export type ClassSession = {
   room_overridden: boolean;
   color: string;
   tags: Tag[];
+  own_tag_ids: number[];
   display_color: string;
   shift_label: string | null;
   auto_task_id: number | null;
@@ -109,3 +123,5 @@ export type TodayData = {
   overdue_tasks: Task[];
   notices: { code: string; message: string }[];
 };
+
+export type CalendarData = { sessions: ClassSession[]; tasks: Task[] };

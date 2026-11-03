@@ -17,6 +17,7 @@ from app.services import semesters as semester_service
 from app.services.colors import is_palette_color, next_color
 from app.services.recurrence import ExistingSession, generate_dates, plan_regeneration
 from app.services.revision import bump_revision
+from app.services.shifts import resolve_range
 from app.services.tag_links import replace_tag_links
 
 MAX_CONFLICTS_LISTED = 3
@@ -77,7 +78,8 @@ def resolve_times(data: dict, prefix: str = "") -> tuple[time, time, int | None,
             raise FieldErrors({f"{prefix}shift": "Ca học không tồn tại"})
         if last.position < first.position:
             raise FieldErrors({f"{prefix}shift": "Ca kết thúc phải sau hoặc trùng ca bắt đầu"})
-        return first.start_time, last.end_time, first.id, last.id
+        start_time, end_time = resolve_range(first, last)
+        return start_time, end_time, first.id, last.id
     if start is None or end is None:
         raise FieldErrors(
             {f"{prefix}start_time": "Cần chọn ca học hoặc nhập giờ bắt đầu và kết thúc"}

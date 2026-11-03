@@ -7,7 +7,9 @@ import { formatDate } from '../lib/dates';
 import { blankToNull } from '../lib/format';
 import { ColorPicker } from './ColorPicker';
 import { ConfirmDialog } from './ConfirmDialog';
-import { FormField } from './FormField';
+import { FormField, fieldError } from './FormField';
+import { ShiftPicker, timeChoiceToInput, type TimeChoice } from './ShiftPicker';
+import { TagPicker } from './TagPicker';
 import { FormActions } from './TaskForm';
 import { WeekdayPicker } from './WeekdayPicker';
 
@@ -35,13 +37,17 @@ export function SubjectForm({
     class_code: subject?.class_code ?? '',
     lecturer: subject?.lecturer ?? '',
     room: subject?.room ?? '',
-    start_time: subject?.start_time ?? '',
-    end_time: subject?.end_time ?? '',
     start_date: subject?.start_date ?? semester?.start_date ?? '',
     end_date: subject?.end_date ?? semester?.end_date ?? '',
   });
   const [weekdays, setWeekdays] = useState<number[]>(subject?.weekdays ?? []);
   const [color, setColor] = useState<string | null>(subject?.color ?? null);
+  const [timeChoice, setTimeChoice] = useState<TimeChoice>({
+    shift: subject?.shift ?? null,
+    start_time: subject?.start_time ?? '',
+    end_time: subject?.end_time ?? '',
+  });
+  const [tagIds, setTagIds] = useState<number[]>(subject?.tags.map((tag) => tag.id) ?? []);
   const [conflicts, setConflicts] = useState<ExceptionConflict[] | null>(null);
   const save = useSaveSubject();
 
@@ -62,8 +68,8 @@ export function SubjectForm({
       lecturer: blankToNull(form.lecturer),
       room: blankToNull(form.room),
       weekdays,
-      start_time: form.start_time || null,
-      end_time: form.end_time || null,
+      ...timeChoiceToInput(timeChoice),
+      tag_ids: tagIds,
       start_date: form.start_date || null,
       end_date: form.end_date || null,
       ...(color ? { color } : {}),
@@ -108,22 +114,17 @@ export function SubjectForm({
       <FormField label={t('subjects.fieldWeekdays')} name="weekdays" error={error}>
         <WeekdayPicker value={weekdays} onChange={setWeekdays} />
       </FormField>
-      <div className="form-row">
-        <FormField label={t('subjects.fieldStartTime')} name="start_time" error={error}>
-          <input
-            type="time"
-            value={form.start_time}
-            onChange={(e) => set('start_time')(e.target.value)}
-          />
-        </FormField>
-        <FormField label={t('subjects.fieldEndTime')} name="end_time" error={error}>
-          <input
-            type="time"
-            value={form.end_time}
-            onChange={(e) => set('end_time')(e.target.value)}
-          />
-        </FormField>
-      </div>
+      <FormField label={t('shifts.pick')} name="shift" error={error}>
+        <ShiftPicker value={timeChoice} onChange={setTimeChoice} />
+        {(['start_time', 'end_time'] as const).map((field) => {
+          const message = fieldError(error, field);
+          return message ? (
+            <span key={field} className="field__error" role="alert">
+              {message}
+            </span>
+          ) : null;
+        })}
+      </FormField>
       <div className="form-row">
         <FormField label={t('subjects.fieldStartDate')} name="start_date" error={error}>
           <input
@@ -150,6 +151,9 @@ export function SubjectForm({
       </div>
       <FormField label={t('subjects.fieldLecturer')} name="lecturer" error={error}>
         <input value={form.lecturer} onChange={(e) => set('lecturer')(e.target.value)} />
+      </FormField>
+      <FormField label={t('tags.pick')} name="tag_ids" error={error}>
+        <TagPicker value={tagIds} onChange={setTagIds} />
       </FormField>
       <FormField label={t('subjects.fieldColor')} name="color" error={error}>
         <ColorPicker value={color} onChange={setColor} />
