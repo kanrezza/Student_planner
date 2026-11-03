@@ -47,12 +47,13 @@ và cũng dễ phát triển, bảo trì hơn.
 - Ứng dụng phục vụ một người dùng duy nhất và PHẢI chạy trên macOS (máy Mac của chủ dự án).
 - KHÔNG có đăng nhập, tài khoản, phân quyền hay quản lý nhiều người dùng.
 - KHÔNG cần server riêng, backend từ xa hay dịch vụ cloud; mọi chức năng PHẢI hoạt động
-  đầy đủ khi không có kết nối internet.
-- Không gửi dữ liệu ra ngoài máy (không analytics, không telemetry, không gọi API từ xa).
+  đầy đủ khi không có kết nối internet. Ứng dụng chạy offline 100%, không có ngoại lệ.
+- Không gửi dữ liệu hay ảnh ra ngoài máy (không analytics, không telemetry, không gọi API
+  hay dịch vụ AI từ xa). Mọi xử lý, kể cả nhận diện ảnh, PHẢI chạy hoàn toàn trên máy.
 - Không cần hỗ trợ Windows, Linux, mobile hay trình duyệt khác ngoài phạm vi chạy trên Mac.
 
 **Lý do**: Phạm vi một người, một máy, không mạng giúp loại bỏ toàn bộ độ phức tạp về
-bảo mật, đồng bộ và hạ tầng, giữ ứng dụng nhỏ gọn và dễ bảo trì.
+bảo mật, đồng bộ và hạ tầng, giữ ứng dụng nhỏ gọn, riêng tư và dễ bảo trì.
 
 ### V. Dữ Liệu Cục Bộ Bền Vững
 
@@ -104,4 +105,4 @@ dễ dàng và không gây nhầm lẫn.
 - Mọi spec, plan và review PHẢI kiểm tra tuân thủ constitution; độ phức tạp vượt mức
   PHẢI có lý do chính đáng.
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
+**Version**: 2.0.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
