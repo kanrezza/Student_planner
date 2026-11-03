@@ -46,14 +46,35 @@ và cũng dễ phát triển, bảo trì hơn.
 
 - Ứng dụng phục vụ một người dùng duy nhất và PHẢI chạy trên macOS (máy Mac của chủ dự án).
 - KHÔNG có đăng nhập, tài khoản, phân quyền hay quản lý nhiều người dùng.
-- KHÔNG cần server riêng, backend từ xa hay dịch vụ cloud; mọi chức năng PHẢI hoạt động
-  đầy đủ khi không có kết nối internet. Ứng dụng chạy offline 100%, không có ngoại lệ.
+- KHÔNG cần server từ xa hay dịch vụ cloud; mọi chức năng PHẢI hoạt động đầy đủ khi không có
+  kết nối internet.
+- KHÔNG kết nối ra ngoài máy. Kết nối nội bộ trong máy (localhost, ví dụ giữa giao diện,
+  backend và cơ sở dữ liệu chạy trên cùng máy Mac) được phép. Ngoại lệ duy nhất là đồng bộ
+  lịch qua iCloud của chính người dùng, nêu dưới đây.
 - Không gửi dữ liệu hay ảnh ra ngoài máy (không analytics, không telemetry, không gọi API
   hay dịch vụ AI từ xa). Mọi xử lý, kể cả nhận diện ảnh, PHẢI chạy hoàn toàn trên máy.
 - Không cần hỗ trợ Windows, Linux, mobile hay trình duyệt khác ngoài phạm vi chạy trên Mac.
 
+**Ngoại lệ duy nhất — đồng bộ lịch qua iCloud của chính người dùng**:
+
+- Ứng dụng ĐƯỢC PHÉP ghi bản sao lời nhắc (buổi học, task) vào ứng dụng Lịch và Lời nhắc có sẵn
+  trên Mac, để hệ thống của Apple tự đồng bộ qua iCloud của chính người dùng sang iPhone.
+  Ứng dụng không tự kết nối tới iCloud; việc đồng bộ do Lịch/Lời nhắc của Apple đảm nhiệm.
+- Chức năng này PHẢI do người dùng bật trong cài đặt, tắt được bất kỳ lúc nào, và khi tắt thì
+  ứng dụng PHẢI xoá các mục nó đã ghi.
+- Chỉ được ghi các thông tin tối thiểu cần cho lời nhắc: tên môn hoặc tiêu đề task, thời gian,
+  phòng học và thời điểm nhắc. KHÔNG ghi ghi chú, ảnh hay dữ liệu nào khác.
+- Ứng dụng chỉ được ghi vào lịch và danh sách lời nhắc riêng do nó tạo, không được đọc, sửa
+  hay xoá mục nào khác của người dùng.
+- Dữ liệu gốc vẫn PHẢI lưu và xử lý hoàn toàn trên máy; Lịch/Lời nhắc chỉ là bản sao để nhắc.
+  Mọi ngoại lệ mới về gửi dữ liệu ra ngoài PHẢI được bổ sung vào constitution trước khi
+  triển khai.
+
 **Lý do**: Phạm vi một người, một máy, không mạng giúp loại bỏ toàn bộ độ phức tạp về
-bảo mật, đồng bộ và hạ tầng, giữ ứng dụng nhỏ gọn, riêng tư và dễ bảo trì.
+bảo mật, đồng bộ và hạ tầng, giữ ứng dụng nhỏ gọn, riêng tư và dễ bảo trì. Người dùng không
+luôn mang theo Mac, nên lời nhắc trên iPhone là cần thiết; đi qua ứng dụng có sẵn của Apple
+giữ cho ứng dụng không kết nối ra ngoài máy và không cần server riêng. Kết nối localhost
+không làm dữ liệu rời khỏi máy nên được phép.
 
 ### V. Dữ Liệu Cục Bộ Bền Vững
 
@@ -105,4 +126,4 @@ dễ dàng và không gây nhầm lẫn.
 - Mọi spec, plan và review PHẢI kiểm tra tuân thủ constitution; độ phức tạp vượt mức
   PHẢI có lý do chính đáng.
 
-**Version**: 2.0.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
+**Version**: 2.2.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
