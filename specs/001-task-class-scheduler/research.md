@@ -63,6 +63,61 @@ và FR-029: lúc chạy không cần internet.
 chính xác ký tự và thời gian. Nếu tên môn sai dấu quá nhiều, thử thêm tham số `decoder='beamsearch'`
 và tiền xử lý (phóng to ×1.5, tăng tương phản) trước khi bàn đến phương án khác.
 
+**Kết quả spike S1 (T010, 2026-11-04)**
+
+> ⚠️ **Đo trên 3 ảnh GIẢ LẬP** (`samples/synthetic/`, xem README trong đó), vì chưa có ảnh chụp thật.
+> Kết luận dưới đây là tạm thời và **phải kiểm chứng lại bằng ảnh thật trước khi làm US6**.
+
+- **Cách đo**: script `backend/spikes/ocr_spike.py` chạy trong image backend với `--network none`.
+  Model nạp trong 2 giây với `download_enabled=False`, chứng tỏ chạy offline được.
+  - Lần 1: tìm chuỗi đúng y nguyên trong kết quả OCR.
+  - Lần 2 (`--parsed`): gom khối theo ô (cột lấy từ tiêu đề "Thứ 2…CN"), rồi chuẩn hoá các lỗi có quy
+    luật: `:` đọc thành `.`, mất dấu `-` giữa hai giờ, `N01` đọc thành `NO1`, đối chiếu giờ với ca và
+    tiết. Tên môn **không** được sửa dấu.
+
+| Ảnh | OCR (giây) | Buổi đúng mọi trường | Giờ | Mã lớp | Phòng | GV | Tên môn |
+|-----|-----------:|---------------------:|----:|-------:|------:|---:|--------:|
+| sample-01 (2880×1800 PNG) | 38–54 | **7/9 (77.8%)** | 100% | 100% | 100% | 100% | 77.8% |
+| sample-03 (2880×1800 JPEG q70) | 40–64 | **5/6 (83.3%)** | 100% | 100% | 100% | 100% | 83.3% |
+| sample-02 (1440×900, phóng to ×2) | 54 | **0/7 (0%)** | 100% | 42.9% | 57.1% | 14.3% | 42.9% |
+
+- **Ảnh Retina**: tổng 12/15 = **80%** buổi đúng hoàn toàn, vừa chạm mục tiêu SC-011. Mọi lỗi còn
+  lại nằm ở **tên môn**: sai dấu ("thống" → "thông") hoặc mất dấu gạch ("Mác - Lênin" → "Mác Lênin").
+  Độ tin cậy OCR của các chữ sai dấu vẫn cao (> 0.8), nên **ngưỡng tin cậy 0.6 không bắt được loại
+  lỗi này**.
+- **Ảnh màn hình thường 1440×900**: không đạt.
+  - Không phóng to thì tiêu đề "Thứ 2/3/4" bị đọc thành "Thứ", nên không xác định được cột.
+  - Phóng to ×2 thì xác định được cột và giờ đúng 100% (nhờ đối chiếu tiết/ca), nhưng dấu tiếng Việt
+    sai nhiều: "Kiến" → "Kiên", "Kỹ năng mềm" → "Kỹ năng mêm", "ThS." → "TnS_".
+- **Tháng/năm**: tiêu đề lịch thu nhỏ ("Tháng 11/2026") đọc đúng ở mọi lần chạy. Ngày giờ trên thanh
+  menu đọc được nhưng dấu `:` thành `.` (ví dụ "Th 2 9 thg 11 08.30"), nên cần regex chấp nhận cả hai.
+- **Cấu hình**: `decoder='beamsearch'` không cải thiện mà chậm hơn. Phóng to ×1.5 + tăng tương phản
+  không giúp với ảnh Retina; chỉ cần cho ảnh < 2000 px.
+- **Thời gian**: 38–64 giây mỗi ảnh (CPU, OrbStack, Apple Silicon). Giới hạn 60 giây trong plan **có
+  lúc bị vượt** (sample-03 lần đầu: 63.5 giây).
+- **Image backend**: 2.46 GB. Model CRAFT 83 MB + latin_g2 15 MB nằm sẵn trong image.
+
+**Quyết định tạm thời**: **giữ EasyOCR** cho US6, kèm các điều kiện sau. Chưa chuyển sang Apple
+Vision; sẽ xem lại sau khi có ảnh thật.
+1. Đưa các quy tắc chuẩn hoá đã chứng minh hiệu quả vào `ocr/fields.py` và `ocr/layout.py` (T096,
+   T097):
+   - Giờ chấp nhận `[:.*,]` làm dấu phân cách; bỏ qua dấu `-` bị mất.
+   - Nếu giờ đọc lệch ca nhưng tiết đọc được thì tin tiết, và đánh dấu chưa chắc chắn.
+   - Sửa `N[O0]\d` thành `N0\d` và `[A-Z]{3}[I1l]\d{3}` thành `[A-Z]{3}1\d{3}` trong mã lớp.
+   - Tiêu đề cột chấp nhận cả dạng mất dấu hoặc dính chữ ("Thu2", "Thứ2").
+2. Ảnh rộng < 2000 px: phóng to ×2 trước khi OCR, và hiện cảnh báo "Ảnh độ phân giải thấp, hãy kiểm
+   tra kỹ tên môn và giảng viên".
+3. Lỗi dấu ở tên môn không bị ngưỡng tin cậy bắt được. Để vẫn "dễ phát hiện" theo SC-011, bảng xem
+   trước (T099 `preview.py`, T103 giao diện) cần:
+   - So khớp gần đúng với tên môn đã có (đã có trong kế hoạch).
+   - Đánh dấu chưa chắc chắn khi cùng một môn (cùng mã lớp) xuất hiện nhiều lần nhưng tên đọc ra khác
+     nhau.
+4. Tăng tốc để giữ dưới 60 giây: chỉ OCR vùng lưới tuần, lịch thu nhỏ và thanh menu, sau khi tìm tiêu
+   đề cột ở lượt nhận diện nhanh đầu tiên.
+5. **Bắt buộc**: chạy lại `ocr_spike.py --parsed` trên 3–5 ảnh thật trước khi bắt đầu US6. Nếu ảnh
+   thật cho < 80%, thử Apple Vision qua mac-agent (phương án dự phòng bên dưới) và so sánh trên cùng bộ
+   ảnh.
+
 **Phương án đã cân nhắc**:
 - Tesseract với gói `vie`: nhẹ hơn, nhưng thường kém hơn với chữ trên giao diện web và khó lấy bố
   cục ổn định.
@@ -116,7 +171,8 @@ cần thiết với định dạng cổng thông tin khá cố định.
 
 ## R4. Tiến trình nhắc trên Mac: Python + PyObjC hay Swift — **SPIKE**
 
-**Quyết định**: Dùng **Python 3.12 + PyObjC (`pyobjc-framework-EventKit`)**, đóng gói bằng
+**Quyết định**: Dùng **Python 3.11 (Homebrew, dạng framework) + PyObjC
+(`pyobjc-framework-EventKit`)**, đóng gói bằng
 **py2app** thành `LichHocAgent.app` (app ẩn, `LSUIElement=true`, không có icon trên Dock). Chuyển
 sang Swift nếu spike thất bại.
 
@@ -137,6 +193,47 @@ với app cá nhân; ghi chú trong README.
 **Spike cần làm**: build .app tối thiểu, xin quyền, tạo một sự kiện có báo trước trong lịch iCloud,
 kiểm tra sự kiện hiện trên iPhone. Nếu không đạt sau 1 ngày, chuyển sang Swift (Swift Package,
 executable + Info.plist), giữ nguyên hợp đồng API ở [contracts/calendar-sync.md](contracts/calendar-sync.md).
+
+**Kết quả spike S2 (T011, 2026-11-04)**: `mac-agent/spikes/eventkit_spike.py`, đóng gói thành
+`LichHocSpike.app` (py2app, ký ad-hoc), chạy bằng `open` trên macOS 26.7.1 (Apple Silicon).
+
+- ✅ **Phía Mac đạt**:
+  - Xin quyền đầy đủ cho Lịch và Lời nhắc thành công. Hộp thoại hiện câu giải thích tiếng Việt lấy từ
+    Info.plist.
+  - Tạo được lịch và danh sách lời nhắc "Lịch Học Cá Nhân (spike)" trong nguồn **iCloud**.
+  - Lưu được `EKEvent` có `EKAlarm` báo trước tương đối và `EKReminder` có `dueDateComponents` + alarm
+    tuyệt đối; `commit_()` thành công.
+  - Đọc lại được sự kiện theo `URL = lichhoc://spike/session/1`, tức cách đối chiếu bằng `sync_key`
+    qua trường URL là khả thi.
+  - **Kết luận: giữ Python + PyObjC, không cần chuyển sang Swift.**
+- ✅ **iPhone đạt** (người dùng kiểm tra trên máy thật, 2026-11-04):
+  - Lần 1: sự kiện báo trước 5 phút, tạo lúc 04:02 cho 04:12. Sự kiện đồng bộ sang iPhone kèm cảnh
+    báo "Trước 5 phút", nhưng **không có thông báo**, nhiều khả năng vì đồng bộ đến sau giờ báo
+    (04:07).
+  - Lần 2: tạo lúc 04:11 một sự kiện 04:27 và một lời nhắc hạn 04:27, cả hai báo lúc 04:22. Cả hai
+    **hiện trên iPhone lúc 04:12** (iCloud đồng bộ khoảng 1 phút), và **có thông báo lúc 04:22**.
+  - Kết luận: chuỗi ứng dụng → EventKit → iCloud → iPhone hoạt động, thông báo đúng giờ (SC-017).
+    Một lời nhắc chỉ đến được iPhone nếu đồng bộ xong **trước** giờ báo. Feed của agent đã ghi trước
+    mọi buổi còn lại của học kỳ, nên trường hợp thông thường không bị ảnh hưởng. Riêng buổi học hoặc
+    task tạo sát giờ (trong khoảng 1–2 phút trước giờ báo) có thể không kịp nhắc trên iPhone. Đây là
+    giới hạn của iCloud, cần ghi vào README.
+- **Phát hiện cần đưa vào T122 (`calendar_store.py`) và T124 (`install.sh`)**:
+  1. **Nguồn Lời nhắc khác nguồn Lịch.** Tạo danh sách lời nhắc trong cùng nguồn CalDAV với Lịch bị lỗi
+     `EKErrorDomain Code=24 "That account does not support reminders"`. Phải lấy nguồn từ
+     `defaultCalendarForNewReminders().source()`.
+  2. **py2app không chạy với Python do uv cài** (bản standalone: `zlib` không có `__file__`). Cần Python
+     dạng framework (Homebrew hoặc python.org). **Quyết định (người dùng chọn): mac-agent dùng Homebrew
+     `python@3.11`** (`/opt/homebrew/opt/python@3.11/bin/python3.11`; đã kiểm chứng với PyObjC 13 và
+     py2app 0.28.10). `requires-python = ">=3.11,<3.12"`. Backend vẫn dùng Python 3.12 trong Docker.
+  3. **py2app báo `install_requires is no longer supported`** khi thư mục chạy build có
+     `pyproject.toml` khai báo `[project].dependencies`. `install.sh` phải build từ một thư mục tạm
+     không có pyproject (spike build trong `mac-agent/spikes/`).
+  4. **Build lại chưa chắc làm macOS hỏi lại quyền.** Lần chạy thứ ba (build và ký ad-hoc lại) xong
+     trong 11 giây mà không hỏi lại quyền. 108 giây của lần thứ hai nhiều khả năng là thời gian người
+     dùng bấm hộp thoại. Rủi ro này chưa được xác nhận, nhưng README vẫn nên dặn: nếu bị hỏi lại quyền
+     sau khi cập nhật agent thì bấm "Cho phép".
+- **Dọn dữ liệu spike**: `open -a mac-agent/spikes/dist/LichHocSpike.app --args --cleanup` xoá lịch và
+  danh sách "(spike)". Đã chạy lúc 04:22; xoá thành công cả hai.
 
 **Phương án đã cân nhắc**:
 - Swift: hợp nền tảng nhất nhưng thêm ngôn ngữ thứ hai. Là phương án dự phòng.

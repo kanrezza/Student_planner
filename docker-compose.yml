@@ -1,0 +1,45 @@
+# Lịch Học Cá Nhân — chạy bằng: docker compose up -d --build (lần đầu), sau đó: docker compose up -d
+# Chỉ service `web` mở cổng, và chỉ trên 127.0.0.1 (constitution Nguyên tắc IV: chỉ kết nối localhost).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: lichhoc
+      POSTGRES_USER: lichhoc
+      POSTGRES_PASSWORD: lichhoc
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - lichhoc_pgdata:/var/lib/postgresql/data
+      - ./docker/db-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lichhoc -d lichhoc"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+    # Không mở cổng: chỉ backend truy cập qua mạng nội bộ của Compose.
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://lichhoc:lichhoc@db:5432/lichhoc
+      TEST_DATABASE_URL: postgresql+psycopg://lichhoc:lichhoc@db:5432/lichhoc_test
+      TZ: Asia/Ho_Chi_Minh
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    # Không mở cổng: nginx của `web` chuyển tiếp /api sang đây.
+
+  web:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  lichhoc_pgdata:
+    # Tên cố định để dễ tìm và sao lưu (README). `docker compose down -v` sẽ XOÁ volume này.
+    name: lichhoc_pgdata

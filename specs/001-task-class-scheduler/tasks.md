@@ -41,13 +41,13 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
 
 **Purpose**: Khởi tạo dự án, công cụ, Docker; chạy 2 spike rủi ro.
 
-- [ ] T001 Tạo cấu trúc thư mục đúng như plan.md (`backend/app/{models,api,schemas,services,ocr,lib}`,
+- [X] T001 Tạo cấu trúc thư mục đúng như plan.md (`backend/app/{models,api,schemas,services,ocr,lib}`,
   `backend/tests/{unit,integration,ocr,fixtures/timetables}`, `backend/migrations`,
   `frontend/src/{api,i18n,lib,reminders,components,pages}`, `frontend/tests`,
   `mac-agent/{lichhoc_agent,launchd,scripts,tests}`, `scripts/`, `docker/db-init/`) và file
   `.gitignore` ở gốc. `.gitignore` bỏ qua `node_modules/`, `dist/`, `__pycache__/`, `.venv/`,
   `.pytest_cache/`, `backups/`, `*.dump`, `.env`, `mac-agent/build/`, `mac-agent/dist/`.
-- [ ] T002 Tạo `backend/pyproject.toml`:
+- [X] T002 Tạo `backend/pyproject.toml`:
   - Dependencies: Python 3.12, `flask>=3`, `flask-sqlalchemy>=3.1`, `flask-migrate>=4`,
     `psycopg[binary]>=3.1`, `pydantic>=2`, `gunicorn`, `easyocr>=1.7`, `pillow`, `pillow-heif`,
     `rapidfuzz`.
@@ -55,7 +55,7 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
   - Cấu hình ruff: `line-length = 100`, `select = ["E","F","I","B","UP"]`.
   - Cấu hình pytest: `testpaths = ["tests"]`, `markers = ["ocr: chạy EasyOCR thật trên ảnh mẫu
     (chậm)"]`, `addopts = "-m 'not ocr'"`.
-- [ ] T003 [P] Tạo `backend/Dockerfile`:
+- [X] T003 [P] Tạo `backend/Dockerfile`:
   - Base `python:3.12-slim`; `apt-get install libgl1 libglib2.0-0`.
   - `pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu`, rồi cài gói từ
     pyproject.
@@ -65,7 +65,7 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
   - Tạo `backend/docker-entrypoint.sh`: chờ database (thử lại `flask db upgrade` tối đa 30 lần, cách
     nhau 1 giây), rồi `exec gunicorn -w 1 --threads 4 --timeout 120 -b 0.0.0.0:8000
     "app:create_app()"`.
-- [ ] T004 [P] Khởi tạo frontend trong `frontend/package.json`, `frontend/vite.config.ts`,
+- [X] T004 [P] Khởi tạo frontend trong `frontend/package.json`, `frontend/vite.config.ts`,
   `frontend/tsconfig.json`, `frontend/index.html`:
   - Dependencies: `react@18`, `react-dom@18`, `react-router-dom@6`, `@tanstack/react-query@5`,
     `@fullcalendar/core@6`, `@fullcalendar/react@6`, `@fullcalendar/daygrid@6`,
@@ -76,13 +76,13 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
     ngoài.
   - Vite dev proxy `/api` → `http://127.0.0.1:8080`.
   - Scripts: `dev`, `build`, `test` (vitest run), `lint`.
-- [ ] T005 [P] Tạo `frontend/Dockerfile` (build bằng `node:22-alpine` → chạy bằng
+- [X] T005 [P] Tạo `frontend/Dockerfile` (build bằng `node:22-alpine` → chạy bằng
   `nginx:1.27-alpine`) và `frontend/nginx.conf`:
   - Phục vụ SPA với fallback về `index.html`.
   - `location /api/ { proxy_pass http://backend:8000; }`, `client_max_body_size 21m;`,
     `proxy_read_timeout 120s;`.
   - Riêng `location /api/sync/changes` đặt `proxy_read_timeout 35s; proxy_buffering off;`.
-- [ ] T006 Tạo `docker-compose.yml` và `docker/db-init/01-test-db.sql`:
+- [X] T006 Tạo `docker-compose.yml` và `docker/db-init/01-test-db.sql`:
   - Service `db`: `postgres:16-alpine`; `POSTGRES_DB=lichhoc`, `POSTGRES_USER=lichhoc`,
     `POSTGRES_PASSWORD=lichhoc`, `TZ=Asia/Ho_Chi_Minh`.
     - Volume `lichhoc_pgdata:/var/lib/postgresql/data` và `./docker/db-init:/docker-entrypoint-initdb.d:ro`.
@@ -95,19 +95,20 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
   - Cả ba service `restart: unless-stopped`.
   - Khai báo `volumes: lichhoc_pgdata: {name: lichhoc_pgdata}`.
   - `01-test-db.sql`: `CREATE DATABASE lichhoc_test OWNER lichhoc;`.
-- [ ] T007 [P] Tạo `docker-compose.dev.yml` (override): thêm service `web-dev` chạy `npm run dev --
+- [X] T007 [P] Tạo `docker-compose.dev.yml` (override): thêm service `web-dev` chạy `npm run dev --
   --host 0.0.0.0` với cổng `127.0.0.1:5173:5173` và mount `./frontend`; mount `./backend:/app` cho
   `backend`, chạy `flask run --debug -h 0.0.0.0 -p 8000`.
-- [ ] T008 [P] Tạo `frontend/eslint.config.js` (typescript-eslint + react-hooks) và
+- [X] T008 [P] Tạo `frontend/eslint.config.js` (typescript-eslint + react-hooks) và
   `frontend/.prettierrc` (`printWidth: 100`, `singleQuote: true`).
-- [ ] T009 [P] Tạo `mac-agent/pyproject.toml` và `mac-agent/setup.py`:
-  - Dependencies: Python 3.12, `pyobjc-framework-EventKit`, `requests`, `py2app`; dev `pytest`,
+- [X] T009 [P] Tạo `mac-agent/pyproject.toml` và `mac-agent/setup.py`:
+  - Dependencies: Python 3.11 (Homebrew dạng framework, xem research R4), `pyobjc-framework-EventKit`,
+    `requests`, `py2app`; dev `pytest`,
     `ruff`.
   - `setup.py` dùng py2app, `app=['lichhoc_agent/main.py']`, `name='LichHocAgent'`.
   - `plist` gồm: `CFBundleIdentifier=vn.lichhoc.agent`, `LSUIElement=True`,
     `NSCalendarsFullAccessUsageDescription` và `NSRemindersFullAccessUsageDescription` bằng tiếng
     Việt (ví dụ "Lịch Học Cá Nhân cần ghi buổi học vào Lịch để nhắc bạn trên Mac và iPhone").
-- [ ] T010 [P] **SPIKE S1 (research R2)**: viết `backend/spikes/ocr_spike.py`. Script chạy EasyOCR
+- [X] T010 [P] **SPIKE S1 (research R2)**: viết `backend/spikes/ocr_spike.py`. Script chạy EasyOCR
   (`['vi','en']`, `download_enabled=False`) trên mọi ảnh trong `backend/tests/fixtures/timetables/`
   và in: số khối chữ, độ tin cậy trung bình, thời gian chạy, 30 dòng chữ đầu.
   - Cần người dùng cung cấp 3–5 ảnh chụp toàn màn hình thời khoá biểu thật, đã che họ tên và mã sinh
@@ -115,7 +116,7 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
   - Thử thêm `decoder='beamsearch'` và tiền xử lý (phóng to ×1.5, tăng tương phản).
   - Ghi kết quả và quyết định (giữ EasyOCR hay chuyển Apple Vision) vào mục "Kết quả spike" cuối R2
     trong `specs/001-task-class-scheduler/research.md`.
-- [ ] T011 [P] **SPIKE S2 (research R4)**: viết `mac-agent/spikes/eventkit_spike.py` và build thành
+- [X] T011 [P] **SPIKE S2 (research R4)**: viết `mac-agent/spikes/eventkit_spike.py` và build thành
   `.app` bằng py2app với Info.plist ở T009, ký `codesign --force --deep -s -`. App phải:
   - Xin quyền đầy đủ cho Lịch và Lời nhắc (`requestFullAccessToEventsWithCompletion_`,
     `requestFullAccessToRemindersWithCompletion_`).
@@ -978,6 +979,8 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
   - `EventKitStore` dùng PyObjC:
     - Xin quyền đầy đủ; tìm nguồn iCloud (`EKSourceTypeCalDAV` có tiêu đề "iCloud"), nếu không có
       thì nguồn cục bộ.
+    - Danh sách lời nhắc phải tạo trong nguồn `defaultCalendarForNewReminders().source()`, không
+      dùng nguồn của Lịch (lỗi `EKErrorDomain Code=24`, research R4).
     - Tạo `EKCalendar` cho sự kiện và cho lời nhắc tên "Lịch Học Cá Nhân".
     - Ánh xạ trường đúng contracts/calendar-sync.md §5, `URL=lichhoc://session/{id}` hoặc
       `lichhoc://task/{id}`.
@@ -990,7 +993,11 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
 - [ ] T124 [US7] Tạo `mac-agent/launchd/vn.lichhoc.agent.plist` (`Label=vn.lichhoc.agent`,
   `RunAtLoad=true`, `KeepAlive=true`, `ProgramArguments` trỏ tới
   `~/Applications/LichHocAgent.app/Contents/MacOS/LichHocAgent`) và `mac-agent/scripts/install.sh`:
-  - Tạo venv, `python setup.py py2app`, `codesign --force --deep -s -`.
+  - Tạo venv bằng Homebrew `/opt/homebrew/opt/python@3.11/bin/python3.11` (Python dạng framework;
+    Python do uv cài không chạy được py2app, xem research R4).
+  - Chạy `python setup.py py2app` từ một **thư mục tạm không có `pyproject.toml`** (chép `setup.py`,
+    `app_plist.py`, `lichhoc_agent/` sang), vì py2app báo lỗi `install_requires is no longer
+    supported` khi gặp `[project].dependencies`. Sau đó chạy `codesign --force --deep -s -`.
   - Chép app vào `~/Applications/`, chép plist vào `~/Library/LaunchAgents/`.
   - `launchctl bootout` (bỏ qua lỗi) rồi `launchctl bootstrap gui/$UID …`.
   - Tuỳ chọn `--uninstall`.

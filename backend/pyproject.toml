@@ -1,0 +1,42 @@
+[project]
+name = "lichhoc-backend"
+version = "0.1.0"
+description = "Lịch Học Cá Nhân – Flask REST API, lưu trữ PostgreSQL, nhận diện ảnh offline bằng EasyOCR"
+requires-python = ">=3.12,<3.13"
+# PyTorch (bản CPU) được cài riêng trong Dockerfile từ index CPU của PyTorch, trước các gói dưới đây.
+dependencies = [
+    "flask>=3.0",
+    "flask-sqlalchemy>=3.1",
+    "flask-migrate>=4.0",
+    "psycopg[binary]>=3.1",
+    "pydantic>=2.6",
+    "gunicorn>=22.0",
+    "easyocr>=1.7",
+    "pillow>=10.3",
+    "pillow-heif>=0.16",
+    "rapidfuzz>=3.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# Code spike là thử nghiệm dùng một lần (research R2/R4), cho phép comment tiếng Việt dài.
+"spikes/*" = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "ocr: chạy EasyOCR thật trên ảnh mẫu (chậm)",
+]
+addopts = "-m 'not ocr'"

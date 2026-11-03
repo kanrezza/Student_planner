@@ -1,0 +1,30 @@
+[project]
+name = "lichhoc-agent"
+version = "0.1.0"
+description = "Lịch Học Cá Nhân – tiến trình nền macOS đồng bộ buổi học/task vào Lịch và Lời nhắc (EventKit)"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "pyobjc-framework-EventKit>=10.3",
+    "requests>=2.32",
+]
+
+[project.optional-dependencies]
+dev = [
+    "py2app>=0.28.8",
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# Code spike là thử nghiệm dùng một lần (research R2/R4), cho phép comment tiếng Việt dài.
+"spikes/*" = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
