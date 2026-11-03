@@ -6,6 +6,7 @@ from app.api.errors import ApiError, not_found
 from app.extensions import db
 from app.lib.text import ci_key
 from app.models import Subject, SubjectTag, Tag
+from app.services import auto_deadlines
 from app.services.colors import is_palette_color, next_color
 from app.services.revision import bump_revision
 from app.services.tag_links import replace_tag_links
@@ -67,6 +68,7 @@ def delete_tag(tag_id: int) -> None:
     if tag.system_key:
         raise ApiError(400, "system_tag", "Không xoá được nhãn hệ thống")
     db.session.delete(tag)
+    auto_deadlines.reconcile(all_future=True)
     bump_revision(db.session)
     db.session.commit()
 
@@ -76,6 +78,7 @@ def set_subject_tags(subject_id: int, tag_ids: list[int]) -> Subject:
     if subject is None:
         raise not_found("Không tìm thấy môn học")
     replace_tag_links(SubjectTag, "subject_id", subject.id, tag_ids)
+    auto_deadlines.reconcile(subject_ids=[subject_id])
     bump_revision(db.session)
     db.session.commit()
     db.session.expire(subject, ["tag_links"])

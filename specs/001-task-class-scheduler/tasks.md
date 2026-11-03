@@ -911,6 +911,17 @@ research R2.
     chưa chắc chắn tô vàng; ghi chú "giờ kết thúc tính từ 60p" khi `end_time_source =
     "format_duration"`.
   - `"unknown"`: hỏi "Đây là lịch học hay lịch thi?" rồi gọi lại `recognize?kind=…`.
+- [ ] T146 [US11] Nhắc và đồng bộ buổi thi (phần của US7 được dời sang đây vì US7 làm trước US11;
+  ID mới đặt sau T145 để không phải đánh số lại):
+  - Backend: `reminders.exam_alarm_offsets(exam, settings)` dùng `services.exams.resolve_offsets`;
+    `upcoming` trả một mục cho mỗi mốc với `sync_key="exam:{id}:{phút}"`; `sync_feed.build_feed`
+    thêm buổi thi vào `events` (`sync_key="exam:{id}"`, tiêu đề "Thi: <tên học phần>",
+    `alarms_minutes_before` theo `reminder_offsets`, không có SBD/hình thức thi — FR-064); ghi buổi
+    thi và `settings.exam_reminder_offsets` gọi `bump_revision`.
+  - Test: các ý về buổi thi trong T123–T126 (mặc định [1440, 60], `[]` → không nhắc, đổi giờ/xoá →
+    feed và `upcoming` đổi theo, `revision` tăng).
+  - Frontend: Cài đặt → Nhắc lịch thêm mốc nhắc buổi thi; `ExamForm` chọn nhắc riêng/tắt nhắc
+    (`reminder_offsets`). Agent không cần sửa (đã nhận `lichhoc://exam/{id}` và danh sách mốc).
 
 **Checkpoint**: US6 và US11 pass; quickstart V7, V8, V18 pass; `pytest -m ocr` ≥ 80% cho cả hai loại
 ảnh.
@@ -927,7 +938,7 @@ thể chất 2" Thứ Tư 20:30 → 0 task (quickstart V9, V10; SC-015).
 
 ### Tests for User Story 10 ⚠️
 
-- [ ] T118 [P] [US10] Test thuần trong `backend/tests/unit/test_auto_deadlines.py`:
+- [X] T118 [P] [US10] Test thuần trong `backend/tests/unit/test_auto_deadlines.py`:
   - `eligible`:
     - Môn có nhãn E-Learning → đúng.
     - Buổi có nhãn riêng E-Learning → đúng.
@@ -943,7 +954,7 @@ thể chất 2" Thứ Tư 20:30 → 0 task (quickstart V9, V10; SC-015).
   - `plan` theo đúng bảng trạng thái trong research R9 (tạo, cập nhật, xoá, không đụng task đã sửa
     hoặc đã hoàn thành, không tạo lại khi `auto_task_suppressed`, không tạo khi hạn đã qua).
   - Sau khi reconcile tự cập nhật tiêu đề hoặc hạn của task, task vẫn có `user_modified=False`.
-- [ ] T119 [P] [US10] Test API trong `backend/tests/integration/test_auto_deadlines_api.py`:
+- [X] T119 [P] [US10] Test API trong `backend/tests/integration/test_auto_deadlines_api.py`:
   - Tạo môn E-Learning → có task trong danh sách "Học tập", ưu tiên 2, `is_auto=true`.
   - Huỷ buổi → task bị xoá; khôi phục → task được tạo lại.
   - Xoá tay task → không tạo lại.
@@ -957,7 +968,7 @@ thể chất 2" Thứ Tư 20:30 → 0 task (quickstart V9, V10; SC-015).
 
 ### Implementation for User Story 10
 
-- [ ] T120 [US10] Tạo `backend/app/services/auto_deadlines.py`:
+- [X] T120 [US10] Tạo `backend/app/services/auto_deadlines.py`:
   - Hàm thuần `eligible(session, subject_tags, session_tags, settings)`, `due_at(session_end,
     due_time)`, `title_for(subject_name, date)`, `plan(sessions, existing_auto_tasks, settings, now)
     -> list[Create|Update|Delete]`.
@@ -968,15 +979,16 @@ thể chất 2" Thứ Tư 20:30 → 0 task (quickstart V9, V10; SC-015).
       `services.tasks.update_task`/`delete_task`, vì các hàm đó đặt `user_modified=True` hoặc
       `auto_task_suppressed=True`, vốn chỉ dành cho thao tác của người dùng.
     - Gọi `bump_revision`.
-- [ ] T121 [US10] Gọi `auto_deadlines.reconcile` ở cuối mỗi hàm ghi (cùng transaction):
+- [X] T121 [US10] Gọi `auto_deadlines.reconcile` ở cuối mỗi hàm ghi (cùng transaction):
   - `services/subjects.py`: create, create_bulk, update, delete.
   - `services/sessions.py`: cancel, restore, update.
   - `services/tags.py`: `set_tags` cho môn và buổi; xoá nhãn.
   - `services/shifts.py`: update, delete.
   - `services/semesters.py`: update, delete.
-  - `services/imports.py`: commit.
+  - `services/imports.py`: commit (không cần gọi riêng: commit tạo môn qua `create_subject` nên đã
+    tự reconcile; làm ở Phase 10).
   - `api/settings.py`: PATCH các trường `auto_deadline_*` → `all_future=True`.
-- [ ] T122 [US10] Frontend:
+- [X] T122 [US10] Frontend:
   - Huy hiệu "Tự tạo" và liên kết "Xem buổi học" (mở `SessionDetail`) trong `TaskForm.tsx`, danh
     sách task `TasksPage.tsx` và `TodayPage.tsx`.
   - Tạo `frontend/src/pages/SettingsPage.tsx` với mục "Tự tạo deadline": mốc giờ (mặc định 20:00),
@@ -999,7 +1011,8 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
 
 ### Tests for User Story 7 ⚠️
 
-- [ ] T123 [P] [US7] Test thuần trong `backend/tests/unit/test_reminders.py`:
+- [X] T123 [P] [US7] Test thuần trong `backend/tests/unit/test_reminders.py` (các ý về buổi thi
+  trong T123–T133 dời sang T146 ở Phase 10):
   - Thời điểm nhắc buổi học: mặc định 15 phút; `subject.reminder_minutes=30` ghi đè; `-1` → không
     nhắc.
   - Task có giờ: mặc định 60 phút; task chỉ có ngày → 08:00 ngày đó (`date_only_task_reminder_time`).
@@ -1008,7 +1021,7 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
   - Task đã hoàn thành, buổi huỷ → không nhắc.
   - Buổi thi: mặc định 2 thời điểm (1 ngày và 1 giờ trước); `reminder_offsets=[]` → không nhắc;
     `[120]` → 2 giờ trước; buổi thi đã qua → không nhắc (FR-063).
-- [ ] T124 [P] [US7] Test API trong `backend/tests/integration/test_sync_api.py`:
+- [X] T124 [P] [US7] Test API trong `backend/tests/integration/test_sync_api.py`:
   - `revision` tăng sau mỗi loại thay đổi: task, môn, buổi, học kỳ, ca, buổi thi, settings.
   - `/sync/changes?after=<rev-1>` trả ngay.
   - `/sync/changes?after=<rev>&wait=1` trả sau khoảng 1 giây với cùng `revision`.
@@ -1023,7 +1036,7 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
   - `PUT /sync/agent-status` → `204` và `last_seen_at` được cập nhật.
   - `/reminders/upcoming` trả `[]` khi `calendar_sync_enabled=true`.
   - `/today.notices` có cảnh báo khi agent không liên lạc quá 2 phút hoặc `permission=denied`.
-- [ ] T125 [P] [US7] Test API cho nhắc theo từng mục (FR-022) trong
+- [X] T125 [P] [US7] Test API cho nhắc theo từng mục (FR-022) trong
   `backend/tests/integration/test_reminder_settings_api.py`:
   - PATCH `subjects/{id}` `reminder_minutes=30` → feed `alarms_minutes_before=[30]` và
     `/reminders/upcoming` lệch 30 phút; `-1` → `alarms_minutes_before=[]`, không có trong upcoming.
@@ -1033,7 +1046,7 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
   - Task chỉ có ngày `reminder_minutes=-1` → `reminder_at=null`, `alarm_at=null`.
   - PATCH `settings.session_reminder_minutes=5` → mọi buổi dùng mặc định đổi `alarms_minutes_before`
     thành `[5]` và `revision` tăng.
-- [ ] T126 [P] [US7] Test API cho cập nhật nhắc ngay khi dữ liệu đổi (FR-023) trong
+- [X] T126 [P] [US7] Test API cho cập nhật nhắc ngay khi dữ liệu đổi (FR-023) trong
   `backend/tests/integration/test_reminder_updates_api.py`, mỗi bước kiểm tra `/reminders/upcoming`
   (khi đồng bộ tắt) và `/sync/feed` (khi đồng bộ bật) **ngay sau** request ghi, không chờ:
   - Huỷ buổi → mục biến mất; khôi phục → xuất hiện lại.
@@ -1041,7 +1054,7 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
   - Hoàn thành task → biến mất; bỏ hoàn thành → xuất hiện lại; xoá task hoặc môn → biến mất.
   - Đổi giờ buổi thi → các mốc nhắc dời theo; xoá buổi thi → biến mất.
   - Mỗi thao tác làm `revision` tăng đúng trong cùng request.
-- [ ] T127 [P] [US7] Test trong `frontend/tests/reminders.test.ts` (Vitest, fake timers, mock
+- [X] T127 [P] [US7] Test trong `frontend/tests/reminders.test.ts` (Vitest, fake timers, mock
   `Notification` và `navigator.locks`):
   - Hẹn giờ các mục trong 24 giờ tới.
   - Bỏ qua mục quá giờ hơn 1 phút (không hiện dồn).
@@ -1051,7 +1064,7 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
   - (FR-023) Khi gọi `refresh()` với danh sách mới không còn một mục (buổi vừa huỷ hoặc task vừa
     hoàn thành), hẹn giờ của mục đó bị huỷ và **không** có thông báo khi tới giờ; mục đổi giờ được
     hẹn lại theo giờ mới.
-- [ ] T128 [P] [US7] Test thuần trong `mac-agent/tests/test_reconcile.py` cho
+- [X] T128 [P] [US7] Test thuần trong `mac-agent/tests/test_reconcile.py` cho
   `plan_changes(feed, current_items, saved_fingerprints)`:
   - Mục thiếu → create; fingerprint lệch → update; mục của app không còn trong feed → delete.
   - Lịch hoặc danh sách bị người dùng xoá → tạo lại.
@@ -1061,24 +1074,24 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
 
 ### Implementation for User Story 7
 
-- [ ] T129 [US7] Tạo `backend/app/services/reminders.py`: `session_alarm_minutes(session,
+- [X] T129 [US7] Tạo `backend/app/services/reminders.py`: `session_alarm_minutes(session,
   settings)`, `task_alarm_at(task, settings)`, `upcoming(now, hours)`. Điền `TaskOut.reminder_at`.
   - Quy tắc `reminder_minutes`: `-1` tắt nhắc cho **mọi** task (kể cả task chỉ có ngày) và mọi môn;
     `NULL` dùng mặc định; số ≥ 0 chỉ có tác dụng với buổi học và task có giờ.
   - Buổi thi: `exam_alarm_offsets(exam, settings)` dùng `services.exams.resolve_offsets`;
     `upcoming` trả một mục cho mỗi mốc với `sync_key="exam:{id}:{phút}"`.
-- [ ] T130 [US7] Tạo `backend/app/services/sync_feed.py`:
+- [X] T130 [US7] Tạo `backend/app/services/sync_feed.py`:
   - `build_feed(today)` theo contracts/calendar-sync.md §2: chỉ các trường cho phép; task gồm cả
     quá hạn trong 7 ngày gần nhất; `events` gồm buổi học chưa huỷ và buổi thi, mỗi event có
     `alarms_minutes_before` là danh sách.
   - `fingerprint(item)` = SHA-256 của JSON đã sắp khoá.
   - `wait_for_change(after, wait)`: kiểm tra `sync_state.revision` mỗi 1 giây bằng session mới, tối
     đa `wait ≤ 25` giây.
-- [ ] T131 [US7] Tạo blueprint `backend/app/api/sync.py` (`GET /api/sync/changes`, `GET
+- [X] T131 [US7] Tạo blueprint `backend/app/api/sync.py` (`GET /api/sync/changes`, `GET
   /api/sync/feed`, `PUT /api/sync/agent-status`, `GET /api/sync/status`) và
   `backend/app/api/reminders.py` (`GET /api/reminders/upcoming`). Thêm `notices` về agent và đồng
   bộ vào `services/today.py`.
-- [ ] T132 [US7] Tạo frontend nhắc dự phòng:
+- [X] T132 [US7] Tạo frontend nhắc dự phòng:
   - `frontend/src/reminders/scheduler.ts`: hàm thuần lên lịch, nhận `now` và danh sách mục.
   - `frontend/src/reminders/leader.ts`: bọc `navigator.locks.request('lichhoc-reminders', …)`.
   - `frontend/src/reminders/useReminders.ts`: gắn ở `App.tsx`; tải `/api/reminders/upcoming` mỗi 5
@@ -1087,7 +1100,7 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
     danh sách mới (FR-023). Hiện thông báo bằng `new Notification(title, {body, tag: sync_key})`.
   - Nút "Bật thông báo trình duyệt" kèm giải thích; khi quyền là `denied`, hiện hướng dẫn trên
     TodayPage.
-- [ ] T133 [US7] Thêm vào `frontend/src/pages/SettingsPage.tsx`:
+- [X] T133 [US7] Thêm vào `frontend/src/pages/SettingsPage.tsx`:
   - Mục "Nhắc lịch": phút nhắc mặc định cho buổi học và cho task, giờ nhắc task chỉ có ngày, các
     mốc nhắc buổi thi (mặc định "1 ngày" và "1 giờ" trước, thêm/bớt mốc).
   - Công tắc "Đồng bộ với Lịch và Lời nhắc".
@@ -1100,13 +1113,13 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
   - Chọn nhắc riêng hoặc tắt nhắc trong `SubjectForm` và `TaskForm` (`reminder_minutes`): ô chọn
     "Theo mặc định" / "Không nhắc" / "Nhắc trước … phút". Với task chỉ có ngày, chỉ hiện "Theo
     mặc định (08:00)" / "Không nhắc".
-- [ ] T134 [P] [US7] Tạo `mac-agent/lichhoc_agent/reconcile.py`: hàm thuần `plan_changes(...) ->
+- [X] T134 [P] [US7] Tạo `mac-agent/lichhoc_agent/reconcile.py`: hàm thuần `plan_changes(...) ->
   Plan(create, update, delete, remove_all, recreate_containers)` theo contracts/calendar-sync.md §4.
-- [ ] T135 [P] [US7] Tạo `mac-agent/lichhoc_agent/backend_client.py` (`changes(after, wait)`,
+- [X] T135 [P] [US7] Tạo `mac-agent/lichhoc_agent/backend_client.py` (`changes(after, wait)`,
   `feed()`, `put_status(...)`; timeout 35 giây) và `mac-agent/lichhoc_agent/state.py` (đọc/ghi
   nguyên tử `~/Library/Application Support/LichHocAgent/state.json` gồm `calendar_id`,
   `reminder_list_id`, `fingerprints`).
-- [ ] T136 [US7] Tạo `mac-agent/lichhoc_agent/calendar_store.py`:
+- [X] T136 [US7] Tạo `mac-agent/lichhoc_agent/calendar_store.py`:
   - `Protocol CalendarStore` (`ensure_containers`, `list_items`, `create`, `update`, `delete`,
     `remove_containers`, `commit`, `permission`, `source_kind`).
   - `FakeCalendarStore` cho test.
@@ -1120,12 +1133,12 @@ khi Mac gập; thông báo trình duyệt là dự phòng.
       `lichhoc://exam/{id}` hoặc `lichhoc://task/{id}`; mỗi phần tử `alarms_minutes_before` là một
       `EKAlarm`.
     - Chỉ thao tác trên hai `calendarIdentifier` trong `state.json`.
-- [ ] T137 [US7] Tạo `mac-agent/lichhoc_agent/main.py`:
+- [X] T137 [US7] Tạo `mac-agent/lichhoc_agent/main.py`:
   - Vòng lặp `changes` → `feed` → `plan_changes` → áp lên store → `commit` → `put_status`.
   - Thử lại khi backend lỗi: 30 giây → tăng dần tới 5 phút, **không** xoá mục đã ghi.
   - Log xoay vòng `~/Library/Logs/LichHocAgent/agent.log` (1 MB × 3).
   - Hàm `run_once()` để test.
-- [ ] T138 [US7] Tạo `mac-agent/launchd/vn.lichhoc.agent.plist` (`Label=vn.lichhoc.agent`,
+- [X] T138 [US7] Tạo `mac-agent/launchd/vn.lichhoc.agent.plist` (`Label=vn.lichhoc.agent`,
   `RunAtLoad=true`, `KeepAlive=true`, `ProgramArguments` trỏ tới
   `~/Applications/LichHocAgent.app/Contents/MacOS/LichHocAgent`) và `mac-agent/scripts/install.sh`:
   - Tạo venv bằng Homebrew `/opt/homebrew/opt/python@3.11/bin/python3.11` (Python dạng framework;

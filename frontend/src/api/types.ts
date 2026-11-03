@@ -34,6 +34,7 @@ export type TaskInput = {
   due_time: string | null;
   priority: Priority;
   list_id: number;
+  reminder_minutes?: number | null;
 };
 
 export type TaskList = {
@@ -93,6 +94,7 @@ export type SubjectInput = {
   start_time: string | null;
   end_time: string | null;
   color?: string | null;
+  reminder_minutes?: number | null;
 };
 
 export type ClassSession = {

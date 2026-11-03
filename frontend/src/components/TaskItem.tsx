@@ -3,6 +3,7 @@ import type { Task } from '../api/types';
 import { t } from '../i18n/vi';
 import { colorHex } from '../lib/colors';
 import { formatDue, priorityLabel } from '../lib/format';
+import { SessionLink } from './SessionLink';
 
 /** Một dòng công việc: checkbox hoàn thành, tiêu đề, hạn, ưu tiên (FR-003, FR-006). */
 export function TaskItem({
@@ -34,6 +35,9 @@ export function TaskItem({
           <span className={`badge badge--p${task.priority}`}>{priorityLabel(task.priority)}</span>
           {task.is_overdue && <span className="badge badge--danger">{t('tasks.overdue')}</span>}
           {task.is_auto && <span className="badge">{t('tasks.auto')}</span>}
+          {task.is_auto && task.source_session_id && (
+            <SessionLink sessionId={task.source_session_id} />
+          )}
           {showList && <span className="muted">{task.list_name}</span>}
         </div>
         {task.notes && <div className="task-item__notes">{task.notes}</div>}

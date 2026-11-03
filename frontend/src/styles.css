@@ -642,3 +642,23 @@ h3 {
 .fc-event {
   cursor: pointer;
 }
+
+/* Nút trông như liên kết (ví dụ "Xem buổi học" của công việc tự tạo). */
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.code {
+  background: var(--bg);
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.85rem;
+  overflow-x: auto;
+}

@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react';
+import { useSettings } from '../api/settings';
+import { minutesLabel, ReminderSelect } from './ReminderSelect';
 import { ApiError } from '../api/client';
 import { useSaveSubject, type SubjectSaveResult } from '../api/subjects';
 import type { Semester, Subject } from '../api/types';
@@ -48,6 +50,8 @@ export function SubjectForm({
     end_time: subject?.end_time ?? '',
   });
   const [tagIds, setTagIds] = useState<number[]>(subject?.tags.map((tag) => tag.id) ?? []);
+  const [reminder, setReminder] = useState<number | null>(subject?.reminder_minutes ?? null);
+  const settings = useSettings().data;
   const [conflicts, setConflicts] = useState<ExceptionConflict[] | null>(null);
   const save = useSaveSubject();
 
@@ -70,6 +74,7 @@ export function SubjectForm({
       weekdays,
       ...timeChoiceToInput(timeChoice),
       tag_ids: tagIds,
+      reminder_minutes: reminder,
       start_date: form.start_date || null,
       end_date: form.end_date || null,
       ...(color ? { color } : {}),
@@ -154,6 +159,21 @@ export function SubjectForm({
       </FormField>
       <FormField label={t('tags.pick')} name="tag_ids" error={error}>
         <TagPicker value={tagIds} onChange={setTagIds} />
+      </FormField>
+      <FormField label={t('reminders.field')} name="reminder_minutes" error={error}>
+        <ReminderSelect
+          value={reminder}
+          onChange={setReminder}
+          defaultLabel={
+            settings
+              ? t('reminders.defaultSession', {
+                  time: t('reminders.before', {
+                    time: minutesLabel(settings.session_reminder_minutes),
+                  }).toLowerCase(),
+                })
+              : t('reminders.defaultTask')
+          }
+        />
       </FormField>
       <FormField label={t('subjects.fieldColor')} name="color" error={error}>
         <ColorPicker value={color} onChange={setColor} />

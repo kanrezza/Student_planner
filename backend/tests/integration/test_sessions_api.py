@@ -53,6 +53,13 @@ def test_only_one_time_field_keeps_the_other(client):
     assert data["end_at"].endswith("10:00:00+07:00")
 
 
+def test_get_single_session(client):
+    _, sessions = setup_subject(client)
+    data = client.get(f"/api/sessions/{sessions[2]['id']}").get_json()
+    assert data["date"] == sessions[2]["date"] and data["subject_name"] == "Giải tích 1"
+    assert client.get("/api/sessions/999999").status_code == 404
+
+
 def test_invalid_times_rejected(client):
     _, sessions = setup_subject(client)
     resp = client.patch(
