@@ -76,6 +76,7 @@ step "Frontend: test" bash -c "cd '$ROOT/frontend' && npm test --silent"
 step "Agent: môi trường Python 3.11" agent_env
 step "Agent: ruff" bash -c "cd '$ROOT/mac-agent' && .venv/bin/ruff check . && .venv/bin/ruff format --check ."
 step "Agent: pytest" agent_pytest
+step "Scripts: ruff" bash -c "cd '$ROOT' && mac-agent/.venv/bin/ruff check --config backend/pyproject.toml scripts && mac-agent/.venv/bin/ruff format --check --config backend/pyproject.toml scripts"
 
 if [[ -x "$ROOT/scripts/test-persistence.sh" ]]; then
     step "Lưu trữ qua khởi động lại" "$ROOT/scripts/test-persistence.sh"

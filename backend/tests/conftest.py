@@ -4,6 +4,7 @@ mỗi test chạy trong transaction rồi rollback (dữ liệu mặc định t�
 import pytest
 from flask_migrate import upgrade
 from sqlalchemy import text
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from app import create_app
 from app.config import TEST_DATABASE_URL
@@ -29,8 +30,10 @@ def db_session(app):
     with app.app_context():
         connection = db.engine.connect()
         transaction = connection.begin()
-        session = db._make_scoped_session(
-            {"bind": connection, "join_transaction_mode": "create_savepoint"}
+        # Session thuần của SQLAlchemy gắn chặt vào `connection` (session của Flask-SQLAlchemy
+        # tự chọn engine riêng và bỏ qua `bind`, làm dữ liệu test bị ghi thật).
+        session = scoped_session(
+            sessionmaker(bind=connection, join_transaction_mode="create_savepoint")
         )
         original_session = db.session
         db.session = session

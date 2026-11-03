@@ -294,11 +294,11 @@ compose down && docker compose up -d`; dữ liệu còn nguyên (quickstart V1, 
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T039 [P] [US1] Test thuần trong `backend/tests/unit/test_task_rules.py`:
+- [X] T039 [P] [US1] Test thuần trong `backend/tests/unit/test_task_rules.py`:
   - `due_at` = `due_date + (due_time ?? 23:59)`.
   - `is_overdue` chỉ đúng khi chưa hoàn thành và `due_at < now`.
   - Khoá sắp xếp: theo `due_at`, task không hạn ở cuối, rồi `priority` 1 → 3.
-- [ ] T040 [P] [US1] Test API trong `backend/tests/integration/test_tasks_api.py`:
+- [X] T040 [P] [US1] Test API trong `backend/tests/integration/test_tasks_api.py`:
   - Tạo task đầy đủ trường.
   - Tiêu đề rỗng hoặc chỉ khoảng trắng → `400` với `fields.title`.
   - Tiêu đề 301 ký tự → `400`.
@@ -307,13 +307,13 @@ compose down && docker compose up -d`; dữ liệu còn nguyên (quickstart V1, 
   - `include_completed=false` ẩn task đã xong.
   - Thứ tự sắp xếp đúng FR-005.
   - Tiêu đề tiếng Việt có dấu được trả về nguyên vẹn.
-- [ ] T041 [P] [US1] Test API trong `backend/tests/integration/test_lists_api.py`:
+- [X] T041 [P] [US1] Test API trong `backend/tests/integration/test_lists_api.py`:
   - Có sẵn 3 danh sách mặc định.
   - Tạo danh sách trùng tên khác hoa thường → `400`.
   - Xoá danh sách còn task mà không có tham số → `409` với `details.task_count`.
   - `?move_to=` chuyển task; `?delete_tasks=true` xoá task.
   - Không xoá được danh sách "Học tập" khi thiếu `move_to`.
-- [ ] T042 [US1] Tạo `scripts/test-persistence.sh`: test tự động cho việc lưu dữ liệu và đọc lại sau
+- [X] T042 [US1] Tạo `scripts/test-persistence.sh`: test tự động cho việc lưu dữ liệu và đọc lại sau
   khi khởi động lại (constitution Nguyên tắc V, FR-024, SC-008). Dùng database chính qua
   `http://127.0.0.1:8080/api`, dữ liệu có tiền tố `__persist_test__` và được dọn ở cuối.
   1. Tạo một danh sách và một task tiêu đề có dấu tiếng Việt qua API; ghi lại JSON trả về.
@@ -327,7 +327,7 @@ compose down && docker compose up -d`; dữ liệu còn nguyên (quickstart V1, 
 
 ### Implementation for User Story 1
 
-- [ ] T043 [US1] Tạo `backend/app/schemas/tasks.py`:
+- [X] T043 [US1] Tạo `backend/app/schemas/tasks.py`:
   - `TaskIn`:
     - `title` bắt buộc, "1–300 ký tự sau khi bỏ khoảng trắng hai đầu"; `notes` tuỳ chọn.
     - `due_date`, `due_time` ("chỉ có khi có `due_date`").
@@ -338,7 +338,7 @@ compose down && docker compose up -d`; dữ liệu còn nguyên (quickstart V1, 
     `source_session_id`, `user_modified`, `tags`, `display_color`, `reminder_at` (`reminder_at`
     tạm để `None`, US7 sẽ điền).
   - `ListIn`/`ListOut`.
-- [ ] T044 [US1] Tạo `backend/app/services/tasks.py`:
+- [X] T044 [US1] Tạo `backend/app/services/tasks.py`:
   - Hàm thuần `due_at(task)`, `is_overdue(task, now)`, `sort_key(task)`.
   - `create_task`, `update_task`: nếu `task.is_auto` và sửa bất kỳ trường nào khác `completed_at`
     thì đặt `user_modified = True`.
@@ -347,21 +347,21 @@ compose down && docker compose up -d`; dữ liệu còn nguyên (quickstart V1, 
     cho buổi học trước khi xoá.
   - `list_tasks(list_id, include_completed, tag_ids)`.
   - Mọi thao tác ghi gọi `bump_revision`.
-- [ ] T045 [US1] Tạo `backend/app/services/task_lists.py`: tạo (gán `next_color`), đổi tên hoặc màu
+- [X] T045 [US1] Tạo `backend/app/services/task_lists.py`: tạo (gán `next_color`), đổi tên hoặc màu
   (kiểm tra trùng theo `ci_key`), xoá với `move_to` / `delete_tasks` / `409`, theo quy tắc trong
   data-model.md.
-- [ ] T046 [US1] Tạo blueprint `backend/app/api/tasks.py` (`/api/tasks…`) và
+- [X] T046 [US1] Tạo blueprint `backend/app/api/tasks.py` (`/api/tasks…`) và
   `backend/app/api/lists.py` (`/api/lists…`) đúng contracts/rest-api.md; đăng ký trong
   `create_app`.
-- [ ] T047 [P] [US1] Tạo hook TanStack Query trong `frontend/src/api/tasks.ts` (`useTasks`,
+- [X] T047 [P] [US1] Tạo hook TanStack Query trong `frontend/src/api/tasks.ts` (`useTasks`,
   `useCreateTask`, `useUpdateTask`, `useCompleteTask`, `useDeleteTask`) và `frontend/src/api/lists.ts`.
   Thay đổi xong thì làm mới các query `tasks`, `today`, `calendar`.
-- [ ] T048 [US1] Tạo `frontend/src/components/TaskForm.tsx`:
+- [X] T048 [US1] Tạo `frontend/src/components/TaskForm.tsx`:
   - Tiêu đề bắt buộc, báo lỗi ngay tại ô bằng tiếng Việt; ghi chú.
   - Ngày hạn chót, giờ (tuỳ chọn, chỉ bật khi đã có ngày).
   - Ưu tiên Cao / Trung bình / Thấp; chọn danh sách.
   - Hiển thị lỗi theo `ApiError.fields`.
-- [ ] T049 [US1] Tạo `frontend/src/pages/TasksPage.tsx`:
+- [X] T049 [US1] Tạo `frontend/src/pages/TasksPage.tsx`:
   - Cột trái là các danh sách kèm số task chưa xong; tạo, đổi tên, đổi màu, xoá danh sách (hộp
     thoại chọn "Chuyển sang danh sách…" hoặc "Xoá luôn các task" khi gặp `409`).
   - Cột phải là task đã sắp xếp: checkbox hoàn thành; task xong thì gạch ngang và làm mờ (FR-006);
@@ -381,7 +381,7 @@ buổi, đúng thứ, đúng giờ (quickstart V3; SC-003).
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T050 [P] [US2] Test thuần trong `backend/tests/unit/test_recurrence.py`:
+- [X] T050 [P] [US2] Test thuần trong `backend/tests/unit/test_recurrence.py`:
   - `generate_dates([1], 2026-09-07, 2026-12-20)` → 15 ngày, đầu là 2026-09-07, cuối là
     2026-12-14.
   - Nhiều thứ `[1, 4]`; ngày bắt đầu không rơi vào thứ đã chọn.
@@ -391,14 +391,14 @@ buổi, đúng thứ, đúng giờ (quickstart V3; SC-003).
     - Giữ buổi `is_cancelled` / `time_overridden` / `room_overridden`.
     - Cập nhật giờ và phòng cho buổi không có ngoại lệ; xoá buổi không ngoại lệ nằm ngoài khoảng.
     - Trả `exception_conflicts` cho buổi có ngoại lệ nằm ngoài khoảng.
-- [ ] T051 [P] [US2] Test API trong `backend/tests/integration/test_semesters_api.py`:
+- [X] T051 [P] [US2] Test API trong `backend/tests/integration/test_semesters_api.py`:
   - Tạo học kỳ; chồng lấn → `400` với `fields.start_date` nêu tên học kỳ bị chồng.
   - `is_current`: học kỳ chứa hôm nay, nếu không có thì học kỳ sắp tới gần nhất.
   - PATCH làm môn ra ngoài khoảng → `409` với `details.subjects`; có `clamp_subjects=true` thì thu
     hẹp ngày môn và sinh lại buổi.
   - DELETE thiếu `confirm` → `409` với `details.subject_count`; có `confirm=true` thì xoá dây
     chuyền.
-- [ ] T052 [P] [US2] Test API trong `backend/tests/integration/test_subjects_api.py`:
+- [X] T052 [P] [US2] Test API trong `backend/tests/integration/test_subjects_api.py`:
   - POST với giờ tuỳ chỉnh → `session_count` đúng.
   - `end_time <= start_time` → `400` với `fields.end_time`.
   - `weekdays` rỗng hoặc trùng → `400`; ngày ngoài học kỳ → `400`; gửi cả `shift` lẫn giờ tuỳ chỉnh
@@ -408,22 +408,22 @@ buổi, đúng thứ, đúng giờ (quickstart V3; SC-003).
   - Trùng giờ với buổi đã có → thành công kèm `warnings[0].code == "time_conflict"`.
   - Khoảng ngày không sinh buổi nào → `warnings[0].code == "no_sessions"`.
   - PATCH môn giữ buổi ngoại lệ (FR-013); DELETE xoá dây chuyền buổi học.
-- [ ] T053 [US2] Mở rộng `scripts/test-persistence.sh` (FR-024): trước bước khởi động lại, tạo thêm
+- [X] T053 [US2] Mở rộng `scripts/test-persistence.sh` (FR-024): trước bước khởi động lại, tạo thêm
   một học kỳ, một môn lặp hàng tuần, một buổi đã huỷ và một buổi đã đổi phòng. Sau khi `down`/`up`
   và sau khi `kill`, kiểm tra số buổi học, trạng thái huỷ và phòng đã sửa còn nguyên.
 
 ### Implementation for User Story 2
 
-- [ ] T054 [US2] Tạo `backend/app/services/recurrence.py`, chỉ chứa hàm thuần:
+- [X] T054 [US2] Tạo `backend/app/services/recurrence.py`, chỉ chứa hàm thuần:
   - `generate_dates(weekdays, start, end) -> list[date]`.
   - `plan_regeneration(existing, desired_dates, start_time, end_time, room) -> Plan(to_create,
     to_update, to_delete, exception_conflicts)` theo research R8.
-- [ ] T055 [US2] Tạo `backend/app/services/semesters.py`:
+- [X] T055 [US2] Tạo `backend/app/services/semesters.py`:
   - `current_semester(today)`; `create`/`update` (bắt lỗi exclusion → `ApiError 400`).
   - Kiểm tra môn ra ngoài khoảng → `409`, hoặc thu hẹp khi `clamp_subjects`.
   - `delete` với `confirm`.
   - `bump_revision`.
-- [ ] T056 [US2] Tạo `backend/app/schemas/subjects.py`:
+- [X] T056 [US2] Tạo `backend/app/schemas/subjects.py`:
   - `SubjectInput`:
     - `name` "1–200 ký tự"; `semester_id`.
     - `weekdays` ("≥ 1 phần tử, không trùng", giá trị 1..7).
@@ -432,7 +432,7 @@ buổi, đúng thứ, đúng giờ (quickstart V3; SC-003).
     - `start_date`, `end_date`; `class_code`, `lecturer`, `room`, `tag_ids`, `reminder_minutes`.
   - `BulkSubjectsIn {semester_id, start_date, end_date, rows: list[SubjectInput không ngày]}`.
   - `SubjectOut`, `SessionOut` đúng contract (thêm `display_color`, `shift_label`, `auto_task_id`).
-- [ ] T057 [US2] Tạo `backend/app/services/subjects.py`:
+- [X] T057 [US2] Tạo `backend/app/services/subjects.py`:
   - `resolve_times(input)`: nếu có `shift` thì lấy giờ bắt đầu của ca đầu và giờ kết thúc của ca
     cuối; kiểm tra ca cuối có `position` ≥ ca đầu.
   - `create_subject`, `create_bulk` (một transaction; lỗi dòng nào thì báo theo
@@ -441,21 +441,21 @@ buổi, đúng thứ, đúng giờ (quickstart V3; SC-003).
   - `find_time_conflicts(date, start_at, end_at, exclude_subject_id)` sinh cảnh báo
     `time_conflict` (FR-015); cảnh báo `no_sessions`.
   - Mọi thao tác ghi gọi `bump_revision`.
-- [ ] T058 [US2] Tạo blueprint `backend/app/api/semesters.py` và `backend/app/api/subjects.py` đúng
+- [X] T058 [US2] Tạo blueprint `backend/app/api/semesters.py` và `backend/app/api/subjects.py` đúng
   contract (gồm `/subjects/bulk`); đăng ký trong `create_app`.
-- [ ] T059 [P] [US2] Tạo hook trong `frontend/src/api/semesters.ts` và `frontend/src/api/subjects.ts`.
-- [ ] T060 [US2] Tạo `frontend/src/pages/SemestersPage.tsx` (đặt trong Cài đặt):
+- [X] T059 [P] [US2] Tạo hook trong `frontend/src/api/semesters.ts` và `frontend/src/api/subjects.ts`.
+- [X] T060 [US2] Tạo `frontend/src/pages/SemestersPage.tsx` (đặt trong Cài đặt):
   - Danh sách học kỳ có huy hiệu "Hiện tại"; tạo, sửa, xoá.
   - Khi xoá gặp `409`: `ConfirmDialog` nêu "Sẽ xoá N môn học".
   - Khi sửa gặp `409`: hộp thoại liệt kê môn bị ảnh hưởng, nút "Thu hẹp ngày các môn" hoặc "Huỷ".
-- [ ] T061 [US2] Tạo `frontend/src/components/SubjectForm.tsx`:
+- [X] T061 [US2] Tạo `frontend/src/components/SubjectForm.tsx`:
   - Tên, mã lớp, giảng viên, phòng.
   - Chọn học kỳ (mặc định học kỳ hiện tại; chưa có học kỳ thì hiện form tạo học kỳ ngay tại chỗ).
   - Chọn nhiều thứ (Thứ Hai … Chủ Nhật); giờ bắt đầu/kết thúc dạng 24h.
   - Ngày bắt đầu/kết thúc mặc định theo học kỳ.
   - `ColorPicker`.
   - Hiện `warnings` bằng `WarningToast`.
-- [ ] T062 [US2] Tạo `frontend/src/components/BulkSubjectForm.tsx` và
+- [X] T062 [US2] Tạo `frontend/src/components/BulkSubjectForm.tsx` và
   `frontend/src/pages/SubjectsPage.tsx`:
   - Trang Môn học liệt kê môn theo học kỳ, có nút "Thêm môn" và "Nhập nhiều môn".
   - Form nhiều dòng: thêm/bớt dòng; khoảng ngày dùng chung, mặc định cả học kỳ.
@@ -474,7 +474,7 @@ buổi, đúng thứ, đúng giờ (quickstart V3; SC-003).
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T063 [P] [US3] Test API trong `backend/tests/integration/test_today_api.py`:
+- [X] T063 [P] [US3] Test API trong `backend/tests/integration/test_today_api.py`:
   - Buổi học sắp theo giờ, có đủ giờ, phòng, `is_cancelled`.
   - `tasks_due_today` không gồm task của ngày khác.
   - `overdue_tasks` chỉ gồm task chưa hoàn thành có `due_at < now`.
@@ -482,10 +482,10 @@ buổi, đúng thứ, đúng giờ (quickstart V3; SC-003).
 
 ### Implementation for User Story 3
 
-- [ ] T064 [US3] Tạo `backend/app/services/today.py` và blueprint `backend/app/api/today.py`: `GET
+- [X] T064 [US3] Tạo `backend/app/services/today.py` và blueprint `backend/app/api/today.py`: `GET
   /api/today` trả `{date, sessions, tasks_due_today, overdue_tasks, notices}`. `notices` tạm rỗng,
   US7 sẽ thêm.
-- [ ] T065 [US3] Tạo `frontend/src/api/today.ts` và `frontend/src/pages/TodayPage.tsx`:
+- [X] T065 [US3] Tạo `frontend/src/api/today.ts` và `frontend/src/pages/TodayPage.tsx`:
   - Tiêu đề "Hôm nay, Thứ …".
   - Khối Buổi học: giờ, môn, phòng; buổi huỷ có nhãn "Đã huỷ" và gạch ngang.
   - Khối Task hôm nay và khối "Quá hạn": tiêu đề, ưu tiên, danh sách; checkbox hoàn thành cập nhật

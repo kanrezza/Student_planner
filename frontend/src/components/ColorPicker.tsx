@@ -1,12 +1,12 @@
 import { t } from '../i18n/vi';
 import { PALETTE, PALETTE_CODES } from '../lib/colors';
 
-/** Chọn 1 trong 12 màu cố định của ứng dụng (FR-018, FR-042). */
+/** Chọn 1 trong 12 màu cố định (FR-018, FR-042). `value = null` nghĩa là để ứng dụng tự chọn. */
 export function ColorPicker({
   value,
   onChange,
 }: {
-  value: string;
+  value: string | null;
   onChange: (code: string) => void;
 }) {
   return (
