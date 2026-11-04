@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14948a"/>
+      <stop offset="1" stop-color="#0a5852"/>
+    </linearGradient>
+  </defs>
+  <!-- Nền bo góc kiểu macOS -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+  <!-- Cuốn lịch -->
+  <rect x="236" y="262" width="552" height="522" rx="64" fill="#ffffff"/>
+  <path d="M236 326a64 64 0 0 1 64-64h424a64 64 0 0 1 64 64v82H236z" fill="#e2f3f0"/>
+  <rect x="340" y="196" width="40" height="124" rx="20" fill="#ffffff"/>
+  <rect x="644" y="196" width="40" height="124" rx="20" fill="#ffffff"/>
+  <rect x="340" y="196" width="40" height="124" rx="20" fill="#0a5852" opacity="0.25"/>
+  <rect x="644" y="196" width="40" height="124" rx="20" fill="#0a5852" opacity="0.25"/>
+  <!-- Dấu tích -->
+  <path d="M368 600l108 108 192-212" fill="none" stroke="#0f766e" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

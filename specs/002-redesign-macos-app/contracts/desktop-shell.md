@@ -56,9 +56,9 @@ không ai gọi).
   (plugin window-state).
 - Mở app lần hai → đưa cửa sổ đang có lên trước (plugin single-instance).
 - Đóng cửa sổ (nút đỏ hoặc ⌘W) → ẩn cửa sổ, app vẫn chạy; bấm icon Dock → hiện lại.
-- Thanh tiêu đề trong suốt, nội dung tràn lên thanh tiêu đề (kiểu app macOS hiện đại); giao diện
-  React chừa khoảng cho ba nút cửa sổ ở góc trái (biến CSS `--titlebar-inset`, chỉ áp dụng khi chạy
-  trong app: trang nhận biết qua `navigator.userAgent` chứa `LichHocDesktop`, do app đặt).
+- Thanh tiêu đề trong suốt (`titleBarStyle: Transparent`), vẫn kéo được cửa sổ; nội dung nằm dưới
+  thanh tiêu đề nên `--titlebar-inset` giữ 0 (xem research R3, quyết định T088). Trang nhận biết đang
+  chạy trong app qua `navigator.userAgent` chứa `LichHocDesktop`, do app đặt.
 
 ## 6. Không kết nối ra ngoài
 

@@ -78,6 +78,18 @@ step "Agent: ruff" bash -c "cd '$ROOT/mac-agent' && .venv/bin/ruff check . && .v
 step "Agent: pytest" agent_pytest
 step "Scripts: ruff" bash -c "cd '$ROOT' && mac-agent/.venv/bin/ruff check --config backend/pyproject.toml scripts && mac-agent/.venv/bin/ruff format --check --config backend/pyproject.toml scripts"
 
+desktop_cargo_test() (
+    [[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
+    if ! command -v cargo >/dev/null 2>&1; then
+        echo "⚠️ Bỏ qua: chưa cài Rust"
+        return 0
+    fi
+    cd "$ROOT/desktop/src-tauri"
+    cargo test --quiet
+)
+
+step "Desktop: cargo test" desktop_cargo_test
+
 if [[ -x "$ROOT/scripts/test-persistence.sh" ]]; then
     step "Lưu trữ qua khởi động lại" "$ROOT/scripts/test-persistence.sh"
 fi
