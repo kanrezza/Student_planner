@@ -1,87 +1,318 @@
 /*
- * Ghi đè FullCalendar theo token màu của app (sáng/tối). Đợt 2 (Phase 8) mở rộng phần này cho lịch
- * tuần mới.
+ * Ghi đè FullCalendar cho trang Lịch (feature 002 T070): đường lưới mảnh, nền theo token màu của app,
+ * đường giờ hiện tại đỏ, hai chế độ sáng/tối (token tự đổi theo `prefers-color-scheme`).
+ * Import sau `index.css` (qua CalendarScreen).
  */
 .lh-calendar .fc {
-  --fc-border-color: var(--color-border);
+  --fc-border-color: color-mix(in srgb, var(--color-border) 75%, transparent);
   --fc-page-bg-color: var(--color-bg);
   --fc-neutral-bg-color: var(--color-surface-2);
   --fc-neutral-text-color: var(--color-muted);
-  --fc-today-bg-color: color-mix(in srgb, var(--color-accent) 7%, transparent);
+  --fc-today-bg-color: transparent;
   --fc-now-indicator-color: var(--color-danger);
-  --fc-button-text-color: var(--color-text);
-  --fc-button-bg-color: var(--color-surface);
-  --fc-button-border-color: var(--color-border);
-  --fc-button-hover-bg-color: var(--color-surface-3);
-  --fc-button-hover-border-color: var(--color-border-strong);
-  --fc-button-active-bg-color: var(--color-accent);
-  --fc-button-active-border-color: var(--color-accent);
-  --fc-event-text-color: #ffffff;
+  --fc-event-border-color: transparent;
+  --fc-small-font-size: 11px;
+  height: 100%;
   font-size: 12px;
   color: var(--color-text);
 }
 
-.lh-calendar .fc .fc-toolbar-title {
-  font-size: 18px;
-  font-weight: 700;
+/* Bỏ viền ngoài bảng — chỉ giữ lưới bên trong. */
+.lh-calendar .fc-theme-standard .fc-scrollgrid {
+  border-left: 0;
+  border-right: 0;
 }
 
-.lh-calendar .fc .fc-button {
-  text-transform: none;
-  font-size: 12px;
+/* ── Hàng tên thứ + số ngày ─────────────────────────────────────────────── */
+.lh-calendar .fc .fc-col-header-cell {
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+
+.lh-calendar .fc .fc-col-header-cell-cushion {
+  display: block;
+  padding: 6px 4px 8px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.lh-calendar .lh-dayhead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.lh-calendar .lh-dayhead-name {
+  font-size: 11px;
   font-weight: 500;
-  border-radius: var(--radius-md);
-  box-shadow: none;
+  color: var(--color-muted);
 }
 
-.lh-calendar .fc .fc-button-primary:not(:disabled).fc-button-active,
-.lh-calendar .fc .fc-button-primary:not(:disabled):active {
+.lh-calendar .lh-dayhead-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lh-calendar .lh-dayhead-num.is-today {
+  background: var(--color-accent);
   color: var(--color-accent-contrast);
 }
 
-.lh-calendar .fc .fc-col-header-cell-cushion,
-.lh-calendar .fc .fc-daygrid-day-number {
-  color: var(--color-text);
+/* ── Lưới giờ ────────────────────────────────────────────────────────────── */
+.lh-calendar .fc .fc-timegrid-slot {
+  height: 2.5em;
 }
 
+/* Chỉ kẻ vạch giờ chẵn; nửa giờ để trống cho nhẹ mắt. */
+.lh-calendar .fc .fc-timegrid-slot-minor {
+  border-top-color: transparent;
+}
+
+.lh-calendar .fc .fc-timegrid-slot-label-cushion,
+.lh-calendar .fc .fc-timegrid-axis-cushion {
+  font-size: 10.5px;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lh-calendar .fc .fc-timegrid-axis-cushion {
+  /* Chữ "Cả ngày" */
+  max-width: none;
+  white-space: nowrap;
+}
+
+.lh-calendar .fc .fc-timegrid-slot-label {
+  vertical-align: top;
+}
+
+.lh-calendar .fc .fc-timegrid-slot-label-cushion {
+  position: relative;
+  top: -0.7em;
+  background: var(--color-bg);
+  padding: 0 6px 0 4px;
+}
+
+/* Nhãn 00:00 nằm sát mép trên nên bị cắt — ẩn đi. */
+.lh-calendar .fc .fc-timegrid-slots tr:first-child .fc-timegrid-slot-label-cushion {
+  visibility: hidden;
+}
+
+.lh-calendar .fc .fc-day-today {
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+}
+
+.lh-calendar .fc .fc-day-sat,
+.lh-calendar .fc .fc-day-sun {
+  background-color: color-mix(in srgb, var(--color-surface-2) 60%, transparent);
+}
+
+.lh-calendar .fc .fc-day-today.fc-day-sat,
+.lh-calendar .fc .fc-day-today.fc-day-sun {
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+}
+
+/* ── Đường giờ hiện tại đỏ + nhãn giờ đỏ ở cột giờ ──────────────────────── */
+.lh-calendar .fc .fc-timegrid-now-indicator-line {
+  border-top-width: 1.5px;
+}
+
+.lh-calendar .fc .fc-timegrid-now-indicator-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -4.5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger);
+}
+
+.lh-calendar .fc .fc-timegrid-now-indicator-arrow {
+  border: 0;
+  left: 0;
+  right: 0;
+  margin-top: -0.75em;
+  text-align: right;
+}
+
+.lh-calendar .lh-now-label {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-danger);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Khối (CalendarBlock) ────────────────────────────────────────────────── */
 .lh-calendar .fc-event {
-  border-radius: 6px;
   cursor: default;
+  border-radius: 6px;
+  box-shadow: none;
 }
 
-.lh-calendar .fc-event-body {
+/* Khối trong lưới giờ: nền nhạt, vạch màu đậm bên trái. */
+.lh-calendar .fc-timegrid-event,
+.lh-calendar .fc-daygrid-block-event {
+  border-width: 0 0 0 3px;
+  border-style: solid;
+}
+
+.lh-calendar .fc-timegrid-event-harness-inset .fc-timegrid-event {
+  box-shadow: 0 0 0 1px var(--color-bg);
+}
+
+/* Trùng giờ xếp cạnh nhau, chừa khe nhỏ giữa các khối. */
+.lh-calendar .fc-timegrid-event-harness > .fc-timegrid-event {
+  margin-right: 2px;
+}
+
+.lh-calendar .lh-block {
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
   overflow: hidden;
+  padding: 2px 4px;
   line-height: 1.25;
-  padding: 1px 3px;
+  container-type: inline-size;
 }
 
-.lh-calendar .fc-event-time {
-  font-weight: 600;
-  margin-right: 0.3rem;
+.lh-calendar .lh-block-compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px;
+  white-space: nowrap;
 }
 
-.lh-calendar .fc .is-cancelled {
-  text-decoration: line-through;
-  opacity: 0.5;
+.lh-calendar .lh-block-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow-wrap: break-word;
 }
 
-.lh-calendar .fc .is-done {
-  text-decoration: line-through;
-  opacity: 0.6;
+/* Khối hẹp (nhiều mục trùng giờ): tiêu đề một dòng rút gọn; rê chuột xem đủ (FR-024). */
+@container (max-width: 80px) {
+  .lh-calendar .lh-block-title {
+    display: block;
+    white-space: nowrap;
+  }
+  .lh-calendar .lh-block .lh-block-check {
+    display: none;
+  }
 }
 
-.lh-calendar .fc .is-important {
-  border-width: 2px !important;
-  border-color: var(--color-warning) !important;
-  font-weight: 600;
+.lh-calendar .lh-block-compact .lh-block-title {
+  display: block;
+  white-space: nowrap;
+}
+
+.lh-calendar .lh-block-meta {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  font-size: 11px;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.lh-calendar .lh-block-check[aria-checked='false'] {
+  border-color: currentColor;
+  background: transparent;
+}
+
+.lh-calendar .lh-block-tag {
+  flex-shrink: 0;
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgb(255 255 255 / 0.25);
 }
 
 .lh-calendar .tag-dot {
   display: inline-block;
-  width: 7px;
-  height: 7px;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  border: 1px solid #fff;
-  margin-left: 3px;
-  vertical-align: middle;
+}
+
+/* Buổi thi: nền đậm, viền rõ, nổi bật hẳn so với buổi học (FR-023). */
+.lh-calendar .fc-event.is-exam {
+  border-width: 2px !important;
+  border-style: solid;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+}
+
+/* Task xong và buổi huỷ: mờ đi. */
+.lh-calendar .fc-event.is-done,
+.lh-calendar .fc-event.is-cancelled {
+  opacity: 0.5;
+}
+
+.lh-calendar .fc-event.is-cancelled .lh-block-title {
+  text-decoration: line-through;
+}
+
+/* Khối hạn chót (30 phút): vạch trái nét đứt. */
+.lh-calendar .fc-event.is-deadline {
+  border-left-style: dashed;
+}
+
+/* ── Chế độ Tháng ─────────────────────────────────────────────────────────── */
+.lh-calendar .fc .fc-daygrid-day-number {
+  padding: 4px 6px;
+  font-size: 12px;
+  color: var(--color-text);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.lh-calendar .fc .fc-day-today .fc-daygrid-day-number {
+  margin: 2px;
+  min-width: 22px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  text-align: center;
+  font-weight: 600;
+}
+
+.lh-calendar .fc .fc-day-other .fc-daygrid-day-top {
+  opacity: 0.45;
+}
+
+.lh-calendar .fc .fc-daygrid-more-link {
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.lh-calendar .fc .fc-popover {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-pop);
+}
+
+.lh-calendar .fc .fc-popover-header {
+  background: var(--color-surface-2);
 }

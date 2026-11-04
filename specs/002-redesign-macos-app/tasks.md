@@ -397,13 +397,13 @@ ngày, khối màu nhạt, xếp cạnh nhau, khối hạn chót, buổi thi n�
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T062 [P] [US4] Test `frontend/tests/calendarEvents.test.ts` cho
+- [X] T062 [P] [US4] Test `frontend/tests/calendarEvents.test.ts` cho
   `frontend/src/features/calendar/toCalendarEvents.ts` (mở rộng bản trong `lib/calendarEvents.ts`)
   theo bảng "Khối trên lịch" của data-model: task có khung giờ làm → khối khung giờ làm; chỉ giờ hạn
   → `due_at`…+30 phút, cờ `deadline`; chỉ ngày → `allDay`; task xong và buổi huỷ có class mờ; buổi
   thi (dữ liệu giả) có class nổi bật, không kéo được; `startEditable`/`durationEditable` đúng bảng;
   màu nền `colorSoft`, chữ `colorStrong`.
-- [ ] T063 [P] [US4] Test hàm thuần `frontend/tests/calendarTitle.test.ts`: tiêu đề tháng/năm "Tháng 11,
+- [X] T063 [P] [US4] Test hàm thuần `frontend/tests/calendarTitle.test.ts`: tiêu đề tháng/năm "Tháng 11,
   2026"; tuần vắt hai tháng "Tháng 11 – Tháng 12, 2026"; vắt hai năm "Tháng 12, 2026 – Tháng 1, 2027";
   `scrollTime` (tuần có hôm nay → giờ hiện tại − 1 giờ, tuần khác → 06:00); `monthGrid(month)` cho
   `frontend/src/features/calendar/monthGrid.ts`: 6 hàng × 7 ngày, bắt đầu Thứ Hai, có ngày tháng
@@ -411,21 +411,21 @@ ngày, khối màu nhạt, xếp cạnh nhau, khối hạn chót, buổi thi n�
 
 ### Implementation for User Story 4
 
-- [ ] T064 [US4] `frontend/src/features/calendar/toCalendarEvents.ts`, `calendarTitle.ts` và
+- [X] T064 [US4] `frontend/src/features/calendar/toCalendarEvents.ts`, `calendarTitle.ts` và
   `monthGrid.ts` (làm T062, T063 pass); xoá `lib/calendarEvents.ts` sau khi chuyển.
-- [ ] T065 [US4] `frontend/src/features/calendar/CalendarHeader.tsx`: nút ẩn/hiện cột bên, tiêu đề
+- [X] T065 [US4] `frontend/src/features/calendar/CalendarHeader.tsx`: nút ẩn/hiện cột bên, tiêu đề
   tháng/năm lớn, nút "+", menu chế độ Ngày/Tuần/Tháng (`Menu`), cụm trước/"Hôm nay"/sau; trạng thái
   lấy từ URL `/lich?che-do=&ngay=&nhan=`; nút ẩn/hiện cột bên (nhớ trong `localStorage`).
-- [ ] T066 [US4] Cột bên `frontend/src/features/calendar/CalendarSidebar.tsx` (FR-021, FR-037): lịch
+- [X] T066 [US4] Cột bên `frontend/src/features/calendar/CalendarSidebar.tsx` (FR-021, FR-037): lịch
   tháng nhỏ dựng từ `monthGrid` (hàng T2…CN, nút tháng trước/sau, hôm nay tô tròn màu nhấn, khoảng đang
   xem tô nền nhạt, ngày ngoài tháng chữ mờ; bấm một ngày → `gotoDate` và cập nhật `ngay=` trên URL)
   và bộ lọc nhãn `TagFilter` bên dưới (cập nhật `nhan=`); test component trong
   `frontend/tests/calendarSidebar.test.tsx` (bấm ngày gọi `onSelectDate` đúng ngày, tô hôm nay).
-- [ ] T067 [US4] `frontend/src/features/calendar/CalendarBlock.tsx` (`eventContent`): khối nền nhạt bo
+- [X] T067 [US4] `frontend/src/features/calendar/CalendarBlock.tsx` (`eventContent`): khối nền nhạt bo
   góc, checkbox cho task (bấm hoàn thành ngay, không mở chi tiết), tiêu đề đậm (★ nếu quan trọng), dòng
   "08:00–10:00", phòng cho buổi học, "Đã dời"/"Đã huỷ", biểu tượng hạn chót; buổi thi nền đậm + viền +
   nhãn "Thi"; khối hẹp hiện tiêu đề rút gọn và tooltip đầy đủ (FR-024).
-- [ ] T068 [US4] `frontend/src/features/calendar/CalendarScreen.tsx` thay `pages/CalendarPage.tsx`:
+- [X] T068 [US4] `frontend/src/features/calendar/CalendarScreen.tsx` thay `pages/CalendarPage.tsx`:
   cấu hình FullCalendar theo bảng research R5 (`headerToolbar: false`, `firstDay: 1`, `locale: vi`,
   `dayHeaderContent` hàng T2…CN + số ngày, số hôm nay tô tròn màu nhấn, `nowIndicator` + nhãn giờ đỏ
   ở cột giờ, `allDayText: 'Cả ngày'`, `slotEventOverlap: false`, `scrollTime`), bấm khối mở bảng chi
@@ -436,8 +436,8 @@ ngày, khối màu nhạt, xếp cạnh nhau, khối hạn chót, buổi thi n�
   URL sang `?task=:id` để các trường khác lưu như bình thường), Esc khi tiêu đề trống thì đóng và không
   tạo gì; test trong `frontend/tests/taskDetailCreate.test.tsx`. Nút "+" mở chế độ này với ngày đang
   chọn (US4 kịch bản 9).
-- [ ] T069 [US4] Phím tắt Lịch (←/→, T, D/W/M) đăng ký trong `CalendarScreen.tsx`.
-- [ ] T070 [US4] CSS ghi đè FullCalendar trong `frontend/src/features/calendar/calendar.css` (import
+- [X] T069 [US4] Phím tắt Lịch (←/→, T, D/W/M) đăng ký trong `CalendarScreen.tsx`.
+- [X] T070 [US4] CSS ghi đè FullCalendar trong `frontend/src/features/calendar/calendar.css` (import
   sau `index.css`): đường lưới mảnh, nền theo token, đường giờ hiện tại đỏ, hai chế độ sáng/tối.
 
 **Checkpoint (hết Đợt 2)**: `./scripts/test.sh` pass; commit; hướng dẫn thử D7.

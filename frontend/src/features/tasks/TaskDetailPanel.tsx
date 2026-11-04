@@ -1,8 +1,8 @@
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { ApiError } from '../../api/client';
 import { useLists } from '../../api/lists';
 import { useSettings } from '../../api/settings';
-import { useTask, useUpdateTask } from '../../api/tasks';
+import { useCreateTask, useTask, useUpdateTask } from '../../api/tasks';
 import type { Priority, Task, TaskInput } from '../../api/types';
 import { useNow } from '../../app/useNow';
 import { ImportantToggle } from '../../components/ImportantToggle';
@@ -10,7 +10,7 @@ import { minutesLabel, ReminderSelect } from '../../components/ReminderSelect';
 import { SessionLink } from '../../components/SessionLink';
 import { TagPicker } from '../../components/TagPicker';
 import { t } from '../../i18n/vi';
-import { formatDayLong, formatTime } from '../../lib/dates';
+import { formatDayLong, formatDayShort, formatTime } from '../../lib/dates';
 import { PRIORITIES, blankToNull, priorityLabel } from '../../lib/format';
 import { Button } from '../../ui/Button';
 import { Checkbox } from '../../ui/Checkbox';
@@ -41,6 +41,158 @@ export function TaskDetailPanel({ taskId, onClose }: { taskId: number; onClose: 
           </p>
         </div>
       )}
+    </SidePanel>
+  );
+}
+
+/** Giá trị truyền vào chế độ tạo mới: `?task=new&due=YYYY-MM-DD[&work_date=&work_start=&work_end=]`. */
+export type NewTaskDefaults = {
+  due_date: string | null;
+  work_date: string | null;
+  work_start: string | null;
+  work_end: string | null;
+};
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_RE = /^\d{2}:\d{2}$/;
+
+export function parseNewTaskParams(params: URLSearchParams): NewTaskDefaults {
+  const pick = (key: string, re: RegExp) => {
+    const value = params.get(key);
+    return value && re.test(value) ? value : null;
+  };
+  const work_date = pick('work_date', DATE_RE);
+  const work_start = pick('work_start', TIME_RE);
+  const work_end = pick('work_end', TIME_RE);
+  const fullWork = Boolean(work_date && work_start && work_end);
+  return {
+    due_date: pick('due', DATE_RE),
+    work_date: fullWork ? work_date : null,
+    work_start: fullWork ? work_start : null,
+    work_end: fullWork ? work_end : null,
+  };
+}
+
+/**
+ * Chế độ tạo mới của bảng chi tiết (feature 002 US4 kịch bản 9; Đợt 3 dùng lại cho chọn vùng): mọi
+ * trường để trống trừ giá trị truyền vào, con trỏ ở ô tiêu đề. Chỉ gọi POST khi rời ô tiêu đề hoặc
+ * Enter với tiêu đề không trống, rồi `onCreated(id)` để chuyển sang bảng chi tiết thường. Esc khi tiêu
+ * đề trống thì đóng và không tạo gì.
+ */
+export function NewTaskPanel({
+  defaults,
+  onCreated,
+  onClose,
+}: {
+  defaults: NewTaskDefaults;
+  onCreated: (id: number) => void;
+  onClose: () => void;
+}) {
+  const create = useCreateTask();
+  const lists = useLists();
+  const toast = useToast();
+  const [title, setTitle] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const sentRef = useRef(false);
+  const closeAfterRef = useRef(false);
+
+  useEffect(() => inputRef.current?.focus(), []);
+
+  const studyList = lists.data?.find((l) => l.is_default_study) ?? lists.data?.[0];
+
+  function submit(closeAfter = false) {
+    const value = title.trim();
+    if (value === '' || sentRef.current || !studyList) return;
+    sentRef.current = true;
+    closeAfterRef.current = closeAfter;
+    create.mutate(
+      {
+        title: value,
+        notes: null,
+        due_date: defaults.due_date,
+        due_time: null,
+        priority: 2,
+        list_id: studyList.id,
+        is_important: false,
+        reminder_minutes: null,
+        ...(defaults.work_date
+          ? {
+              work_date: defaults.work_date,
+              work_start: defaults.work_start,
+              work_end: defaults.work_end,
+            }
+          : {}),
+      },
+      {
+        onSuccess: ({ task, warnings }) => {
+          for (const warning of warnings) toast.show(warning.message, { tone: 'warning' });
+          if (closeAfterRef.current) onClose();
+          else onCreated(task.id);
+        },
+        onError: (err) => {
+          sentRef.current = false;
+          if (err instanceof ApiError && err.fields.title) setError(err.fields.title);
+          else toast.show(t('detail.createFailed', { message: err.message }), { tone: 'danger' });
+        },
+      },
+    );
+  }
+
+  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.nativeEvent.isComposing) return;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault(); // phím Esc chung của màn hình bỏ qua sự kiện đã xử lý
+      if (title.trim() === '') onClose();
+      else submit(true);
+    }
+  }
+
+  return (
+    <SidePanel label={t('detail.newLabel')}>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <PanelHeader onClose={onClose}>
+          <span className="truncate text-[12px] font-medium text-muted">
+            {t('detail.newLabel')}
+            {studyList ? ` · ${`${studyList.emoji ?? ''} ${studyList.name}`.trim()}` : ''}
+          </span>
+        </PanelHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-4">
+          <input
+            ref={inputRef}
+            aria-label={t('tasks.fieldTitle')}
+            value={title}
+            maxLength={300}
+            placeholder={t('detail.titlePlaceholder')}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setError(null);
+            }}
+            onBlur={() => submit()}
+            onKeyDown={onKeyDown}
+            aria-invalid={Boolean(error)}
+            readOnly={create.isPending}
+            className="h-auto border-transparent bg-transparent px-1 py-0.5 text-[17px] font-semibold hover:border-border"
+          />
+          <FieldError message={error ?? undefined} />
+          <p className="mt-2 px-1 text-[12px] text-muted">{t('detail.newHint')}</p>
+          <dl className="mt-4 flex flex-col divide-y divide-border border-y border-border">
+            <Row label={t('detail.due')}>
+              <span>{defaults.due_date ? formatDayShort(defaults.due_date) : '—'}</span>
+            </Row>
+            {defaults.work_date && (
+              <Row label={t('detail.workWindow')}>
+                <span className="tabular-nums">
+                  {formatDayShort(defaults.work_date)}, {defaults.work_start}–{defaults.work_end}
+                </span>
+              </Row>
+            )}
+          </dl>
+        </div>
+      </div>
     </SidePanel>
   );
 }

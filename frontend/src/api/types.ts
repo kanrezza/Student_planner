@@ -147,6 +147,9 @@ export type ClassSession = {
   is_important: boolean;
   important_override: boolean | null;
   subject_is_important: boolean;
+  /** Dời buổi sang ngày khác (feature 002 FR-028, có từ Đợt 3). */
+  is_moved?: boolean;
+  original_date?: string | null;
 };
 
 export type TodayData = {
@@ -157,4 +160,17 @@ export type TodayData = {
   notices: { code: string; message: string }[];
 };
 
-export type CalendarData = { sessions: ClassSession[]; tasks: Task[] };
+/** Buổi thi trên lịch (feature 001 US11; backend chưa trả `exams` thì coi như rỗng). */
+export type CalendarExam = {
+  id: number;
+  course_name: string;
+  date: string;
+  start_at: string;
+  end_at: string;
+  room: string | null;
+  display_color: string;
+  is_important: boolean;
+  tags: Tag[];
+};
+
+export type CalendarData = { sessions: ClassSession[]; tasks: Task[]; exams?: CalendarExam[] };
