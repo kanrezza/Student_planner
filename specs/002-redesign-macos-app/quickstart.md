@@ -41,3 +41,63 @@ app trên Dock.
 | D15 | Menu tiếng Việt | Mở từng menu; Cài đặt… ⌘, | Chữ tiếng Việt; ⌘, mở Cài đặt | FR-006 |
 | D16 | Giữ chức năng cũ | Chạy lại quickstart 001 V1–V21 trong app mới | Pass (trừ phần feature 001 chưa làm) | SC-003, FR-036 |
 | D17 | Offline | Tắt Wi-Fi; dùng app; kiểm tra kết nối của app bằng Activity Monitor → Mạng | Mọi thứ hoạt động; app chỉ kết nối 127.0.0.1 | SC-010 |
+
+
+## Kết quả kiểm chứng (T093) — 2026-11-05
+
+Chạy tự động được: `./scripts/test.sh` (pass toàn bộ), `./scripts/validate.sh` (20/20), đo thời gian và đếm
+bấm bên dưới. Phần cần mắt/tay người dùng ghi ở cuối.
+
+### Đo thời gian mở app (SC-001)
+
+Đo từ lúc `open` app (đã thoát hẳn) tới lúc nginx nhận request `/api/today` đầu tiên từ app (đã có dữ liệu
+trang; chưa gồm thời gian vẽ, và có sai số ~0,3 giây do chu kỳ dò log).
+
+| Lần | Giây |
+|-----|------|
+| 1 (nguội) | 3,57 |
+| 2 | 0,61 |
+| 3 | 0,68 |
+| Trung bình | 1,62 |
+
+**Chưa đạt tiêu chí "cả 3 lần < 3 giây"**: lần mở đầu tiên sau khi app bị thoát chậm hơn 3 giây (khởi động
+nguội của WKWebView/Gatekeeper); hai lần sau dưới 1 giây. Đo "tắt OrbStack → mở app → mở OrbStack (< 5 giây)"
+chưa làm vì sẽ dừng dịch vụ của bạn.
+
+### Đếm số lần bấm (SC-009)
+
+Từ màn hình mặc định (Công việc → Hôm nay); gõ phím không tính là bấm.
+
+| Chức năng | Đường đi | Số lần bấm |
+|-----------|----------|-----------|
+| Thêm task | bấm ô *Thêm công việc* (hoặc ⌘N: 0), gõ, Enter | ≤ 1 |
+| Xem lịch tuần | Lịch (mặc định chế độ tuần) | 1 |
+| Thêm môn | Môn học → Thêm môn → Lưu | 3 |
+| Huỷ một buổi học | Lịch → bấm buổi → Huỷ buổi | 3 |
+| Bật đồng bộ | Cài đặt (mở sẵn *Nhắc lịch và đồng bộ*) → công tắc | 2 |
+| Khôi phục task từ Thùng rác | Thùng rác → Khôi phục | 2 |
+
+**Đạt** (mọi chức năng ≤ 3).
+
+### Kết quả theo kịch bản
+
+| # | Kết quả | Ghi chú |
+|---|---------|---------|
+| D1–D3, D6 | ✅ bằng test giao diện (Vitest) + `validate.sh` (D6) | |
+| D4 Thùng rác | ✅ `validate.sh` (30 ngày, khôi phục) | phần Lời nhắc Apple cần thử tay |
+| D5 | ◐ logic được test (pytest) | chưa chạy lệnh SQL thủ công |
+| D7–D9 Lịch, kéo thả | ✅ test Vitest (ánh xạ, dropToPatch, vùng chọn) | thao tác kéo thật cần thử tay |
+| D10 Dời buổi học | ✅ `validate.sh` + test | |
+| D11 Sáng/Tối | ⏳ cần thử tay | test tương phản màu (SC-007) pass |
+| D12 Phím tắt | ✅ test `shortcuts.test.tsx` | |
+| D13 App trên Dock | ◐ app mở và nạp giao diện từ 127.0.0.1:8080 (log nginx); màn hình "Hãy mở OrbStack" cần thử tay | |
+| D14, D15 Cửa sổ, menu | ◐ ⌘Q hoạt động; nhớ cửa sổ, menu cần thử tay | |
+| D16 Giữ chức năng cũ | ✅ phần tự động của V1–V10, V17–V19 (xem `validation.md` của feature 001) | |
+| D17 Offline | ◐ `lsof` không thấy kết nối nào của app; dist/backend không gọi URL ngoài | chưa tắt Wi-Fi thật |
+
+### Rà constitution (T094)
+
+- Không có URL ngoài được gọi: `frontend/dist` chỉ có URL không gọi (namespace XML/SVG, chuỗi trong thư viện);
+  `desktop/` chỉ gọi `127.0.0.1:8080`; cổng Docker chỉ mở trên `127.0.0.1`.
+- Không còn chuỗi tiếng Anh hiển thị trong `frontend/src` (ngoài `i18n/vi.ts`) và `message` của `ApiError`.
+- Phụ thuộc: mọi gói trong `frontend/package.json` đều được dùng; `Cargo.toml` chỉ có tauri, hai plugin và serde.

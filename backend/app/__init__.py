@@ -27,6 +27,9 @@ def create_app(config_overrides: dict | None = None) -> Flask:
     migrate.init_app(app, db, directory=MIGRATIONS_DIR)
 
     register_blueprints(app)
+    from app import cli
+
+    cli.register(app)
     register_error_handlers(app)
     purge_trash_on_startup(app)
     return app

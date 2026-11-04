@@ -551,9 +551,9 @@ D17.
 
 ## Phase 11: Polish & Cross-Cutting Concerns
 
-- [ ] T091 [P] Cập nhật `specs/001-task-class-scheduler/quickstart.md` các bước dùng giao diện mới
+- [X] T091 [P] Cập nhật `specs/001-task-class-scheduler/quickstart.md` các bước dùng giao diện mới
   (đường dẫn trang, tên nút) để V1–V21 chạy được trong app mới (SC-003).
-- [ ] T092 [P] Tạo hoặc cập nhật `README.md` tiếng Việt ở gốc repo (constitution "Ràng buộc bổ sung" và
+- [X] T092 [P] Tạo hoặc cập nhật `README.md` tiếng Việt ở gốc repo (constitution "Ràng buộc bổ sung" và
   V; gộp T141 của feature 001 vào đây): giới thiệu; yêu cầu (macOS 14+, OrbStack, Node, Python 3.11 cho
   agent, Rust chỉ khi build app; internet chỉ cần ở lần build/cài đầu); chạy `docker compose up -d
   --build`; cài app (`desktop/scripts/install.sh`) và màn hình "Hãy mở OrbStack"; cài agent
@@ -565,7 +565,7 @@ D17.
   --if-exists`); Thùng rác giữ task 30 ngày; phím tắt (bảng ui-shortcuts); chạy test
   `./scripts/test.sh`; xử lý sự cố (OrbStack chưa mở, agent không chạy, bị từ chối quyền, không có
   iCloud). Đánh dấu T141 của feature 001 là đã làm khi xong.
-- [ ] T093 Chạy quickstart D1–D17 và V1–V21 (feature 001) trong app; ghi kết quả và chỗ chưa đạt vào
+- [ ] T093 (đã chạy phần tự động và đo, kết quả ở cuối quickstart.md; SC-001 lần mở nguội 3,57 giây chưa đạt; còn các bước cần thử tay) Chạy quickstart D1–D17 và V1–V21 (feature 001) trong app; ghi kết quả và chỗ chưa đạt vào
   cuối `specs/002-redesign-macos-app/quickstart.md`, kèm:
   - **Đo thời gian mở app (SC-001)**: backend đang chạy, app đã thoát → bấm icon Dock, bấm giờ tới khi
     danh sách Hôm nay hiện đủ; đo 3 lần, ghi từng lần và trung bình (đạt khi cả 3 lần < 3 giây). Tắt
@@ -574,7 +574,7 @@ D17.
   - **Đếm số lần bấm (SC-009)**: từ màn hình mặc định (Công việc → Hôm nay), đếm số lần bấm để: thêm
     task, xem lịch tuần, thêm môn, huỷ một buổi học, bật đồng bộ, khôi phục task từ Thùng rác; ghi
     bảng chức năng → số lần bấm → đường đi (đạt khi mọi chức năng ≤ 3; gõ phím không tính là bấm).
-- [ ] T094 Rà constitution: không có kết nối ra ngoài (D17), mọi chữ tiếng Việt (tìm chuỗi tiếng Anh
+- [X] T094 Rà constitution: không có kết nối ra ngoài (D17), mọi chữ tiếng Việt (tìm chuỗi tiếng Anh
   còn sót trong `frontend/src` và `desktop/`), không phụ thuộc thừa trong `package.json`/`Cargo.toml`.
 
 ---

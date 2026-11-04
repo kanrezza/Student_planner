@@ -35,6 +35,7 @@ select = ["E", "F", "I", "B", "UP"]
 "spikes/*" = ["E501"]
 # Test OCR dựng bảng tay bằng các dòng `box(...)` dài, giữ nguyên bố cục (`# fmt: skip`).
 "tests/*" = ["E501"]
+"scripts_validate.py" = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
