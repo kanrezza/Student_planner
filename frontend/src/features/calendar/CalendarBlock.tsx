@@ -1,6 +1,6 @@
 import type { EventContentArg } from '@fullcalendar/core';
 import { t } from '../../i18n/vi';
-import { formatTime } from '../../lib/dates';
+import { formatDayAbbr, formatTime } from '../../lib/dates';
 import { Checkbox } from '../../ui/Checkbox';
 import { cx } from '../../ui/cx';
 import { IconFlag, IconStarFilled } from '../../ui/icons';
@@ -29,7 +29,10 @@ export function CalendarBlock({
   const { event, view } = arg;
   const p = event.extendedProps as CalendarEventProps;
   const timeLabel = event.allDay ? '' : blockTimeLabel(event.start, event.end, p.deadline);
-  const status = p.cancelled ? t('calendar.cancelled') : p.moved ? t('calendar.moved') : null;
+  const moved = p.originalDate
+    ? t('calendar.movedFrom', { date: formatDayAbbr(p.originalDate) })
+    : t('calendar.moved');
+  const status = p.cancelled ? t('calendar.cancelled') : p.moved ? moved : null;
   const tooltip = [
     event.title,
     timeLabel && (p.deadline ? `${t('calendar.deadline')} ${timeLabel}` : timeLabel),

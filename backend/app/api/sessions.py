@@ -1,5 +1,7 @@
 """/api/sessions — sửa, huỷ, khôi phục, gắn nhãn một buổi học (FR-011, FR-012, FR-043)."""
 
+import datetime as dt
+
 from flask import Blueprint, request
 
 from app.schemas.common import HHMM, ApiModel, OptionalText
@@ -11,6 +13,7 @@ bp = Blueprint("sessions", __name__)
 
 
 class SessionPatch(ApiModel):
+    date: dt.date | None = None  # dời sang ngày khác (feature 002 FR-028)
     start_time: HHMM | None = None
     end_time: HHMM | None = None
     room: OptionalText = None
@@ -26,7 +29,10 @@ def get_session(session_id: int):
 def update_session(session_id: int):
     patch = SessionPatch.model_validate(request.get_json(silent=True) or {})
     changes = patch.model_dump(exclude_unset=True)
-    return serialize_session(service.update_session(session_id, changes))
+    if changes.get("date") is None:
+        changes.pop("date", None)
+    session, warnings = service.update_session(session_id, changes)
+    return {"session": serialize_session(session), "warnings": warnings}
 
 
 @bp.post("/sessions/<int:session_id>/cancel")

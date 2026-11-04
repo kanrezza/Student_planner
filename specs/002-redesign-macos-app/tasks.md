@@ -453,39 +453,39 @@ nhận, Hoàn tác.
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T071 [P] [US5] Test unit `backend/tests/unit/test_recurrence.py` (bổ sung): `plan_regeneration`
+- [X] T071 [P] [US5] Test unit `backend/tests/unit/test_recurrence.py` (bổ sung): `plan_regeneration`
   dùng ngày khoá `original_date ?? date`; buổi đã dời được giữ khi đổi phòng/giờ chung của môn, không
   sinh buổi mới ở ngày gốc; ngày gốc nằm ngoài khoảng mới → thuộc `exception_conflicts`.
-- [ ] T072 [P] [US5] Test API `backend/tests/integration/test_move_session_api.py`: PATCH `date` dời
+- [X] T072 [P] [US5] Test API `backend/tests/integration/test_move_session_api.py`: PATCH `date` dời
   Thứ Hai 16/11 → Thứ Bảy 21/11 08:00 → `original_date = 2026-11-16`, `is_moved`, `revision` tăng,
   feed có sự kiện ở ngày mới; dời về ngày gốc → `original_date = null`; trùng `(môn, ngày, giờ bắt
   đầu)` → 400 `fields.date` "Môn này đã có buổi học vào ngày và giờ đó"; ngoài học kỳ → thành công kèm
   `outside_semester`; buổi có task tự tạo → deadline tính theo ngày mới; buổi đã dời rồi sửa lịch
   chung của môn → vẫn giữ.
-- [ ] T073 [P] [US5] Test hàm thuần `frontend/tests/dropToPatch.test.ts` cho
+- [X] T073 [P] [US5] Test hàm thuần `frontend/tests/dropToPatch.test.ts` cho
   `frontend/src/features/calendar/dropToPatch.ts`: đủ các dòng của bảng "Quy tắc kéo thả" (data-model),
   làm tròn 15 phút, kéo dãn tối thiểu 15 phút, `undoPatch` trả đúng giá trị cũ của các trường đã đổi.
 
 ### Implementation for User Story 5
 
-- [ ] T074 [US5] Backend dời buổi: `backend/app/services/recurrence.py` (`ExistingSession` thêm
+- [X] T074 [US5] Backend dời buổi: `backend/app/services/recurrence.py` (`ExistingSession` thêm
   `original_date`, ngày khoá, `has_exception`), `backend/app/services/subjects.py` (`_existing` truyền
   `original_date`), `backend/app/services/sessions.py` + `backend/app/api/sessions.py` (`date` trong
   PATCH theo research R8, trả `{session, warnings}`), `backend/app/schemas/subjects.py`
   (`original_date`, `is_moved` trong `serialize_session`); làm T071, T072 pass. Cập nhật
   `frontend/src/api/sessions.ts` cho dạng trả mới.
-- [ ] T075 [US5] `frontend/src/features/calendar/dropToPatch.ts` (làm T073 pass).
-- [ ] T076 [US5] Kéo thả task trong `CalendarScreen.tsx`: `editable`, `snapDuration: '00:15'`,
+- [X] T075 [US5] `frontend/src/features/calendar/dropToPatch.ts` (làm T073 pass).
+- [X] T076 [US5] Kéo thả task trong `CalendarScreen.tsx`: `editable`, `snapDuration: '00:15'`,
   `eventDrop`/`eventResize` → `dropToPatch` → PATCH (cập nhật lạc quan; lỗi thì `info.revert()` +
   Toast); Toast "Đã đổi giờ" có "Hoàn tác" 5 giây; Esc khi đang kéo huỷ (mặc định FullCalendar).
-- [ ] T077 [US5] Chọn vùng tạo task: `selectable`, `select` → mở bảng chi tiết bằng chế độ tạo mới đã
+- [X] T077 [US5] Chọn vùng tạo task: `selectable`, `select` → mở bảng chi tiết bằng chế độ tạo mới đã
   có từ T068 (`?task=new&due=&work_date=&work_start=&work_end=` theo vùng đã kéo); không sửa thêm
   `TaskDetailPanel.tsx` ngoài việc truyền tham số; bỏ vùng chọn sau khi mở.
-- [ ] T078 [US5] Dời buổi học: `frontend/src/features/calendar/MoveSessionDialog.tsx` ("Chỉ đổi giờ buổi
+- [X] T078 [US5] Dời buổi học: `frontend/src/features/calendar/MoveSessionDialog.tsx` ("Chỉ đổi giờ buổi
   học ngày … sang …? Các buổi khác của môn không đổi." hoặc "Dời buổi học ngày … sang …?"); đồng ý →
   PATCH session; huỷ → `revert()`; hiện cảnh báo trùng giờ/ngoài học kỳ nếu có. Thêm ô ngày "Dời sang
   ngày" vào `SessionDetail` (FR-028).
-- [ ] T079 [US5] Khoá kéo thả cho buổi thi, buổi đã huỷ, task đã hoàn thành (theo `toCalendarEvents`);
+- [X] T079 [US5] Khoá kéo thả cho buổi thi, buổi đã huỷ, task đã hoàn thành (theo `toCalendarEvents`);
   khối buổi đã dời hiện "Đã dời (từ T2 16/11)".
 
 **Checkpoint (hết Đợt 3)**: `./scripts/test.sh` pass; commit; hướng dẫn thử D8–D10.

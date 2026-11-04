@@ -178,3 +178,18 @@ def test_eve_reminder_setting(client, db_session, e_learning):
     resp = client.patch("/api/settings", json={"auto_deadline_eve_reminder_time": None})
     assert resp.get_json()["auto_deadline_eve_reminder_time"] is None
     assert alarms() == ["2026-11-15T07:00:00+07:00"]
+
+
+def test_moving_a_session_recomputes_its_auto_deadline(client, db_session, e_learning):
+    """Dời buổi sang ngày khác (feature 002 FR-028): deadline tự tạo tính theo ngày mới."""
+    subject = setup(client, e_learning)  # Thứ Ba 03, 10, 17, 24/11
+    first = sessions_of(client, subject["id"])[0]
+    assert str(auto_tasks(db_session)[0].due_date) == "2026-11-08"  # Chủ Nhật sau buổi
+
+    resp = client.patch(
+        f"/api/sessions/{first['id']}", json={"date": "2026-11-12"}
+    )  # Thứ Năm tuần sau
+    assert resp.status_code == 200
+    moved = next(t for t in auto_tasks(db_session) if t.source_session_id == first["id"])
+    assert str(moved.due_date) == "2026-11-15"  # Chủ Nhật sau ngày mới
+    assert moved.title == "Bài tập Triết học – buổi 12/11"

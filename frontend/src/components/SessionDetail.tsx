@@ -2,10 +2,11 @@ import { useState, type FormEvent } from 'react';
 import { useSessionActions, type SessionPatch } from '../api/sessions';
 import type { ClassSession } from '../api/types';
 import { t } from '../i18n/vi';
-import { formatDayLong, formatTime } from '../lib/dates';
+import { formatDayAbbr, formatDayLong, formatTime } from '../lib/dates';
 import { blankToNull, sessionTimeRange } from '../lib/format';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
+import { useToast } from '../ui/Toast';
 import { FormActions } from './FormActions';
 import { FormField, FormRow } from './FormField';
 import {
@@ -29,6 +30,8 @@ export function SessionDetail({
   onClose: () => void;
 }) {
   const { update, setCancelled, setTags } = useSessionActions();
+  const toast = useToast();
+  const [date, setDate] = useState(session.date);
   const [startTime, setStartTime] = useState(formatTime(session.start_at));
   const [endTime, setEndTime] = useState(formatTime(session.end_at));
   const [room, setRoom] = useState(session.room ?? '');
@@ -43,6 +46,7 @@ export function SessionDetail({
     e.preventDefault();
     // Chỉ gửi trường đã đổi, để không đánh dấu "sửa riêng" khi người dùng không đổi gì.
     const patch: SessionPatch = {};
+    if (date && date !== session.date) patch.date = date;
     if (startTime !== formatTime(session.start_at)) patch.start_time = startTime;
     if (endTime !== formatTime(session.end_at)) patch.end_time = endTime;
     if (blankToNull(room) !== session.room) patch.room = blankToNull(room);
@@ -53,7 +57,15 @@ export function SessionDetail({
         ? setTags.mutate({ id: session.id, tagIds: ownTags }, { onSuccess: onClose })
         : onClose();
     if (Object.keys(patch).length)
-      update.mutate({ id: session.id, patch }, { onSuccess: saveTags });
+      update.mutate(
+        { id: session.id, patch },
+        {
+          onSuccess: ({ warnings }) => {
+            for (const warning of warnings) toast.show(warning.message, { tone: 'warning' });
+            saveTags();
+          },
+        },
+      );
     else saveTags();
   }
 
@@ -84,9 +96,15 @@ export function SessionDetail({
           {session.is_cancelled ? t('session.restore') : t('session.cancel')}
         </Button>
       </div>
-      {(session.is_cancelled || session.time_overridden || session.room_overridden) && (
+      {(session.is_cancelled ||
+        session.is_moved ||
+        session.time_overridden ||
+        session.room_overridden) && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {session.is_cancelled && <Badge tone="danger">{t('session.cancelled')}</Badge>}
+          {session.is_moved && session.original_date && (
+            <Badge>{t('session.moved', { date: formatDayAbbr(session.original_date) })}</Badge>
+          )}
           {session.time_overridden && <Badge>{t('session.timeOverridden')}</Badge>}
           {session.room_overridden && <Badge>{t('session.roomOverridden')}</Badge>}
         </div>
@@ -96,6 +114,18 @@ export function SessionDetail({
         <h3 className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-muted">
           {t('session.editOnly')}
         </h3>
+        <FormField label={t('session.moveTo')} name="date" error={update.error}>
+          <input
+            type="date"
+            aria-label={t('session.moveTo')}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-[10rem]"
+          />
+          {date !== session.date && (
+            <p className="mt-1 text-[12px] text-muted">{t('session.moveHelp')}</p>
+          )}
+        </FormField>
         <FormRow>
           <FormField label={t('subjects.fieldStartTime')} name="start_time" error={update.error}>
             <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />

@@ -167,6 +167,8 @@ def serialize_session(session) -> dict:
         "subject_id": subject.id,
         "subject_name": subject.name,
         "date": session.date.isoformat(),
+        "original_date": session.original_date.isoformat() if session.original_date else None,
+        "is_moved": session.is_moved,
         "start_at": iso(session.start_at),
         "end_at": iso(session.end_at),
         "room": session.room,
