@@ -1,135 +1,290 @@
-import type { DatesSetArg, EventClickArg, EventContentArg } from '@fullcalendar/core';
+import type {
+  DayHeaderContentArg,
+  EventClickArg,
+  EventContentArg,
+  NowIndicatorContentArg,
+} from '@fullcalendar/core';
 import viLocale from '@fullcalendar/core/locales/vi';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCalendar } from '../../api/calendar';
-import type { ClassSession } from '../../api/types';
-import { SessionDetail } from '../../components/SessionDetail';
-import { TagFilter, useTagFilter } from '../../components/TagFilter';
+import { keys } from '../../api/keys';
+import type { CalendarData, ClassSession } from '../../api/types';
+import { useColorScheme } from '../../app/useColorScheme';
 import { useHotkeys } from '../../app/useHotkeys';
-import { TaskDetailPanel } from '../tasks/TaskDetailPanel';
-import './calendar.css';
+import { useNow } from '../../app/useNow';
+import { SessionDetail } from '../../components/SessionDetail';
+import { useTagFilter } from '../../components/TagFilter';
 import { t } from '../../i18n/vi';
-import { toCalendarEvents, type CalendarEventProps } from '../../lib/calendarEvents';
-
-const VIEWS = ['timeGridDay', 'timeGridWeek', 'dayGridMonth'] as const;
-type View = (typeof VIEWS)[number];
+import { formatTime } from '../../lib/dates';
+import { useStoredState } from '../../lib/storage';
+import { cx } from '../../ui/cx';
+import { NewTaskPanel, TaskDetailPanel, parseNewTaskParams } from '../tasks/TaskDetailPanel';
+import { useTaskActions } from '../tasks/useTaskActions';
+import { CalendarBlock } from './CalendarBlock';
+import { CalendarHeader } from './CalendarHeader';
+import { CalendarSidebar } from './CalendarSidebar';
+import {
+  FC_VIEW,
+  calendarTitle,
+  isCalendarMode,
+  scrollTimeFor,
+  shiftDate,
+  visibleRange,
+  type CalendarMode,
+} from './calendarTitle';
+import { monthGrid } from './monthGrid';
+import { toCalendarEvents, type CalendarEventProps } from './toCalendarEvents';
+import './calendar.css';
 
 const TIME_FORMAT = { hour: '2-digit', minute: '2-digit', hour12: false } as const;
+const WEEKDAY_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']; // theo Date.getDay()
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/** Tham số của chế độ tạo mới trong bảng chi tiết. */
+const NEW_TASK_KEYS = ['due', 'work_date', 'work_start', 'work_end'];
+
+/** Khoảng ngày cần tải: chế độ Tháng gồm cả các ngày tháng trước/sau hiện trên lưới 6 tuần. */
+function queryRange(mode: CalendarMode, date: string) {
+  if (mode !== 'thang') {
+    const { start, end } = visibleRange(mode, date);
+    return { from: start, to: end };
+  }
+  const grid = monthGrid(date.slice(0, 7));
+  return { from: grid[0][0].date, to: grid[5][6].date };
+}
+
+/**
+ * Trang Lịch (feature 002 US4): đầu trang riêng, cột bên (lịch tháng nhỏ + lọc nhãn), FullCalendar
+ * cấu hình theo research R5. Trạng thái nằm trên URL `/lich?che-do=&ngay=&nhan=` (+ `task=` cho bảng
+ * chi tiết); chế độ gần nhất và cột bên ẩn/hiện nhớ trong `localStorage`.
+ */
+export function CalendarScreen() {
+  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { today } = useNow();
+  const scheme = useColorScheme();
+  const qc = useQueryClient();
+  const actions = useTaskActions();
+  const calendarRef = useRef<FullCalendar>(null);
+
+  const [storedMode, setStoredMode] = useStoredState<CalendarMode>('calendar.mode', 'tuan');
+  const [sidebarOpen, setSidebarOpen] = useStoredState('calendar.sidebar', true);
+  const modeParam = params.get('che-do');
+  const mode: CalendarMode = isCalendarMode(modeParam)
+    ? modeParam
+    : isCalendarMode(storedMode)
+      ? storedMode
+      : 'tuan';
+  const dateParam = params.get('ngay');
+  const date = dateParam && DATE_RE.test(dateParam) ? dateParam : today;
+  const [tagIds] = useTagFilter('nhan');
+
+  const range = useMemo(() => queryRange(mode, date), [mode, date]);
+  const calendar = useCalendar(range, tagIds);
+  const [openSession, setOpenSession] = useState<ClassSession | null>(null);
+
+  const taskParam = params.get('task');
+  const openTaskId = Number(taskParam) || null;
+  const creating = taskParam === 'new';
+
+  // Đợt 2 chưa có kéo thả (Đợt 3 dùng cờ `startEditable`/`durationEditable` của từng khối).
+  const events = useMemo(
+    () =>
+      calendar.data
+        ? toCalendarEvents(calendar.data, scheme).map((e) => ({
+            ...e,
+            startEditable: false,
+            durationEditable: false,
+          }))
+        : [],
+    [calendar.data, scheme],
+  );
+
+  // Cuộn tới giờ hiện tại − 1 giờ khi xem khoảng có hôm nay; chỉ tính lại khi đổi khoảng.
+  const scrollTime = useMemo(() => scrollTimeFor(mode, date, new Date()), [mode, date]);
+
+  /** Đổi tham số URL; `null` = xoá. */
+  function updateParams(patch: Record<string, string | null>, replace = false) {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        for (const [key, value] of Object.entries(patch)) {
+          if (value === null) next.delete(key);
+          else next.set(key, value);
+        }
+        return next;
+      },
+      { replace },
+    );
+  }
+
+  function go(nextMode: CalendarMode, nextDate: string) {
+    if (nextMode !== mode) setStoredMode(nextMode);
+    updateParams({ 'che-do': nextMode, ngay: nextDate });
+  }
+
+  // URL → FullCalendar (đầu trang và lịch nhỏ chỉ đổi URL).
+  useEffect(() => {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+    if (api.view.type !== FC_VIEW[mode]) api.changeView(FC_VIEW[mode], date);
+    else api.gotoDate(date);
+  }, [mode, date]);
+
+  function openTask(id: number) {
+    updateParams({ task: String(id) });
+  }
+
+  function closeTaskPanel() {
+    updateParams({ task: null, ...Object.fromEntries(NEW_TASK_KEYS.map((k) => [k, null])) }, true);
+  }
+
+  function onEventClick(arg: EventClickArg) {
+    // Bấm checkbox trên khối: chỉ hoàn thành, không mở chi tiết (FR-025).
+    if ((arg.jsEvent.target as Element | null)?.closest?.('[role="checkbox"]')) return;
+    const { kind, id } = arg.event.extendedProps as CalendarEventProps;
+    if (kind === 'session')
+      setOpenSession(calendar.data?.sessions.find((s) => s.id === id) ?? null);
+    else if (kind === 'task') openTask(id);
+    else navigate('/lich-thi');
+  }
+
+  /** Checkbox trên khối: khối mờ ngay (cập nhật cache trước), rồi gọi API. */
+  function toggleTask(taskId: number, completed: boolean) {
+    const task = calendar.data?.tasks.find((item) => item.id === taskId);
+    if (!task) return;
+    qc.setQueriesData<CalendarData>({ queryKey: keys.calendar }, (old) =>
+      old
+        ? {
+            ...old,
+            tasks: old.tasks.map((item) => (item.id === taskId ? { ...item, completed } : item)),
+          }
+        : old,
+    );
+    actions.toggleComplete(task, completed);
+  }
+
+  const panelOpen = creating || openTaskId !== null;
+
+  // Phím tắt Lịch (contracts/ui-shortcuts.md): ←/→, T, D/W/M; Esc đóng bảng chi tiết.
+  useHotkeys([
+    {
+      key: 'Escape',
+      handler: () => {
+        if (!panelOpen) return false;
+        // Rời ô đang sửa trước để trường đó kịp được lưu.
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+        closeTaskPanel();
+      },
+    },
+    { key: 'ArrowLeft', handler: () => go(mode, shiftDate(mode, date, -1)), enabled: !openSession },
+    { key: 'ArrowRight', handler: () => go(mode, shiftDate(mode, date, 1)), enabled: !openSession },
+    { key: 't', handler: () => go(mode, today), enabled: !openSession },
+    { key: 'd', handler: () => go('ngay', date), enabled: !openSession },
+    { key: 'w', handler: () => go('tuan', date), enabled: !openSession },
+    { key: 'm', handler: () => go('thang', date), enabled: !openSession },
+  ]);
+
+  return (
+    <div className="relative flex h-full">
+      {sidebarOpen && (
+        <CalendarSidebar
+          selected={date}
+          range={visibleRange(mode, date)}
+          today={today}
+          onSelectDate={(day) => go(mode, day)}
+        />
+      )}
+      <section className="flex min-w-0 flex-1 flex-col">
+        <CalendarHeader
+          title={calendarTitle(mode, date)}
+          mode={mode}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onAdd={() => updateParams({ task: 'new', due: date })}
+          onMode={(next) => go(next, date)}
+          onPrev={() => go(mode, shiftDate(mode, date, -1))}
+          onToday={() => go(mode, today)}
+          onNext={() => go(mode, shiftDate(mode, date, 1))}
+        />
+        <div className={cx('lh-calendar min-h-0 flex-1', `lh-calendar-${mode}`)}>
+          <FullCalendar
+            ref={calendarRef}
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            locale={viLocale}
+            initialView={FC_VIEW[mode]}
+            initialDate={date}
+            firstDay={1}
+            headerToolbar={false}
+            height="100%"
+            allDaySlot
+            allDayText={t('calendar.allDay')}
+            dayHeaderContent={renderDayHeader}
+            nowIndicator
+            nowIndicatorContent={renderNowIndicator}
+            slotEventOverlap={false}
+            slotLabelFormat={TIME_FORMAT}
+            eventTimeFormat={TIME_FORMAT}
+            scrollTime={scrollTime}
+            scrollTimeReset
+            dayMaxEvents
+            moreLinkText={(n) => t('calendar.more', { n })}
+            eventDisplay="block"
+            events={events}
+            eventClick={onEventClick}
+            eventContent={(arg: EventContentArg) => (
+              <CalendarBlock arg={arg} onToggle={toggleTask} />
+            )}
+            navLinks
+            navLinkDayClick={(day) => go('ngay', formatIsoLocal(day))}
+          />
+        </div>
+      </section>
+
+      {openSession && <SessionDetail session={openSession} onClose={() => setOpenSession(null)} />}
+      {creating && (
+        <NewTaskPanel
+          key={params.toString()}
+          defaults={parseNewTaskParams(params)}
+          onCreated={(id) =>
+            updateParams(
+              { task: String(id), ...Object.fromEntries(NEW_TASK_KEYS.map((k) => [k, null])) },
+              true,
+            )
+          }
+          onClose={closeTaskPanel}
+        />
+      )}
+      {openTaskId !== null && <TaskDetailPanel taskId={openTaskId} onClose={closeTaskPanel} />}
+    </div>
+  );
+}
 
 /** "YYYY-MM-DD" theo giờ máy (FullCalendar dùng múi giờ của máy). */
-function localIsoDate(d: Date): string {
+function formatIsoLocal(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/** Lịch ngày/tuần/tháng (US5, FR-016, FR-017) có lọc theo nhãn (US9, FR-045). */
-export function CalendarScreen() {
-  const [params, setParams] = useSearchParams();
-  const initialView: View = VIEWS.includes(params.get('view') as View)
-    ? (params.get('view') as View)
-    : 'timeGridWeek';
-  const [range, setRange] = useState<{ from: string; to: string } | null>(null);
-  const [tagIds] = useTagFilter();
-  const calendar = useCalendar(range, tagIds);
-  const [openSession, setOpenSession] = useState<ClassSession | null>(null);
-  const [openTaskId, setOpenTaskId] = useState<number | null>(null);
-  useHotkeys([
-    { key: 'Escape', handler: () => (openTaskId !== null ? setOpenTaskId(null) : false) },
-  ]);
-
-  const events = useMemo(
-    () => (calendar.data ? toCalendarEvents(calendar.data) : []),
-    [calendar.data],
-  );
-
-  function onDatesSet(arg: DatesSetArg) {
-    const lastDay = new Date(arg.end);
-    lastDay.setDate(lastDay.getDate() - 1); // `end` của FullCalendar là ngày sau ngày cuối
-    setRange({ from: localIsoDate(arg.start), to: localIsoDate(lastDay) });
-    if (params.get('view') !== arg.view.type) {
-      setParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          p.set('view', arg.view.type);
-          return p;
-        },
-        { replace: true },
-      );
-    }
-  }
-
-  function onEventClick(arg: EventClickArg) {
-    const { kind, id } = arg.event.extendedProps as CalendarEventProps;
-    if (kind === 'session')
-      setOpenSession(calendar.data?.sessions.find((s) => s.id === id) ?? null);
-    else setOpenTaskId(id);
-  }
-
+/** Hàng tên thứ (T2 … CN) phía trên số ngày; số hôm nay tô tròn màu nhấn (FR-021). */
+function renderDayHeader(arg: DayHeaderContentArg) {
+  const name = WEEKDAY_SHORT[arg.date.getDay()];
+  if (arg.view.type === 'dayGridMonth') return <span className="lh-dayhead-name">{name}</span>;
   return (
-    <div className="relative flex h-full">
-      <section className="lh-calendar min-w-0 flex-1 overflow-y-auto px-6 pb-6 pt-[calc(16px+var(--titlebar-inset))]">
-        <div className="mb-3">
-          <TagFilter />
-        </div>
-        <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          locale={viLocale}
-          initialView={initialView}
-          firstDay={1}
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'timeGridDay,timeGridWeek,dayGridMonth',
-          }}
-          buttonText={{
-            prev: t('calendar.prev'),
-            next: t('calendar.next'),
-            today: t('calendar.today'),
-            day: t('calendar.day'),
-            week: t('calendar.week'),
-            month: t('calendar.month'),
-          }}
-          buttonIcons={false}
-          allDayText={t('calendar.allDay')}
-          moreLinkText={(n) => t('calendar.more', { n })}
-          slotLabelFormat={TIME_FORMAT}
-          eventTimeFormat={TIME_FORMAT}
-          slotMinTime="06:00:00"
-          slotMaxTime="23:00:00"
-          scrollTime="06:30:00"
-          nowIndicator
-          dayMaxEvents
-          eventDisplay="block" // chế độ tháng cũng hiện nền màu thay vì chấm nhỏ
-          height="auto"
-          events={events}
-          datesSet={onDatesSet}
-          eventClick={onEventClick}
-          eventContent={renderEventContent}
-        />
-      </section>
-      {openSession && <SessionDetail session={openSession} onClose={() => setOpenSession(null)} />}
-      {openTaskId !== null && (
-        <TaskDetailPanel taskId={openTaskId} onClose={() => setOpenTaskId(null)} />
-      )}
+    <div className="lh-dayhead">
+      <span className="lh-dayhead-name">{name}</span>
+      <span className={cx('lh-dayhead-num', arg.isToday && 'is-today')}>{arg.date.getDate()}</span>
     </div>
   );
 }
 
-/** Nội dung sự kiện: giờ, tiêu đề, và chấm màu cho các nhãn thứ 2 trở đi (FR-044). */
-function renderEventContent(arg: EventContentArg) {
-  const { extraTagColors } = arg.event.extendedProps as CalendarEventProps;
-  return (
-    <div className="fc-event-body">
-      {arg.timeText && <span className="fc-event-time">{arg.timeText}</span>}
-      <span className="fc-event-title">{arg.event.title}</span>
-      {extraTagColors.map((color, i) => (
-        <span key={i} className="tag-dot" style={{ backgroundColor: color }} />
-      ))}
-    </div>
-  );
+/** Nhãn giờ đỏ ở cột giờ, đi cùng đường kẻ đỏ (FR-021). */
+function renderNowIndicator(arg: NowIndicatorContentArg) {
+  if (!arg.isAxis) return null;
+  return <span className="lh-now-label">{formatTime(arg.date.toISOString())}</span>;
 }
