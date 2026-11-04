@@ -20,7 +20,7 @@ Hướng dẫn chạy và các kịch bản kiểm chứng end-to-end. Chi tiế
 
 ```bash
 docker compose up -d --build      # lần đầu mất vài phút vì build image backend có PyTorch + EasyOCR
-open http://127.0.0.1:8080        # trang "Hôm nay"
+open http://127.0.0.1:8080        # mở vào Công việc → Hôm nay
 ```
 
 Cài agent nhắc lịch (một lần):
@@ -29,7 +29,7 @@ Cài agent nhắc lịch (một lần):
 cd mac-agent && ./scripts/install.sh   # build LichHocAgent.app, cài LaunchAgent, chạy ngay
 ```
 
-Vào **Cài đặt → Đồng bộ với Lịch và Lời nhắc → Bật**, rồi cho phép khi macOS hỏi quyền.
+Vào **Cài đặt → Nhắc lịch và đồng bộ → bật công tắc đồng bộ**, rồi cho phép khi macOS hỏi quyền.
 
 **Cập nhật agent**: khi backend đổi định dạng feed (ví dụ bản 0.2.0 thêm bản tóm tắt hằng ngày và
 `alarms_at`), chạy lại `./scripts/install.sh` sau `docker compose up -d --build`. Script thay app cũ
@@ -44,6 +44,7 @@ bản đang chạy ở dòng `LichHocAgent khởi động` trong `~/Library/Logs
 ```bash
 ./scripts/test.sh          # hoặc: make test
 ./scripts/test.sh --ocr    # thêm bộ OCR với ảnh mẫu (chậm)
+./scripts/validate.sh      # chạy các kịch bản V*/D* tự động được trên database tạm (OCR thật, ~3 phút)
 ```
 
 Chạy riêng từng phần khi cần:
@@ -66,13 +67,13 @@ và tỉ lệ này phải ≥ 80% (SC-011).
 |---|----------|------|------------------|-----------|
 | V1 | Task cơ bản | Tạo task "Nộp bài Toán", hạn 10/11 17:00, Cao, Học tập; sửa; hoàn thành; xoá | Hiển thị đúng ở danh sách, Hôm nay, lịch | US1, SC-001 |
 | V2 | Không mất dữ liệu | `./scripts/test-persistence.sh` (tự động); thêm thủ công: khởi động lại Mac | Script pass; dữ liệu còn nguyên sau khi khởi động lại máy | FR-024, SC-008 |
-| V3 | Học kỳ + nhiều môn | Tạo học kỳ "HK1 2026–2027" 07/09–20/12; nhập 6 môn một lần, chọn ca | Mỗi môn có đúng 15 buổi, đúng thứ, đúng giờ ca | US2, US8, SC-002, SC-003 |
-| V4 | Ngoại lệ buổi học | Huỷ buổi 16/11, đổi phòng buổi 23/11, rồi đổi phòng chung của môn | Hai buổi ngoại lệ giữ nguyên, các buổi khác cập nhật | US4, FR-013 |
-| V5 | Đổi giờ ca | Đổi Ca 2 thành 09:30–12:05, xác nhận | Môn dùng Ca 2 cập nhật, trừ buổi đã sửa giờ riêng | FR-040 |
-| V6 | Lịch & nhãn | Tạo nhãn "Gấp" đỏ, gắn cho 2 task + 1 buổi; xem tuần/tháng; lọc "Gấp" | Đúng màu nhãn; lọc chỉ còn 3 mục, dưới 1 giây | US5, US9, SC-016 |
-| V7 | Nhập ảnh | Kéo thả `backend/tests/fixtures/timetables/week-grid-01.png` | Bảng xem trước khớp `week-grid-01.expected.json`; ô sai được đánh dấu; giờ khớp ca hiện "Ca n" | US6, FR-041 |
+| V3 | Học kỳ + nhiều môn | **Cài đặt → Học kỳ**: tạo "HK1 2026–2027" 07/09–20/12; **Môn học → Nhập nhiều môn**: 6 môn một lần, chọn ca | Mỗi môn có đúng 15 buổi, đúng thứ, đúng giờ ca | US2, US8, SC-002, SC-003 |
+| V4 | Ngoại lệ buổi học | **Lịch** → bấm buổi → Huỷ buổi 16/11, đổi phòng buổi 23/11, rồi **Môn học → Sửa** đổi phòng chung | Hai buổi ngoại lệ giữ nguyên, các buổi khác cập nhật | US4, FR-013 |
+| V5 | Đổi giờ ca | **Cài đặt → Ca học**: đổi Ca 2 thành 09:30–12:05, xác nhận | Môn dùng Ca 2 cập nhật, trừ buổi đã sửa giờ riêng | FR-040 |
+| V6 | Lịch & nhãn | **Cài đặt → Nhãn**: tạo "Gấp" đỏ, gắn cho 2 task + 1 buổi; **Lịch** tuần/tháng; lọc "Gấp" ở cột bên | Đúng màu nhãn; lọc chỉ còn 3 mục, dưới 1 giây | US5, US9, SC-016 |
+| V7 | Nhập ảnh | **Môn học → Nhập từ ảnh**, kéo thả `backend/tests/fixtures/timetables/real-grid-01.jpg` (hoặc `sample-01.png`) | Bảng xem trước khớp `*.expected.json` (cần học kỳ chứa các ngày đó); ô sai được đánh dấu; giờ khớp ca hiện "Ca n" | US6, FR-041 |
 | V8 | Không trùng | Lưu lần nhập V7, rồi nhập lại cùng ảnh | Mọi dòng "Đã có trong lịch", lưu tạo 0 buổi | SC-012 |
-| V9 | Deadline tự tạo | Môn "Triết học" + nhãn E-Learning học Thứ Ba; môn "Giáo dục thể chất 2" Thứ Tư 20:30 | Mỗi buổi Triết học có task hạn 08:00 Chủ Nhật kế tiếp; GDTC không có | US10, SC-015 |
+| V9 | Deadline tự tạo | **Môn học**: "Triết học" + nhãn E-Learning học Thứ Ba; môn "Giáo dục thể chất 2" Thứ Tư 20:30 | Mỗi buổi Triết học có task hạn 08:00 Chủ Nhật kế tiếp; GDTC không có | US10, SC-015 |
 | V10 | Deadline phản ứng | Huỷ một buổi Triết học; xoá tay một task tự tạo khác; khôi phục buổi đã huỷ | Task của buổi huỷ biến mất rồi xuất hiện lại; task đã xoá tay không quay lại | FR-049 |
 | V11 | Đồng bộ Mac | Bật đồng bộ; thêm buổi học bắt đầu sau 20 phút, nhắc 15 phút | Sự kiện xuất hiện trong Lịch "Lịch Học Cá Nhân" trong vài giây; nhắc hiện đúng giờ khi đã đóng tab | US7, SC-007, SC-018 |
 | V12 | iPhone khi Mac gập | Như V11, chờ iPhone thấy sự kiện, gập Mac | iPhone nhắc đúng giờ (±1 phút) | SC-017 |
@@ -80,8 +81,8 @@ và tỉ lệ này phải ≥ 80% (SC-011).
 | V14 | Tắt đồng bộ | Tắt đồng bộ trong cài đặt | Lịch và danh sách "Lịch Học Cá Nhân" bị xoá; nhắc bằng trình duyệt hoạt động khi tab mở | FR-054, FR-021 |
 | V15 | Offline | Tắt Wi-Fi rồi lặp lại V1, V7, V11 | Mọi thứ hoạt động; agent và backend không có kết nối ra ngoài | FR-025, SC-013 |
 | V16 | Chỉ localhost | Từ máy khác cùng mạng LAN truy cập `http://<ip-mac>:8080` | Không kết nối được | Constitution IV |
-| V18 | Lịch thi | Thêm tay 1 buổi thi trùng giờ một buổi học; nhập `samples/synthetic/exam-01.png` (bảng lịch thi giả lập có 2 môn đã qua) | Cảnh báo trùng giờ; bảng xem trước loại "Lịch thi", 2 dòng "Đã qua" bỏ chọn, không có họ tên/mã SV; buổi thi hiện trên Hôm nay và lịch với nhãn "Thi"; nhập lại không tạo trùng | US11, SC-019 đến SC-021 |
-| V19 | Tóm tắt hằng ngày | Bật đồng bộ; Cài đặt → giờ tổng hợp = 5 phút nữa; ngày mai có 2 buổi học, 2 task đến hạn và 3 task quá hạn; một ngày khác chỉ có task quá hạn; xem trước bằng `GET /api/digest?date=<ngày mai>`; gập Mac qua giờ tổng hợp hôm nay; huỷ 1 buổi của ngày mai | Lịch "Lịch Học Cá Nhân" có sự kiện cả ngày cho mỗi ngày không trống trong 14 ngày; iPhone nhận bản tóm tắt đúng giờ khi Mac gập; bản của ngày mai cập nhật sau khi huỷ; bản tóm tắt ngày mai có 2 task đến hạn, 1 task quá hạn và "+2 việc khác"; ngày chỉ có task quá hạn có bản tóm tắt, tắt tuỳ chọn "Gửi tóm tắt khi chỉ có việc quá hạn" thì mất; ngày trống không có sự kiện | US7, FR-065, FR-066, SC-022 |
+| V18 | Lịch thi | **Lịch thi → Thêm buổi thi**: 1 buổi thi trùng giờ một buổi học; **Lịch thi → Nhập từ ảnh** `samples/synthetic/exam-01.png` (bảng lịch thi giả lập có 2 môn đã qua) | Cảnh báo trùng giờ; bảng xem trước loại "Lịch thi", 2 dòng "Đã qua" bỏ chọn, không có họ tên/mã SV; buổi thi hiện trên Hôm nay và lịch với nhãn "Thi"; nhập lại không tạo trùng | US11, SC-019 đến SC-021 |
+| V19 | Tóm tắt hằng ngày | Bật đồng bộ; **Cài đặt → Thông báo tổng hợp**: giờ tổng hợp = 5 phút nữa; ngày mai có 2 buổi học, 2 task đến hạn và 3 task quá hạn; một ngày khác chỉ có task quá hạn; xem trước bằng `GET /api/digest?date=<ngày mai>`; gập Mac qua giờ tổng hợp hôm nay; huỷ 1 buổi của ngày mai | Lịch "Lịch Học Cá Nhân" có sự kiện cả ngày cho mỗi ngày không trống trong 14 ngày; iPhone nhận bản tóm tắt đúng giờ khi Mac gập; bản của ngày mai cập nhật sau khi huỷ; bản tóm tắt ngày mai có 2 task đến hạn, 1 task quá hạn và "+2 việc khác"; ngày chỉ có task quá hạn có bản tóm tắt, tắt tuỳ chọn "Gửi tóm tắt khi chỉ có việc quá hạn" thì mất; ngày trống không có sự kiện | US7, FR-065, FR-066, SC-022 |
 | V20 | Quan trọng | Bật "Quan trọng" cho 1 task có giờ hạn sau 2 ngày và cho 1 môn; đặt riêng 1 buổi của môn đó là "không quan trọng" | Task có 4 lời báo (1 ngày, 3 giờ, 1 giờ, 15 phút) trong Lời nhắc với ưu tiên cao; buổi của môn có 4 lời báo và tiền tố ★, trừ buổi đặt riêng; ★ và viền đậm trên lịch và Hôm nay; iPhone báo đủ các mốc | US7, FR-067 đến FR-070, SC-023 |
 | V21 | Deadline tự tạo: nhắc tối và Quan trọng | Môn "Triết học" + E-Learning (như V9); bật Quan trọng cho môn; Cài đặt → Tự tạo deadline: đổi giờ nhắc tối thành 21:30 rồi tắt | Task tự tạo có lời nhắc 20:00 tối Thứ Bảy (rồi 21:30, rồi không còn); khi môn quan trọng, task tự tạo có ★ và đủ mốc quan trọng trong Lời nhắc | US10, FR-071, FR-072 |
 | V17 | Hiệu năng | Seed 6 môn + 200 task (`docker compose run --rm backend flask seed-demo`); mở trang Hôm nay | Hiện trong dưới 2 giây; chuyển chế độ xem dưới 1 giây | SC-005, SC-006 |

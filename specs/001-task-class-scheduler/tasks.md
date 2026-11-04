@@ -1299,13 +1299,13 @@ T146 (Phase 10).
 
 **Purpose**: Tài liệu, sao lưu, hiệu năng, kiểm chứng toàn bộ.
 
-- [ ] T139 [P] Tạo `scripts/backup.sh` (`docker compose exec -T db pg_dump -U lichhoc -Fc lichhoc >
+- [X] T139 [P] Tạo `scripts/backup.sh` (`docker compose exec -T db pg_dump -U lichhoc -Fc lichhoc >
   backups/lichhoc-$(date +%Y%m%d-%H%M).dump`, tự tạo thư mục `backups/`) và `scripts/restore.sh
   <file>` (hỏi "Ghi đè dữ liệu hiện tại? (y/N)", rồi `pg_restore --clean --if-exists -U lichhoc -d
   lichhoc`).
-- [ ] T140 [P] Tạo `backend/app/cli.py` với lệnh `flask seed-demo`: 1 học kỳ, 6 môn (2 môn
+- [X] T140 [P] Tạo `backend/app/cli.py` với lệnh `flask seed-demo`: 1 học kỳ, 6 môn (2 môn
   E-Learning, 1 môn 20:30), 200 task rải trong học kỳ, vài nhãn. Đăng ký trong `create_app`.
-- [ ] T141 Viết `README.md` bằng tiếng Việt (*gộp vào feature 002 T092, làm ở đó*):
+- [X] T141 Viết `README.md` bằng tiếng Việt (*gộp vào feature 002 T092, làm ở đó*):
   - Giới thiệu; yêu cầu (macOS 14+, OrbStack, cần internet chỉ ở lần build đầu).
   - Chạy bằng `docker compose up -d --build`; mở `http://127.0.0.1:8080`.
   - Cài agent (`mac-agent/scripts/install.sh`) và bật đồng bộ; lưu ý chữ ký ad-hoc có thể khiến
@@ -1316,18 +1316,18 @@ T146 (Phase 10).
   - Sao lưu và khôi phục (`scripts/backup.sh`, `scripts/restore.sh`).
   - Chạy test (theo quickstart.md).
   - Xử lý sự cố: agent không chạy, bị từ chối quyền, không có iCloud.
-- [ ] T142 [P] Kiểm tra chuỗi tiếng Việt và kết nối ngoài:
+- [X] T142 [P] Kiểm tra chuỗi tiếng Việt và kết nối ngoài:
   - Tìm chuỗi tiếng Anh còn hiển thị trong `frontend/src/` (ngoài `i18n/vi.ts`) và `message` của
     `ApiError` ở backend.
   - Kiểm tra `frontend/dist` không chứa URL `http(s)://` ngoài localhost; backend không gọi mạng
     ngoài (V15).
   - Sửa mọi chỗ còn sót.
-- [ ] T143 Đo hiệu năng với `flask seed-demo`: trang Hôm nay < 2 giây (SC-005); chuyển chế độ xem và
+- [X] T143 Đo hiệu năng với `flask seed-demo`: trang Hôm nay < 2 giây (SC-005); chuyển chế độ xem và
   lọc nhãn < 1 giây (SC-006, SC-016). Nếu chậm thì thêm index hoặc eager-load trong
   `services/calendar.py` và `services/today.py`.
-- [ ] T144 [P] Thêm `.pre-commit-config.yaml` (ruff check/format cho `backend/` và `mac-agent/`,
+- [X] T144 [P] Thêm `.pre-commit-config.yaml` (ruff check/format cho `backend/` và `mac-agent/`,
   eslint/prettier cho `frontend/`).
-- [ ] T145 Chạy toàn bộ kịch bản quickstart V1–V17 trên máy thật (gồm V12 với iPhone, V15 tắt Wi-Fi,
+- [ ] T145 (đã chạy phần tự động, xem validation.md; còn V11–V14, V15 thật, V12/V19/V20 trên iPhone cần thử tay) Chạy toàn bộ kịch bản quickstart V1–V17 trên máy thật (gồm V12 với iPhone, V15 tắt Wi-Fi,
   V16 thử từ máy khác trong LAN). Ghi kết quả pass/fail kèm ghi chú vào
   `specs/001-task-class-scheduler/validation.md`.
 

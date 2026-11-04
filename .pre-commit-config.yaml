@@ -1,0 +1,17 @@
+# Chạy kiểm tra trước mỗi commit: pre-commit install (cần `pip install pre-commit` một lần).
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.7
+    hooks:
+      - id: ruff
+        files: ^(backend|mac-agent)/
+      - id: ruff-format
+        files: ^(backend|mac-agent)/
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: eslint + prettier (frontend)
+        entry: bash -c 'cd frontend && npm run --silent lint'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
