@@ -4,7 +4,7 @@ from flask import Blueprint, request
 
 from app.extensions import db
 from app.models import Settings
-from app.schemas.settings import SettingsOut, SettingsPatch
+from app.schemas.settings import NULLABLE_FIELDS, SettingsOut, SettingsPatch
 from app.services import auto_deadlines
 from app.services.revision import bump_revision
 
@@ -24,10 +24,16 @@ def get_settings():
 def patch_settings():
     patch = SettingsPatch.model_validate(request.get_json(silent=True) or {})
     settings = _settings()
-    changes = {k: v for k, v in patch.model_dump(exclude_unset=True).items() if v is not None}
+    changes = {
+        k: v
+        for k, v in patch.model_dump(exclude_unset=True).items()
+        if v is not None or k in NULLABLE_FIELDS
+    }
     for field, value in changes.items():
         setattr(settings, field, value)
-    if any(field.startswith("auto_deadline_") for field in changes):
+    if any(
+        field.startswith("auto_deadline_") and field not in NULLABLE_FIELDS for field in changes
+    ):
         auto_deadlines.reconcile(all_future=True)  # FR-048: áp dụng cho các buổi chưa qua hạn
     bump_revision(db.session)
     db.session.commit()

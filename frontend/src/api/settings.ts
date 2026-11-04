@@ -11,6 +11,8 @@ export type AppSettings = {
   auto_deadline_evening_from: string;
   auto_deadline_due_time: string;
   auto_deadline_excluded_keywords: string[];
+  /** null = tắt nhắc tối hôm trước hạn của task tự tạo (FR-071). */
+  auto_deadline_eve_reminder_time: string | null;
   important_reminder_offsets: number[];
   exam_extra_reminder_offsets: number[];
   exam_reminder_minutes: number;

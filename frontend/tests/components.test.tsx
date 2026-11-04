@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ClassSession } from '../src/api/types';
 import { ImportantToggle } from '../src/components/ImportantToggle';
 import { SessionDetail } from '../src/components/SessionDetail';
+import { EveReminderField } from '../src/pages/AutoDeadlineSettings';
 import { ShiftPicker, timeChoiceToInput, type TimeChoice } from '../src/components/ShiftPicker';
 
 const SHIFTS = [
@@ -138,5 +139,24 @@ describe('Quan trọng (FR-067)', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const patch = fetchMock.mock.calls.find(([url]) => url === '/api/sessions/9');
     expect(JSON.parse(String(patch?.[1]?.body))).toEqual({ important_override: false });
+  });
+});
+
+describe('Nhắc tối hôm trước hạn (FR-071)', () => {
+  it('bật về 20:00, đổi giờ, tắt thì gửi null', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(<EveReminderField value={null} onChange={onChange} />);
+    const box = screen.getByRole('checkbox', { name: 'Nhắc tối hôm trước hạn' });
+    expect(screen.queryByLabelText('Giờ nhắc (ngày trước hạn)')).toBeNull();
+    fireEvent.click(box);
+    expect(onChange).toHaveBeenLastCalledWith('20:00');
+
+    rerender(<EveReminderField value="20:00" onChange={onChange} />);
+    fireEvent.change(screen.getByLabelText('Giờ nhắc (ngày trước hạn)'), {
+      target: { value: '21:30' },
+    });
+    expect(onChange).toHaveBeenLastCalledWith('21:30');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Nhắc tối hôm trước hạn' }));
+    expect(onChange).toHaveBeenLastCalledWith(null);
   });
 });

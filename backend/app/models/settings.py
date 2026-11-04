@@ -68,6 +68,10 @@ class Settings(_SingleRow, db.Model):
     auto_deadline_excluded_keywords: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, server_default=text("ARRAY['Giáo dục thể chất']::text[]")
     )
+    # Nhắc tối hôm trước hạn của task tự tạo; NULL = tắt (FR-071).
+    auto_deadline_eve_reminder_time: Mapped[time | None] = mapped_column(
+        Time, server_default=text("'20:00'")
+    )
     # Mức "Quan trọng" (FR-068, FR-069): phút báo trước.
     important_reminder_offsets: Mapped[list[int]] = mapped_column(
         ARRAY(Integer), nullable=False, server_default=text("'{1440,180,60,15}'::integer[]")

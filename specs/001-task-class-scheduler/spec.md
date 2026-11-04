@@ -38,6 +38,9 @@ cần đăng nhập."
   nhiều ngày trong Lịch để iPhone nhận khi Mac gập); công tắc "Quan trọng" cho task, buổi học, buổi
   thi; mục quan trọng nhắc nhiều mốc (mặc định 1 ngày, 3 giờ, 1 giờ, 15 phút), buổi thi mặc định
   quan trọng và thêm mốc 7 ngày (FR-065 đến FR-070).
+- Q: Deadline tự tạo có cần nhắc riêng và theo mức "Quan trọng" của môn không? → A: Có: thêm một mốc
+  nhắc riêng, mặc định 20:00 tối hôm trước hạn, chỉnh hoặc tắt trong phần Tự tạo deadline; môn quan
+  trọng thì task tự tạo của môn đó cũng quan trọng (FR-071, FR-072).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -356,7 +359,9 @@ môn học, nhưng không bắt buộc cho luồng cơ bản.
 
 Với môn học có nhãn "E-Learning" hoặc buổi học bắt đầu từ 20:00 trở đi, mỗi buổi học tự sinh một
 task deadline vào 08:00 sáng Chủ Nhật gần nhất sau buổi học đó, trừ các môn Giáo dục thể chất. Mốc
-giờ 20:00, giờ deadline 08:00 và danh sách môn ngoại lệ chỉnh được trong cài đặt.
+giờ 20:00, giờ deadline 08:00 và danh sách môn ngoại lệ chỉnh được trong cài đặt. Mỗi deadline tự
+tạo còn được nhắc thêm lúc 20:00 tối hôm trước hạn (chỉnh hoặc tắt được), và là mục Quan trọng nếu
+môn học là Quan trọng.
 
 **Why this priority**: Tiết kiệm công tạo task lặp lại cho các môn học trực tuyến có bài nộp hằng
 tuần, nhưng người dùng vẫn có thể tạo task bằng tay.
@@ -380,6 +385,12 @@ tương ứng cho Triết học và không có task nào cho Giáo dục thể c
    chưa hoàn thành và chưa bị người dùng sửa; khôi phục buổi học thì task được tạo lại.
 6. **Given** task tự tạo, **When** xem task, **Then** thấy rõ đây là task tự tạo và liên kết tới buổi
    học sinh ra nó.
+7. **Given** task tự tạo hạn 08:00 Chủ Nhật 15/11 với cài đặt mặc định, **Then** ngoài các mốc nhắc
+   thường của task còn có một lời nhắc lúc 20:00 Thứ Bảy 14/11; đổi giờ này thành 21:30 thì lời nhắc
+   dời theo; tắt thì chỉ còn các mốc thường.
+8. **Given** môn "Triết học" được bật Quan trọng, **Then** các task tự tạo chưa bị sửa của môn đó trở
+   thành Quan trọng (nhắc nhiều mốc, hiển thị ★); tắt Quan trọng của môn thì các task đó trở lại
+   thường; task tự tạo đã bị người dùng sửa giữ nguyên mức quan trọng của nó.
 
 ---
 
@@ -682,6 +693,12 @@ tạo trùng.
   người dùng sửa. Task người dùng đã xoá KHÔNG ĐƯỢC tạo lại.
 - **FR-050**: Task tự tạo PHẢI được đánh dấu rõ là "Tự tạo" và mở được buổi học sinh ra nó; ngoài ra
   nó là task bình thường (sửa, hoàn thành, xoá, nhắc như task khác).
+- **FR-071**: Task tự tạo PHẢI có thêm một mốc nhắc vào tối hôm trước ngày hạn, giờ mặc định 20:00,
+  chỉnh được hoặc tắt trong phần cài đặt Tự tạo deadline. Mốc này cộng thêm vào các mốc nhắc của
+  task (FR-022, FR-068); trùng thời điểm thì chỉ nhắc một lần; task tắt nhắc ("Không nhắc") thì không
+  có mốc nào.
+- **FR-072**: Task tự tạo chưa bị người dùng sửa PHẢI có mức "Quan trọng" bằng mức quan trọng hiệu
+  lực của buổi học sinh ra nó (mặc định theo môn, FR-067), và được cập nhật khi mức đó thay đổi.
 
 **Lịch thi**
 
@@ -759,7 +776,8 @@ tạo trùng.
 - **Cài đặt nhắc thi**: các mốc thêm cho buổi thi quan trọng (mặc định 7 ngày trước) và mốc nhắc của
   buổi thi không quan trọng (mặc định 1 giờ trước).
 - **Cài đặt tự tạo deadline**: mốc giờ buổi tối (mặc định 20:00), giờ deadline Chủ Nhật (mặc định
-  08:00), danh sách tên môn ngoại lệ (mặc định "Giáo dục thể chất").
+  08:00), danh sách tên môn ngoại lệ (mặc định "Giáo dục thể chất"), giờ nhắc tối hôm trước hạn
+  (mặc định 20:00, có thể tắt).
 
 ## Success Criteria *(mandatory)*
 

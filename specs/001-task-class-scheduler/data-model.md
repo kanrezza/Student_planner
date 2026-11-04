@@ -196,6 +196,7 @@ position)`, `task_tags(task_id, tag_id, position)`, `exam_tags(exam_id, tag_id, 
 | auto_deadline_evening_from | time | 20:00 (buổi bắt đầu `>=` giờ này thì thoả điều kiện) |
 | auto_deadline_due_time | time | 08:00 (giờ deadline Chủ Nhật) |
 | auto_deadline_excluded_keywords | text[] | `{'Giáo dục thể chất'}` |
+| auto_deadline_eve_reminder_time | time | 20:00; `NULL` = tắt mốc nhắc tối hôm trước hạn của task tự tạo (FR-071) |
 | important_reminder_offsets | integer[] | `{1440, 180, 60, 15}` (mốc của mục quan trọng, 1–6 phần tử ≥ 0, FR-068) |
 | exam_extra_reminder_offsets | integer[] | `{10080}` (mốc thêm cho buổi thi quan trọng: 7 ngày, 0–3 phần tử, FR-069) |
 | exam_reminder_minutes | integer | 60 (1 mốc cho buổi thi không quan trọng, FR-069) |
@@ -268,6 +269,11 @@ Hàm thuần trong `services/reminders.py`, trả danh sách **phút trước** 
 - `reminder_minutes = -1` (buổi học, task) hoặc `reminder_offsets = {}` (buổi thi) → `[]`, kể cả mục
   quan trọng.
 - Buổi thi có `reminder_offsets` khác `NULL` → dùng đúng danh sách đó, bỏ qua bảng trên.
+- Task tự tạo (`is_auto`): thêm thời điểm `due_date − 1 ngày` lúc
+  `settings.auto_deadline_eve_reminder_time` nếu cột này khác `NULL` và task không tắt nhắc (FR-071);
+  thời điểm trùng chỉ tính một lần.
+- Task tự tạo chưa bị sửa: `is_important` do reconcile đặt bằng mức quan trọng hiệu lực của buổi
+  nguồn (FR-072).
 - Task quan trọng **chỉ có ngày**: thời điểm nhắc = `due_date − k ngày` lúc
   `date_only_task_reminder_time`, với `k = 0` và `k = phút // 1440` cho mỗi mốc ≥ 1440; mốc < 1440 bị
   bỏ.

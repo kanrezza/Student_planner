@@ -20,6 +20,7 @@ def test_get_settings_defaults(client):
         "auto_deadline_evening_from": "20:00",
         "auto_deadline_due_time": "08:00",
         "auto_deadline_excluded_keywords": ["Giáo dục thể chất"],
+        "auto_deadline_eve_reminder_time": "20:00",
         "important_reminder_offsets": [1440, 180, 60, 15],
         "exam_extra_reminder_offsets": [10080],
         "exam_reminder_minutes": 60,

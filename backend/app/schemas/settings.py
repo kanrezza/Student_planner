@@ -13,6 +13,7 @@ class SettingsOut(ApiModel):
     auto_deadline_evening_from: HHMM
     auto_deadline_due_time: HHMM
     auto_deadline_excluded_keywords: list[str]
+    auto_deadline_eve_reminder_time: HHMM | None
     important_reminder_offsets: list[int]
     exam_extra_reminder_offsets: list[int]
     exam_reminder_minutes: int
@@ -32,6 +33,10 @@ def _offsets(value: list[int] | None, low: int, high: int, label: str) -> list[i
     return cleaned
 
 
+# Trường được phép đặt về null (null = tắt). Các trường khác bỏ qua giá trị null.
+NULLABLE_FIELDS = {"auto_deadline_eve_reminder_time"}
+
+
 class SettingsPatch(ApiModel):
     """Mọi trường tuỳ chọn; chỉ cập nhật trường được gửi."""
 
@@ -43,6 +48,7 @@ class SettingsPatch(ApiModel):
     auto_deadline_evening_from: HHMM | None = None
     auto_deadline_due_time: HHMM | None = None
     auto_deadline_excluded_keywords: list[str] | None = None
+    auto_deadline_eve_reminder_time: HHMM | None = None  # gửi null để tắt
     important_reminder_offsets: list[int] | None = None
     exam_extra_reminder_offsets: list[int] | None = None
     exam_reminder_minutes: int | None = Field(default=None, ge=0)

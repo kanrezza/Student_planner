@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.lib import timeutil
 from app.lib.timeutil import TZ
 from app.models import Tag, Task
+from app.services.revision import current_revision
 from tests.integration.helpers import create_semester, create_subject, sessions_of
 
 NOW = datetime(2026, 11, 2, 9, 0, tzinfo=TZ)  # Thứ Hai 02/11/2026
@@ -134,3 +135,43 @@ def test_full_semester_count(client, db_session, e_learning):
     create_subject(client, semester_id, name="Triết học", weekdays=[2], tag_ids=[e_learning])
     create_subject(client, semester_id, name="Giải tích", weekdays=[1])  # không thoả điều kiện
     assert len(auto_tasks(db_session)) == 15  # SC-015
+
+
+def test_auto_tasks_follow_subject_importance(client, db_session, e_learning):
+    subject = setup(client, e_learning)
+    tasks = auto_tasks(db_session)
+    edited = tasks[-1]
+    client.patch(f"/api/tasks/{edited.id}", json={"title": "Bài cuối (đã sửa)"})
+
+    client.patch(f"/api/subjects/{subject['id']}", json={"is_important": True})
+    tasks = auto_tasks(db_session)
+    assert [t.is_important for t in tasks] == [True, True, True, False]
+    reminder = next(
+        r
+        for r in client.get("/api/sync/feed").get_json()["reminders"]
+        if r["sync_key"] == f"task:{tasks[1].id}"
+    )
+    assert reminder["important"] is True
+    assert len(reminder["alarms_at"]) == 5  # tối hôm trước + 4 mốc quan trọng
+
+    client.patch(f"/api/subjects/{subject['id']}", json={"is_important": False})
+    assert [t.is_important for t in auto_tasks(db_session)] == [False] * 4
+
+
+def test_eve_reminder_setting(client, db_session, e_learning):
+    setup(client, e_learning)
+    key = f"task:{auto_tasks(db_session)[1].id}"  # hạn 08:00 CN 15/11
+
+    def alarms():
+        feed = client.get("/api/sync/feed").get_json()
+        return next(r for r in feed["reminders"] if r["sync_key"] == key)["alarms_at"]
+
+    assert alarms() == ["2026-11-14T20:00:00+07:00", "2026-11-15T07:00:00+07:00"]
+    before = current_revision(db_session)
+    resp = client.patch("/api/settings", json={"auto_deadline_eve_reminder_time": "21:30"})
+    assert resp.get_json()["auto_deadline_eve_reminder_time"] == "21:30"
+    assert current_revision(db_session) > before
+    assert alarms()[0] == "2026-11-14T21:30:00+07:00"
+    resp = client.patch("/api/settings", json={"auto_deadline_eve_reminder_time": None})
+    assert resp.get_json()["auto_deadline_eve_reminder_time"] is None
+    assert alarms() == ["2026-11-15T07:00:00+07:00"]
