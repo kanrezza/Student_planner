@@ -41,6 +41,7 @@ class SessionInfo:
     subject_name: str
     tag_keys: frozenset[str]  # system_key của các nhãn hiệu lực (môn + buổi)
     suppressed: bool  # người dùng đã xoá task tự tạo của buổi này
+    is_important: bool = False  # mức quan trọng hiệu lực của buổi (FR-072)
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,7 @@ class AutoTaskInfo:
     due: datetime
     completed: bool
     user_modified: bool
+    is_important: bool = False
 
 
 @dataclass(frozen=True)
@@ -58,6 +60,7 @@ class Create:
     session_id: int
     title: str
     due: datetime
+    is_important: bool = False
 
 
 @dataclass(frozen=True)
@@ -65,6 +68,7 @@ class Update:
     task_id: int
     title: str
     due: datetime
+    is_important: bool = False
 
 
 @dataclass(frozen=True)
@@ -108,14 +112,18 @@ def plan(
         title = title_for(s.subject_name, s.date)
         if task is None:
             if wanted and not s.suppressed and due >= now:
-                actions.append(Create(session_id=s.id, title=title, due=due))
+                actions.append(
+                    Create(session_id=s.id, title=title, due=due, is_important=s.is_important)
+                )
             continue
         if task.completed or task.user_modified or task.due < now:
             continue  # task thuộc về người dùng, hoặc đã qua hạn
         if not wanted:
             actions.append(Delete(task_id=task.id))
-        elif (task.title, task.due) != (title, due):
-            actions.append(Update(task_id=task.id, title=title, due=due))
+        elif (task.title, task.due, task.is_important) != (title, due, s.is_important):
+            actions.append(
+                Update(task_id=task.id, title=title, due=due, is_important=s.is_important)
+            )
     return actions
 
 
@@ -141,6 +149,7 @@ def _session_info(s: ClassSession) -> SessionInfo:
         subject_name=s.subject.name,
         tag_keys=frozenset(t.system_key for t in s.effective_tags if t.system_key),
         suppressed=s.auto_task_suppressed,
+        is_important=s.is_important,
     )
 
 
@@ -161,12 +170,14 @@ def _apply(actions: list[Create | Update | Delete], tasks_by_id: dict[int, Task]
                     due_time=local.time(),
                     priority=PRIORITY_MEDIUM,
                     is_auto=True,
+                    is_important=action.is_important,
                     source_session_id=action.session_id,
                 )
             )
         elif isinstance(action, Update):
             task, local = tasks_by_id[action.task_id], action.due.astimezone(TZ)
             task.title, task.due_date, task.due_time = action.title, local.date(), local.time()
+            task.is_important = action.is_important
         else:
             db.session.delete(tasks_by_id[action.task_id])
 
@@ -203,6 +214,7 @@ def reconcile(
             due=_task_due(t),
             completed=t.completed_at is not None,
             user_modified=t.user_modified,
+            is_important=t.is_important,
         )
         for t in tasks
     ]

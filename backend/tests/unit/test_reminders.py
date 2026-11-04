@@ -9,6 +9,7 @@ SETTINGS = SimpleNamespace(
     task_reminder_minutes=60,
     date_only_task_reminder_time=time(8, 0),
     important_reminder_offsets=[1440, 180, 60, 15],
+    auto_deadline_eve_reminder_time=time(20, 0),
 )
 
 
@@ -24,8 +25,10 @@ def task(
     reminder_minutes=None,
     done=False,
     important=False,
+    auto=False,
 ):
     return SimpleNamespace(
+        is_auto=auto,
         due_date=due_date,
         due_time=due_time,
         reminder_minutes=reminder_minutes,
@@ -105,3 +108,25 @@ def test_important_date_only_task_uses_whole_days():
 def test_no_reminder_for_completed_or_undated_tasks():
     assert task_alarm_times(task(done=True), SETTINGS) == []
     assert task_alarm_times(task(due_date=None, due_time=None), SETTINGS) == []
+
+
+def test_auto_deadline_gets_eve_reminder():
+    due = combine(date(2026, 11, 15), time(8, 0))  # Chủ Nhật
+    eve = combine(date(2026, 11, 14), time(20, 0))
+    auto = task(due_date=date(2026, 11, 15), due_time=time(8, 0), auto=True)
+    assert task_alarm_times(auto, SETTINGS) == [eve, due - timedelta(minutes=60)]
+    later = SimpleNamespace(**{**vars(SETTINGS), "auto_deadline_eve_reminder_time": time(21, 30)})
+    assert task_alarm_times(auto, later)[0] == combine(date(2026, 11, 14), time(21, 30))
+    off = SimpleNamespace(**{**vars(SETTINGS), "auto_deadline_eve_reminder_time": None})
+    assert task_alarm_times(auto, off) == [due - timedelta(minutes=60)]
+    # Tắt nhắc của task thắng mốc tối hôm trước; task thường không có mốc này.
+    muted = task(due_date=date(2026, 11, 15), due_time=time(8, 0), auto=True, reminder_minutes=-1)
+    assert task_alarm_times(muted, SETTINGS) == []
+    plain = task(due_date=date(2026, 11, 15), due_time=time(8, 0))
+    assert task_alarm_times(plain, SETTINGS) == [due - timedelta(minutes=60)]
+
+
+def test_eve_reminder_not_duplicated():
+    # Mốc 12 giờ trước 08:00 CN trùng đúng 20:00 Thứ Bảy → chỉ một lần.
+    auto = task(due_date=date(2026, 11, 15), due_time=time(8, 0), auto=True, reminder_minutes=720)
+    assert task_alarm_times(auto, SETTINGS) == [combine(date(2026, 11, 14), time(20, 0))]

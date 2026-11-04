@@ -61,12 +61,20 @@ def task_alarm_times(task, settings) -> list[datetime]:
         days = {0}
         if task.is_important:
             days |= {m // 1440 for m in settings.important_reminder_offsets if m >= 1440}
-        return sorted(morning - timedelta(days=d) for d in days)
+        return _with_eve(task, settings, {morning - timedelta(days=d) for d in days})
     offsets = alarm_offsets(
         task.reminder_minutes, task.is_important, settings.task_reminder_minutes, settings
     )
     deadline = due_at(task)
-    return sorted(deadline - timedelta(minutes=m) for m in offsets)
+    return _with_eve(task, settings, {deadline - timedelta(minutes=m) for m in offsets})
+
+
+def _with_eve(task, settings, times: set[datetime]) -> list[datetime]:
+    """Task tự tạo: thêm mốc tối hôm trước ngày hạn (FR-071); thời điểm trùng chỉ một lần."""
+    eve = settings.auto_deadline_eve_reminder_time
+    if task.is_auto and eve is not None:
+        times.add(combine(task.due_date - timedelta(days=1), eve))
+    return sorted(times)
 
 
 def _key(kind: str, item_id: int, minutes: int, count: int) -> str:

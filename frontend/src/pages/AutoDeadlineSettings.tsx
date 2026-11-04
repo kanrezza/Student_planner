@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useSaveSettings, useSettings } from '../api/settings';
 import { t } from '../i18n/vi';
 
-/** Cài đặt → Tự tạo deadline (US10, FR-048): mốc giờ tối, giờ deadline Chủ Nhật, môn ngoại lệ. */
+/**
+ * Cài đặt → Tự tạo deadline (US10, FR-048, FR-071): mốc giờ tối, giờ deadline Chủ Nhật, nhắc tối
+ * hôm trước hạn, môn ngoại lệ.
+ */
 export function AutoDeadlineSettings() {
   const settings = useSettings();
   const save = useSaveSettings();
@@ -44,6 +47,10 @@ export function AutoDeadlineSettings() {
           />
         </label>
       </div>
+      <EveReminderField
+        value={s.auto_deadline_eve_reminder_time}
+        onChange={(v) => save.mutate({ auto_deadline_eve_reminder_time: v })}
+      />
       <span className="field__label">{t('autoDeadline.excluded')}</span>
       <div className="tag-chips">
         {keywords.map((k) => (
@@ -75,5 +82,39 @@ export function AutoDeadlineSettings() {
       </div>
       {save.error && <p className="field__error">{save.error.message}</p>}
     </section>
+  );
+}
+
+const DEFAULT_EVE_TIME = '20:00';
+
+/** Nhắc tối hôm trước hạn cho task tự tạo (FR-071): bật/tắt và giờ nhắc. */
+export function EveReminderField({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (value: string | null) => void;
+}) {
+  return (
+    <div className="form-row">
+      <label className="checkbox-line">
+        <input
+          type="checkbox"
+          checked={value !== null}
+          onChange={(e) => onChange(e.target.checked ? DEFAULT_EVE_TIME : null)}
+        />
+        {t('autoDeadline.eveReminder')}
+      </label>
+      {value !== null && (
+        <label className="field">
+          <span className="field__label">{t('autoDeadline.eveReminderTime')}</span>
+          <input
+            type="time"
+            value={value}
+            onChange={(e) => e.target.value && onChange(e.target.value)}
+          />
+        </label>
+      )}
+    </div>
   );
 }

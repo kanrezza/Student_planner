@@ -28,6 +28,7 @@ def session(
     tags=frozenset({"e_learning"}),
     cancelled=False,
     suppressed=False,
+    important=False,
 ):
     return SessionInfo(
         id=id,
@@ -38,6 +39,7 @@ def session(
         subject_name=name,
         tag_keys=tags,
         suppressed=suppressed,
+        is_important=important,
     )
 
 
@@ -71,6 +73,7 @@ def auto_task(
     due=(15, 8),
     completed=False,
     modified=False,
+    important=False,
 ):
     return AutoTaskInfo(
         id=id,
@@ -79,6 +82,7 @@ def auto_task(
         due=combine(date(2026, 11, due[0]), time(due[1], 0)),
         completed=completed,
         user_modified=modified,
+        is_important=important,
     )
 
 
@@ -116,3 +120,20 @@ def test_plan_skips_past_deadlines():
     assert plan([old], [], RULES, NOW) == []
     # Task cũ đã qua hạn thì không bị sửa dù quy tắc đổi
     assert plan([old], [auto_task(due=(8, 7))], RULES, NOW) == []
+
+
+def test_plan_follows_session_importance():
+    due = combine(date(2026, 11, 15), time(8, 0))
+    title = "Bài tập Triết học – buổi 10/11"
+    assert plan([session(important=True)], [], RULES, NOW) == [
+        Create(session_id=1, title=title, due=due, is_important=True)
+    ]
+    # Môn/buổi đổi mức quan trọng → cập nhật task chưa sửa.
+    assert plan([session(important=True)], [auto_task()], RULES, NOW) == [
+        Update(task_id=50, title=title, due=due, is_important=True)
+    ]
+    assert plan([session()], [auto_task(important=True)], RULES, NOW) == [
+        Update(task_id=50, title=title, due=due, is_important=False)
+    ]
+    # Task đã sửa giữ nguyên.
+    assert plan([session(important=True)], [auto_task(modified=True)], RULES, NOW) == []

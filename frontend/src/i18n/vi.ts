@@ -220,6 +220,8 @@ export const vi = {
     dueTime: 'Giờ deadline Chủ Nhật',
     excluded: 'Môn ngoại lệ (tên chứa)',
     keywordPlaceholder: 'Ví dụ: GDTC',
+    eveReminder: 'Nhắc tối hôm trước hạn',
+    eveReminderTime: 'Giờ nhắc (ngày trước hạn)',
     add: 'Thêm',
     remove: 'Bỏ “{keyword}”',
   },

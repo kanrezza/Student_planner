@@ -220,8 +220,8 @@ LichHocAgent.app.
    - US9 nhãn + lọc.
    - US8 đổi/xoá ca.
    - US6 nhập ảnh lịch học (sau S1) cùng nhóm với US11 lịch thi (quản lý, nhập ảnh bảng lịch thi,
-     hiển thị trên lịch và trang Hôm nay). Migration `0003_exams` thêm bảng mới (sau
-     `0002_important_digest` của phần mở rộng US7).
+     hiển thị trên lịch và trang Hôm nay). Migration `0004_exams` thêm bảng mới (sau
+     `0002_important_digest` và `0003_auto_deadline_reminder`).
 5. **P3**:
    - US10 deadline tự tạo.
    - US7: nhắc dự phòng, rồi mac-agent đồng bộ (sau S2); gồm cả buổi thi với nhiều mốc báo trước.

@@ -862,8 +862,8 @@ research R2.
 
 ### Implementation for User Story 11
 
-- [ ] T110 [US11] Tạo migration `backend/migrations/versions/0003_exams.py` (sau
-  `0002_important_digest` của T147) và model
+- [ ] T110 [US11] Tạo migration `backend/migrations/versions/0004_exams.py` (sau
+  `0002_important_digest` của T147 và `0003_auto_deadline_reminder` của T160) và model
   `backend/app/models/exam.py` (`Exam`, `ExamTag`) đúng data-model.md, đăng ký trong
   `app/models/__init__.py`:
   - Cột: `course_code` (tuỳ chọn), `course_name` "1–200 ký tự", `attempt` "≥ 1, mặc định 1",
@@ -1004,7 +1004,29 @@ thể chất 2" Thứ Tư 20:30 → 0 task (quickstart V9, V10; SC-015).
     giờ deadline Chủ Nhật (08:00), danh sách môn ngoại lệ (thêm/xoá từ khoá).
   - SettingsPage cũng chứa liên kết tới Học kỳ, Ca học, Nhãn.
 
-**Checkpoint**: US10 pass; quickstart V9, V10 pass.
+### US10 mở rộng: nhắc tối hôm trước và mức Quan trọng (FR-071, FR-072)
+
+Bổ sung sau khi T147–T158 đã xong; ID tiếp nối T159.
+
+- [X] T160 [US10] Migration `backend/migrations/versions/0003_auto_deadline_reminder.py`:
+  `settings.auto_deadline_eve_reminder_time time NULL DEFAULT '20:00'`; model và
+  `schemas/settings.py` (PATCH nhận `null` để tắt).
+- [X] T161 [P] [US10] Test:
+  - `tests/unit/test_reminders.py`: task tự tạo hạn 08:00 CN có thêm mốc 20:00 Thứ Bảy; đổi giờ →
+    mốc đổi; `NULL` → không có; `reminder_minutes = -1` → không có mốc nào; task thường không có mốc
+    này; mốc trùng chỉ một lần.
+  - `tests/unit/test_auto_deadlines.py`: `plan` tạo task với `is_important` của buổi; buổi đổi mức
+    quan trọng → `Update`; task đã sửa không bị đụng.
+  - `tests/integration/test_auto_deadlines_api.py`: PATCH môn `is_important` → task tự tạo chưa sửa
+    thành quan trọng (feed `important`, nhiều `alarms_at`), task đã sửa giữ nguyên; PATCH
+    `auto_deadline_eve_reminder_time` (giờ khác, `null`) → `alarms_at` đổi và `revision` tăng.
+- [X] T162 [US10] Backend: `auto_deadlines.SessionInfo/AutoTaskInfo/Create/Update` có
+  `is_important`, `plan` so sánh cả mức quan trọng, `_apply` ghi `Task.is_important`;
+  `reminders.task_alarm_times` thêm mốc tối hôm trước cho task `is_auto`.
+- [X] T163 [US10] Frontend: `AutoDeadlineSettings.tsx` có ô "Nhắc tối hôm trước hạn" (giờ) và công
+  tắc tắt/bật; `AppSettings` thêm trường; chuỗi tiếng Việt; test trong `components.test.tsx`.
+
+**Checkpoint**: US10 pass; quickstart V9, V10 pass; phần mở rộng: V21 pass.
 
 ---
 
@@ -1326,7 +1348,7 @@ T146 (Phase 10).
 | US10 Deadline tự tạo (P3) | US1, US2, US9 | Cần nhãn E-Learning gắn được |
 | US11 Lịch thi (P2) | US2, US3, US5, US9, US6 (pipeline OCR), T010 | Làm cùng phase với US6; trùng giờ cần buổi học; hiển thị cần lịch và nhãn |
 | US7 Nhắc (P3) | US1, US2, T011 | Có thể làm trước US10; feed tự gồm task tự tạo khi US10 xong và buổi thi khi US11 xong |
-| US7 mở rộng (T147–T159) | T118–T138 | Làm trước Phase 10 thì T110 dùng migration `0003_exams`; phần buổi thi của tóm tắt và "Quan trọng" nằm ở T146 |
+| US7 mở rộng (T147–T159) | T118–T138 | Làm trước Phase 10 thì T110 dùng migration `0004_exams`; phần buổi thi của tóm tắt và "Quan trọng" nằm ở T146 |
 
 ### Within Each User Story
 
