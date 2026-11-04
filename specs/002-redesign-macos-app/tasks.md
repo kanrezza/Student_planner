@@ -501,47 +501,47 @@ nhận, Hoàn tác.
 
 **Phụ thuộc người dùng**: cài Rust (`rustup`) một lần trước task T080.
 
-- [ ] T080 [US1] Khởi tạo `desktop/` theo plan: `desktop/package.json` (`@tauri-apps/cli`,
+- [X] T080 [US1] Khởi tạo `desktop/` theo plan: `desktop/package.json` (`@tauri-apps/cli`,
   `@tauri-apps/api`, script `tauri`), `desktop/src-tauri/Cargo.toml` (`tauri` 2,
   `tauri-plugin-window-state`, `tauri-plugin-single-instance`, không thêm crate HTTP),
   `desktop/src-tauri/tauri.conf.json` (`productName: "Lịch Học Cá Nhân"`, `identifier:
   "vn.lichhoc.desktop"`, cửa sổ `main` 1280×820, tối thiểu 720×520, `titleBarStyle: "Overlay"`,
   `hiddenTitle: true`, `url` = trang chờ nội bộ, `userAgent` thêm `LichHocDesktop`), `.gitignore` cho
   `desktop/node_modules`, `desktop/src-tauri/target`.
-- [ ] T081 [P] [US1] `desktop/src-tauri/src/health.rs`: hàm thuần `parse_status_line(&str) ->
+- [X] T081 [P] [US1] `desktop/src-tauri/src/health.rs`: hàm thuần `parse_status_line(&str) ->
   Option<u16>`, `is_ready(status) -> bool`, `check_health(addr, timeout) -> HealthResult` dùng
   `std::net::TcpStream` gửi `GET /api/health HTTP/1.1` tới `127.0.0.1:8080` (timeout 1 giây); test
   `cargo test` cho phân tích phản hồi 200, 502, rác, và kết nối bị từ chối (cổng không mở).
-- [ ] T082 [US1] `desktop/src-tauri/src/main.rs`: vòng kiểm tra mỗi 2 giây ở luồng nền; phát sự kiện
+- [X] T082 [US1] `desktop/src-tauri/src/main.rs`: vòng kiểm tra mỗi 2 giây ở luồng nền; phát sự kiện
   `connection-status` (`connecting`, `waiting_for_backend`, `orbstack_missing`); khi sẵn sàng điều
   hướng cửa sổ `main` tới `http://127.0.0.1:8080/` và dừng vòng; lệnh `open_orbstack` (`open -a
   OrbStack`, lỗi → `orbstack_missing`) và `retry_now`; đóng cửa sổ thì ẩn, bấm Dock (`RunEvent::Reopen`)
   thì hiện lại; plugin window-state và single-instance (đưa cửa sổ lên trước).
-- [ ] T083 [P] [US1] `desktop/src-tauri/capabilities/splash.json`: chỉ cửa sổ `main` với nguồn nội bộ
+- [X] T083 [P] [US1] `desktop/src-tauri/capabilities/splash.json`: chỉ cửa sổ `main` với nguồn nội bộ
   (`local: true`) được gọi `open_orbstack`, `retry_now` và nghe `connection-status`; không cấp quyền
   cho `http://127.0.0.1:8080`.
-- [ ] T084 [P] [US1] Trang chờ `desktop/splash/index.html` + `splash.js` + style nội tuyến (không tải
+- [X] T084 [P] [US1] Trang chờ `desktop/splash/index.html` + `splash.js` + style nội tuyến (không tải
   gì từ ngoài, có chế độ sáng/tối): "Đang kết nối…" → "Hãy mở OrbStack" (2 dòng giải thích, nút Mở
   OrbStack, Thử lại, dòng "Đang thử kết nối lại…") → "Không tìm thấy OrbStack trên máy…" theo
   desktop-shell §1; chữ tiếng Việt.
-- [ ] T085 [P] [US1] `desktop/src-tauri/src/menu.rs`: menu tiếng Việt theo desktop-shell §3; Cài đặt…
+- [X] T085 [P] [US1] `desktop/src-tauri/src/menu.rs`: menu tiếng Việt theo desktop-shell §3; Cài đặt…
   (⌘,) và Phím tắt (⌘/) gọi `eval("window.lichhoc?.navigate('/cai-dat')")` /
   `showShortcuts()`; Giới thiệu hiện tên và phiên bản.
-- [ ] T086 [P] [US1] Icon riêng `desktop/icon/icon.svg` (cuốn lịch cách điệu + dấu tích, màu nhấn của
+- [X] T086 [P] [US1] Icon riêng `desktop/icon/icon.svg` (cuốn lịch cách điệu + dấu tích, màu nhấn của
   app, nền bo góc kiểu macOS; không giống icon app khác) và sinh `desktop/src-tauri/icons/` bằng
   `npx tauri icon desktop/icon/icon.svg` (chuyển sang PNG 1024 nếu công cụ yêu cầu).
-- [ ] T087 [US1] Kiểm chứng R1: chạy `npx tauri dev`, xác nhận cửa sổ nạp được
+- [X] T087 [US1] Kiểm chứng R1: chạy `npx tauri dev`, xác nhận cửa sổ nạp được
   `http://127.0.0.1:8080`; nếu App Transport Security chặn thì thêm `desktop/src-tauri/Info.plist`
   với `NSAppTransportSecurity → NSAllowsLocalNetworking = true`; ghi kết quả vào `research.md` R1.
-- [ ] T088 [US1] Giao diện React: chừa khoảng cho nút cửa sổ khi chạy trong app (`--titlebar-inset` khi
+- [X] T088 [US1] Giao diện React: chừa khoảng cho nút cửa sổ khi chạy trong app (`--titlebar-inset` khi
   `navigator.userAgent` có `LichHocDesktop`) trong `frontend/src/app/AppShell.tsx`; vùng kéo cửa sổ
   (`data-tauri-drag-region` không dùng được vì trang ngoài — dùng thanh tiêu đề trong suốt, kéo ở vùng
   trống trên cùng bằng CSS `-webkit-app-region` nếu WKWebView hỗ trợ; nếu không, giữ thanh tiêu đề
   chuẩn và bỏ `titleBarStyle: Overlay`). Ghi quyết định vào research R3.
-- [ ] T089 [US1] `desktop/scripts/install.sh`: kiểm tra `cargo` (thiếu → hướng dẫn cài rustup bằng
+- [X] T089 [US1] `desktop/scripts/install.sh`: kiểm tra `cargo` (thiếu → hướng dẫn cài rustup bằng
   tiếng Việt), `npm ci`, `npx tauri build --bundles app`, `codesign --force --deep -s -`, chép
   `Lịch Học Cá Nhân.app` vào `~/Applications` (thay bản cũ); tuỳ chọn `--build-only`, `--uninstall`.
-- [ ] T090 [US1] `scripts/test.sh`: thêm bước "Desktop: cargo test" (trong `desktop/src-tauri`) khi có
+- [X] T090 [US1] `scripts/test.sh`: thêm bước "Desktop: cargo test" (trong `desktop/src-tauri`) khi có
   `cargo`; nếu không có thì in "⚠️ Bỏ qua: chưa cài Rust" và không tính là lỗi.
 
 **Checkpoint (hết Đợt 4)**: `./scripts/test.sh` pass; app cài được; commit; hướng dẫn thử D13–D15,

@@ -36,6 +36,10 @@ duyệt vẫn mở được cùng địa chỉ để phát triển và dự phò
 bị App Transport Security chặn (Tauri dev dùng `http://localhost` nên dự kiến được); nếu bị chặn thì
 thêm `NSAppTransportSecurity → NSAllowsLocalNetworking = true` vào Info.plist của app.
 
+**Kết quả kiểm chứng (T087, 2026-11-05)**: bản build release (`Lịch Học Cá Nhân.app`) mở được và
+nạp `http://127.0.0.1:8080/` — log nginx của service `web` ghi các request `/api/...` kèm user agent
+`LichHocDesktop`. App Transport Security **không** chặn nên **không cần** `Info.plist` riêng.
+
 ---
 
 ## R2. Khi backend chưa chạy: màn hình "Hãy mở OrbStack"
@@ -76,6 +80,12 @@ lệnh shell từ app; phức tạp và dễ lỗi hơn mà lợi ích nhỏ vì
   `tauri-plugin-single-instance` (mở lần hai thì đưa cửa sổ lên trước).
 - Đóng cửa sổ không thoát app (bắt sự kiện đóng, ẩn cửa sổ; bấm icon Dock thì hiện lại); ⌘Q thoát.
   Thoát app không ảnh hưởng Docker và agent (FR-004).
+
+**Quyết định T088 (2026-11-05)**: WKWebView không hỗ trợ `-webkit-app-region` và trang tải từ ngoài
+không dùng được `data-tauri-drag-region`, nên với `titleBarStyle: "Overlay"` cửa sổ sẽ không kéo được.
+Dùng `titleBarStyle: "Transparent"` + `hiddenTitle: true`: giữ thanh tiêu đề chuẩn (kéo được, ba nút
+cửa sổ nằm trong thanh đó) nhưng trong suốt, nên `--titlebar-inset` giữ 0 và giao diện React không
+cần sửa.
 
 **Lý do**: Dùng sẵn tính năng của Tauri cho phần hệ điều hành; giữ trang React không phụ thuộc Tauri
 để trình duyệt vẫn dùng được.
