@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
 import { t } from '../i18n/vi';
+import { Button } from '../ui/Button';
+import { Dialog } from '../ui/Dialog';
 
 type Props = {
   open: boolean;
@@ -10,7 +11,7 @@ type Props = {
   onCancel: () => void;
 };
 
-/** Hộp thoại xác nhận trước mọi thao tác xoá (FR-027). Dùng thẻ <dialog> có sẵn của trình duyệt. */
+/** Hộp thoại xác nhận (FR-027 của feature 001; với task chỉ còn dùng cho "Xoá vĩnh viễn"). */
 export function ConfirmDialog({
   open,
   title = t('confirm.deleteTitle'),
@@ -19,27 +20,22 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: Props) {
-  const ref = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal?.();
-    if (!open && dialog.open) dialog.close?.();
-  }, [open]);
-
   return (
-    <dialog ref={ref} className="dialog" onCancel={onCancel} aria-labelledby="confirm-title">
-      <h2 id="confirm-title">{title}</h2>
-      <p>{message}</p>
-      <div className="dialog__actions">
-        <button type="button" onClick={onCancel}>
-          {t('confirm.cancel')}
-        </button>
-        <button type="button" className="button--danger" onClick={onConfirm}>
-          {confirmLabel}
-        </button>
-      </div>
-    </dialog>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => !next && onCancel()}
+      title={title}
+      size="sm"
+      footer={
+        <>
+          <Button onClick={onCancel}>{t('confirm.cancel')}</Button>
+          <Button variant="danger" onClick={onConfirm} autoFocus>
+            {confirmLabel}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-text">{message}</p>
+    </Dialog>
   );
 }

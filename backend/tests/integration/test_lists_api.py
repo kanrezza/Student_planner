@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import select
 
 from app.models import TaskList
@@ -52,6 +53,9 @@ def test_delete_list_and_its_tasks(client):
     task_id = client.post("/api/tasks", json={"title": "Báo cáo", "list_id": work}).get_json()["id"]
     assert client.delete(f"/api/lists/{work}?delete_tasks=true").status_code == 204
     assert client.get(f"/api/tasks/{task_id}").status_code == 404
+    # Feature 002 FR-030: task vào Thùng rác chứ không bị xoá hẳn.
+    trash = client.get("/api/tasks?view=trash").get_json()
+    assert [t["id"] for t in trash] == [task_id]
 
 
 def test_default_study_list_needs_replacement(client, db_session):
@@ -65,3 +69,35 @@ def test_default_study_list_needs_replacement(client, db_session):
     assert client.delete(f"/api/lists/{study}?move_to={personal}").status_code == 204
     new_default = db_session.scalars(select(TaskList).where(TaskList.is_default_study)).one()
     assert new_default.id == personal
+
+
+# ---- Emoji của danh sách (feature 002 FR-015, task T020) -------------------------------------
+
+
+@pytest.mark.parametrize("emoji", ["🏠", "❤️", "👍🏽", "👨‍👩‍👧", "🇻🇳"])
+def test_list_emoji_valid(client, emoji):
+    resp = client.post("/api/lists", json={"name": "Nhà", "emoji": emoji})
+    assert resp.status_code == 201, resp.get_json()
+    assert resp.get_json()["emoji"] == emoji
+    assert lists(client)["Nhà"]["emoji"] == emoji
+
+
+@pytest.mark.parametrize("emoji", ["ab", "a", "🏠🏠", "🏠a", "🏠 a", "1️⃣", ""])
+def test_list_emoji_invalid(client, emoji):
+    resp = client.post("/api/lists", json={"name": "Nhà", "emoji": emoji})
+    assert resp.status_code == 400
+    assert resp.get_json()["error"]["fields"] == {"emoji": "Chỉ chọn một emoji"}
+
+
+def test_list_emoji_patch_and_remove(client):
+    personal = lists(client)["Cá nhân"]
+    assert personal["emoji"] is None
+    resp = client.patch(f"/api/lists/{personal['id']}", json={"emoji": "🏠"})
+    assert resp.status_code == 200 and resp.get_json()["emoji"] == "🏠"
+    assert client.patch(f"/api/lists/{personal['id']}", json={"emoji": "🏠🏠"}).status_code == 400
+    resp = client.patch(f"/api/lists/{personal['id']}", json={"emoji": None})
+    assert resp.get_json()["emoji"] is None
+    # Đổi tên không làm mất emoji.
+    client.patch(f"/api/lists/{personal['id']}", json={"emoji": "📚"})
+    resp = client.patch(f"/api/lists/{personal['id']}", json={"name": "Riêng tư"})
+    assert resp.get_json()["emoji"] == "📚"

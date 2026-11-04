@@ -1,0 +1,150 @@
+/*
+ * Giao diện feature 002 (research R4): Tailwind CSS 4 với bộ token màu riêng của app.
+ * Chế độ Sáng/Tối theo macOS bằng `prefers-color-scheme` — không có nút chọn giao diện.
+ * Chỉ dùng font hệ thống; không tải tài nguyên ngoài (constitution IV).
+ */
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+
+  /* Nền: cửa sổ, thanh biểu tượng, cột danh sách, ô nhập, dòng khi rê chuột. */
+  --color-bg: #ffffff;
+  --color-rail: #eef0f3;
+  --color-surface: #ffffff;
+  --color-surface-2: #f6f7f9;
+  --color-surface-3: #eceef2;
+  --color-border: #e2e5ea;
+  --color-border-strong: #cdd2da;
+
+  /* Chữ. */
+  --color-text: #1c1e22;
+  --color-muted: #5f6672;
+
+  /* Màu nhấn: xanh lam ngọc đậm (riêng của app). */
+  --color-accent: #0f766e;
+  --color-accent-hover: #0c625b;
+  --color-accent-contrast: #ffffff;
+  --color-accent-soft: #e2f3f0;
+  --color-accent-strong: #0a5852;
+
+  --color-danger: #c0271a;
+  --color-danger-soft: #fdecea;
+  --color-warning: #8a5a00;
+  --color-warning-soft: #fdf3dc;
+  --color-today: #0f766e;
+  --color-overlay: rgb(15 18 24 / 0.35);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-panel: 0 8px 28px rgb(15 18 24 / 0.12), 0 1px 3px rgb(15 18 24 / 0.08);
+  --shadow-pop: 0 10px 32px rgb(15 18 24 / 0.16), 0 1px 4px rgb(15 18 24 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1d1e21;
+    --color-rail: #161719;
+    --color-surface: #26272b;
+    --color-surface-2: #222326;
+    --color-surface-3: #2f3035;
+    --color-border: #36383d;
+    --color-border-strong: #4a4d54;
+
+    --color-text: #e9eaed;
+    --color-muted: #a3a8b1;
+
+    --color-accent: #3dc4b3;
+    --color-accent-hover: #5ad2c3;
+    --color-accent-contrast: #052320;
+    --color-accent-soft: #1a3a36;
+    --color-accent-strong: #8ae3d7;
+
+    --color-danger: #ff7a6e;
+    --color-danger-soft: #3d2120;
+    --color-warning: #f0bb57;
+    --color-warning-soft: #3a2f17;
+    --color-today: #3dc4b3;
+    --color-overlay: rgb(0 0 0 / 0.5);
+
+    --shadow-panel: 0 8px 28px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.06);
+    --shadow-pop: 0 10px 32px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.07);
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+    /* Khoảng chừa cho ba nút cửa sổ khi chạy trong app macOS (desktop-shell §5); 0 trong trình duyệt. */
+    --titlebar-inset: 0px;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-bg font-sans text-[13px] leading-5 text-text antialiased;
+  }
+
+  button,
+  [role='button'] {
+    cursor: default;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+
+  input[type='date'],
+  input[type='time'] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Ô nhập mặc định của mọi form (độ ưu tiên thấp nhờ :where, class Tailwind vẫn ghi đè được). */
+  :where(input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']), select) {
+    height: 2rem;
+  }
+  :where(
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
+    select,
+    textarea
+  ) {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    padding: 0 0.625rem;
+    font-size: 13px;
+    transition: border-color 120ms;
+  }
+  :where(textarea) {
+    padding: 0.375rem 0.625rem;
+  }
+  :where(input, select, textarea):focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent);
+  }
+  :where(input, select, textarea)[aria-invalid='true'] {
+    border-color: var(--color-danger);
+  }
+  :where(input, select, textarea):disabled {
+    opacity: 0.5;
+  }
+  :where(input[type='checkbox']) {
+    accent-color: var(--color-accent);
+    width: 15px;
+    height: 15px;
+  }
+  ::placeholder {
+    color: var(--color-muted);
+  }
+}

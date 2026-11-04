@@ -13,7 +13,7 @@ from app.extensions import db
 from app.lib.timeutil import TZ, combine
 from app.models import ClassSession, Task
 from app.services.shifts import shift_label
-from app.services.tasks import due_at
+from app.services.tasks import active_tasks, due_at
 
 MAX_TASKS_SHOWN = 3
 DAYS_AHEAD = 14  # hôm nay + 13 ngày (research R15)
@@ -157,7 +157,7 @@ def digests_for_range(start: date, days: int, settings) -> list[Digest]:
         sessions_by_day.setdefault(s.date, []).append(_session_info(s))
     tasks = list(
         db.session.scalars(
-            select(Task).where(
+            active_tasks().where(
                 Task.completed_at.is_(None), Task.due_date.is_not(None), Task.due_date <= end
             )
         )

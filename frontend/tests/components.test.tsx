@@ -5,8 +5,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ClassSession } from '../src/api/types';
 import { ImportantToggle } from '../src/components/ImportantToggle';
 import { SessionDetail } from '../src/components/SessionDetail';
-import { EveReminderField } from '../src/pages/AutoDeadlineSettings';
-import { ShiftPicker, timeChoiceToInput, type TimeChoice } from '../src/components/ShiftPicker';
+import { EveReminderField } from '../src/features/settings/AutoDeadlineSettings';
+import {
+  ShiftPicker,
+  timeChoiceToInput,
+  type TimeChoice,
+} from '../src/features/subjects/ShiftPicker';
 
 const SHIFTS = [
   { id: 1, name: 'Ca 1', start_time: '06:45', end_time: '09:25', position: 1 },

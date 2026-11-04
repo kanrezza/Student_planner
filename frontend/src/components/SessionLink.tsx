@@ -17,7 +17,7 @@ export function SessionLink({ sessionId }: { sessionId: number }) {
     <>
       <button
         type="button"
-        className="link-button"
+        className="inline-flex items-center gap-1 text-accent hover:underline"
         onClick={(e) => {
           e.stopPropagation();
           setOpen(true);

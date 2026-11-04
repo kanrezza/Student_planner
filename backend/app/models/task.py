@@ -7,6 +7,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     SmallInteger,
     Text,
@@ -33,6 +34,15 @@ class Task(IdMixin, TimestampMixin, db.Model):
         CheckConstraint(
             "reminder_minutes IS NULL OR reminder_minutes >= -1", name="ck_tasks_reminder"
         ),
+        CheckConstraint(
+            "(work_date IS NULL) = (work_start IS NULL) "
+            "AND (work_date IS NULL) = (work_end IS NULL)",
+            name="ck_tasks_work_window_complete",
+        ),
+        CheckConstraint(
+            "work_end IS NULL OR work_end > work_start", name="ck_tasks_work_window_order"
+        ),
+        Index("ix_tasks_deleted_at", "deleted_at", postgresql_where=text("deleted_at IS NOT NULL")),
     )
 
     list_id: Mapped[int] = mapped_column(
@@ -51,6 +61,13 @@ class Task(IdMixin, TimestampMixin, db.Model):
     is_auto: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
     user_modified: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
     is_important: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
+    # Khung giờ làm (feature 002 FR-018): cả ba cùng có hoặc cùng trống, trong một ngày.
+    work_date: Mapped[date | None] = mapped_column(Date, index=True)
+    work_start: Mapped[time | None] = mapped_column(Time)
+    work_end: Mapped[time | None] = mapped_column(Time)
+    # Thùng rác (feature 002 FR-030): NULL = đang dùng.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    trashed_from_list_name: Mapped[str | None] = mapped_column(Text)
 
     list = relationship("TaskList", back_populates="tasks")
     source_session = relationship("ClassSession", back_populates="auto_task")

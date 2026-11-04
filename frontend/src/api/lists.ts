@@ -10,13 +10,16 @@ export function useLists() {
   });
 }
 
+/** `emoji: null` bỏ emoji; không gửi `emoji` thì giữ nguyên (feature 002 FR-015). */
+export type ListInput = { id?: number; name: string; color?: string; emoji?: string | null };
+
 export function useSaveList() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, name, color }: { id?: number; name: string; color?: string }) =>
+    mutationFn: ({ id, ...body }: ListInput) =>
       id
-        ? apiFetch<TaskList>(`/lists/${id}`, { method: 'PATCH', body: { name, color } })
-        : apiFetch<TaskList>('/lists', { method: 'POST', body: { name, color } }),
+        ? apiFetch<TaskList>(`/lists/${id}`, { method: 'PATCH', body })
+        : apiFetch<TaskList>('/lists', { method: 'POST', body }),
     onSuccess: () => invalidateTaskViews(qc),
   });
 }

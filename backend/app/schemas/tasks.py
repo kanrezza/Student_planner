@@ -1,9 +1,10 @@
 """Schema request/response cho task và danh sách (contracts/rest-api.md, data-model.md)."""
 
-from datetime import date
-from typing import Literal
+import math
+from datetime import date, datetime
+from typing import Annotated, Literal
 
-from pydantic import Field, ValidationInfo, field_validator
+from pydantic import AfterValidator, Field, ValidationInfo, field_validator
 
 from app.lib.timeutil import iso
 from app.schemas.common import HHMM, ApiModel, OptionalText, VietnameseText
@@ -25,6 +26,11 @@ class TaskIn(ApiModel):
     # None = theo mặc định; -1 = tắt nhắc; ≥ 0 = số phút trước hạn (chỉ với task có giờ).
     reminder_minutes: int | None = Field(default=None, ge=-1)
     is_important: bool = False
+    # Khung giờ làm (feature 002 FR-018): kiểm tra "đủ ba trường" và "kết thúc sau bắt đầu" ở
+    # service, sau khi gộp với giá trị đang có (PATCH chỉ gửi một phần).
+    work_date: date | None = None
+    work_start: HHMM | None = None
+    work_end: HHMM | None = None
 
     @field_validator("due_time")
     @classmethod
@@ -46,16 +52,77 @@ class TaskPatch(ApiModel):
     tag_ids: list[int] | None = None
     reminder_minutes: int | None = Field(default=None, ge=-1)
     is_important: bool | None = None
+    work_date: date | None = None
+    work_start: HHMM | None = None
+    work_end: HHMM | None = None
+
+
+# ---- Emoji của danh sách (feature 002 FR-015) ------------------------------------------------
+# Không dùng thư viện: kiểm tra theo dải mã emoji, ZWJ, VS16, modifier màu da và cờ (data-model).
+
+EMOJI_ERROR = "Chỉ chọn một emoji"
+EMOJI_MAX_BYTES = 64
+_VS16, _ZWJ = 0xFE0F, 0x200D
+_SKIN_TONES = range(0x1F3FB, 0x1F400)
+_REGIONAL = range(0x1F1E6, 0x1F200)
+_EMOJI_RANGES = (
+    range(0x1F000, 0x1FB00),
+    range(0x2600, 0x27C0),
+    range(0x2B00, 0x2C00),
+    range(0x2300, 0x2400),
+    range(0x2194, 0x21AB),
+)
+_EMOJI_SINGLES = {0x3030, 0x303D, 0x3297, 0x3299, 0xA9, 0xAE, 0x203C, 0x2049, 0x2122, 0x2139}
+
+
+def _is_emoji_char(code: int) -> bool:
+    return code in _EMOJI_SINGLES or any(code in r for r in _EMOJI_RANGES)
+
+
+def _is_flag(codes: list[int]) -> bool:
+    return len(codes) == 2 and all(c in _REGIONAL for c in codes)
+
+
+def is_single_emoji(text: str) -> bool:
+    """Đúng một emoji: ký tự emoji, theo sau chỉ có VS16, màu da, hoặc ZWJ + emoji; hoặc một cờ."""
+    if not text or len(text.encode()) > EMOJI_MAX_BYTES:
+        return False
+    codes = [ord(ch) for ch in text]
+    if codes[0] in _REGIONAL:
+        return _is_flag(codes)
+    if not _is_emoji_char(codes[0]) or codes[0] in _SKIN_TONES:
+        return False
+    i = 1
+    while i < len(codes):
+        code = codes[i]
+        if code == _VS16 or code in _SKIN_TONES:
+            i += 1
+        elif code == _ZWJ and i + 1 < len(codes) and _is_emoji_char(codes[i + 1]):
+            i += 2
+        else:
+            return False
+    return True
+
+
+def _check_emoji(value: str | None) -> str | None:
+    if value is not None and not is_single_emoji(value):
+        raise ValueError(EMOJI_ERROR)
+    return value
+
+
+Emoji = Annotated[str | None, AfterValidator(_check_emoji)]
 
 
 class ListIn(ApiModel):
     name: VietnameseText = Field(min_length=1, max_length=100)
     color: str | None = None
+    emoji: Emoji = None
 
 
 class ListPatch(ApiModel):
     name: VietnameseText | None = Field(default=None, min_length=1, max_length=100)
     color: str | None = None
+    emoji: Emoji = None
 
 
 def _reminder_times(task) -> list[str]:
@@ -68,6 +135,21 @@ def _reminder_fields(task) -> dict:
     times = _reminder_times(task)
     # `reminder_at` = mốc sớm nhất (giữ tương thích), `reminder_times` = mọi mốc (FR-068).
     return {"reminder_at": times[0] if times else None, "reminder_times": times}
+
+
+TRASH_DAYS = 30
+
+
+def days_left_in_trash(deleted_at: datetime | None, now: datetime) -> int | None:
+    """Còn N ngày = 30 − số ngày đã qua (làm tròn lên, tối thiểu 0); None nếu không ở Thùng rác."""
+    if deleted_at is None:
+        return None
+    elapsed_days = (now - deleted_at).total_seconds() / 86400
+    return max(0, math.ceil(TRASH_DAYS - elapsed_days))
+
+
+def _hhmm(value) -> str | None:
+    return value.strftime("%H:%M") if value else None
 
 
 def serialize_task(task, now) -> dict:
@@ -93,6 +175,12 @@ def serialize_task(task, now) -> dict:
         "display_color": display_color([t.color for t in tags], task.list.color),
         "reminder_minutes": task.reminder_minutes,
         "is_important": task.is_important,
+        "work_date": task.work_date.isoformat() if task.work_date else None,
+        "work_start": _hhmm(task.work_start),
+        "work_end": _hhmm(task.work_end),
+        "deleted_at": iso(task.deleted_at) if task.deleted_at else None,
+        "days_left_in_trash": days_left_in_trash(task.deleted_at, now),
+        "trashed_from_list_name": task.trashed_from_list_name,
         **_reminder_fields(task),
     }
 
@@ -103,5 +191,6 @@ def serialize_list(task_list, open_task_count: int) -> dict:
         "name": task_list.name,
         "color": task_list.color,
         "is_default_study": task_list.is_default_study,
+        "emoji": task_list.emoji,
         "open_task_count": open_task_count,
     }

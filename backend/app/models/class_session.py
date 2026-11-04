@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from datetime import date as calendar_date  # cột `date` bên dưới che tên kiểu `date`
 
 from sqlalchemy import (
     BigInteger,
@@ -20,8 +21,8 @@ from app.models.base import IdMixin, TimestampMixin
 class ClassSession(IdMixin, TimestampMixin, db.Model):
     """Một buổi học cụ thể, được sinh sẵn từ môn học (research R8).
 
-    Buổi có `is_cancelled`, `time_overridden` hoặc `room_overridden` là buổi có ngoại lệ và được
-    giữ nguyên khi môn học thay đổi (FR-013).
+    Buổi có `is_cancelled`, `time_overridden`, `room_overridden` hoặc `original_date` (đã dời) là
+    buổi có ngoại lệ và được giữ nguyên khi môn học thay đổi (FR-013, feature 002 FR-028).
     """
 
     __tablename__ = "class_sessions"
@@ -45,6 +46,8 @@ class ClassSession(IdMixin, TimestampMixin, db.Model):
     )
     # NULL = theo môn; True/False = đặt riêng buổi này (FR-067).
     important_override: Mapped[bool | None] = mapped_column(Boolean)
+    # Ngày gốc khi buổi được dời sang ngày khác (feature 002 FR-028); NULL = chưa dời.
+    original_date: Mapped[calendar_date | None] = mapped_column(Date)
 
     subject = relationship("Subject", back_populates="sessions")
     tag_links = relationship(
@@ -57,7 +60,16 @@ class ClassSession(IdMixin, TimestampMixin, db.Model):
 
     @property
     def has_exception(self) -> bool:
-        return self.is_cancelled or self.time_overridden or self.room_overridden
+        return (
+            self.is_cancelled
+            or self.time_overridden
+            or self.room_overridden
+            or self.original_date is not None
+        )
+
+    @property
+    def is_moved(self) -> bool:
+        return self.original_date is not None
 
     @property
     def is_important(self) -> bool:

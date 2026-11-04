@@ -18,7 +18,7 @@ from app.lib.timeutil import TZ, combine, iso
 from app.models import ClassSession, SyncState, Task
 from app.services.digest import DAYS_AHEAD, digests_for_range
 from app.services.reminders import get_settings, session_alarm_minutes, task_alarm_times
-from app.services.tasks import due_at
+from app.services.tasks import active_tasks, due_at
 
 CONTAINER_NAME = "Lịch Học Cá Nhân"
 OVERDUE_DAYS_KEPT = 7
@@ -59,7 +59,7 @@ def build_feed(now: datetime) -> dict:
         for s in sessions
     ]
     tasks = db.session.scalars(
-        select(Task)
+        active_tasks()
         .where(
             Task.completed_at.is_(None),
             Task.due_date.is_not(None),

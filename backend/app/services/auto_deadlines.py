@@ -204,7 +204,12 @@ def reconcile(
     if not sessions:
         return
     tasks = db.session.scalars(
-        select(Task).where(Task.is_auto, Task.source_session_id.in_([s.id for s in sessions]))
+        # Task trong Thùng rác bị bỏ qua; buổi của nó có `auto_task_suppressed` nên không tạo lại.
+        select(Task).where(
+            Task.is_auto,
+            Task.deleted_at.is_(None),
+            Task.source_session_id.in_([s.id for s in sessions]),
+        )
     ).all()
     infos = [
         AutoTaskInfo(
@@ -237,6 +242,7 @@ def drop_for_sessions(session_ids: list[int]) -> None:
             Task.source_session_id.in_(session_ids),
             Task.completed_at.is_(None),
             Task.user_modified.is_(False),
+            Task.deleted_at.is_(None),  # task trong Thùng rác được giữ để khôi phục
         )
     ):
         db.session.delete(task)

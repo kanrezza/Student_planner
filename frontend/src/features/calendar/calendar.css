@@ -1,0 +1,87 @@
+/*
+ * Ghi đè FullCalendar theo token màu của app (sáng/tối). Đợt 2 (Phase 8) mở rộng phần này cho lịch
+ * tuần mới.
+ */
+.lh-calendar .fc {
+  --fc-border-color: var(--color-border);
+  --fc-page-bg-color: var(--color-bg);
+  --fc-neutral-bg-color: var(--color-surface-2);
+  --fc-neutral-text-color: var(--color-muted);
+  --fc-today-bg-color: color-mix(in srgb, var(--color-accent) 7%, transparent);
+  --fc-now-indicator-color: var(--color-danger);
+  --fc-button-text-color: var(--color-text);
+  --fc-button-bg-color: var(--color-surface);
+  --fc-button-border-color: var(--color-border);
+  --fc-button-hover-bg-color: var(--color-surface-3);
+  --fc-button-hover-border-color: var(--color-border-strong);
+  --fc-button-active-bg-color: var(--color-accent);
+  --fc-button-active-border-color: var(--color-accent);
+  --fc-event-text-color: #ffffff;
+  font-size: 12px;
+  color: var(--color-text);
+}
+
+.lh-calendar .fc .fc-toolbar-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.lh-calendar .fc .fc-button {
+  text-transform: none;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+.lh-calendar .fc .fc-button-primary:not(:disabled).fc-button-active,
+.lh-calendar .fc .fc-button-primary:not(:disabled):active {
+  color: var(--color-accent-contrast);
+}
+
+.lh-calendar .fc .fc-col-header-cell-cushion,
+.lh-calendar .fc .fc-daygrid-day-number {
+  color: var(--color-text);
+}
+
+.lh-calendar .fc-event {
+  border-radius: 6px;
+  cursor: default;
+}
+
+.lh-calendar .fc-event-body {
+  overflow: hidden;
+  line-height: 1.25;
+  padding: 1px 3px;
+}
+
+.lh-calendar .fc-event-time {
+  font-weight: 600;
+  margin-right: 0.3rem;
+}
+
+.lh-calendar .fc .is-cancelled {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.lh-calendar .fc .is-done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.lh-calendar .fc .is-important {
+  border-width: 2px !important;
+  border-color: var(--color-warning) !important;
+  font-weight: 600;
+}
+
+.lh-calendar .tag-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  margin-left: 3px;
+  vertical-align: middle;
+}

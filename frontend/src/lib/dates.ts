@@ -76,3 +76,41 @@ export function toIsoDate(d: Date): string {
   const p = toParts(d.toISOString());
   return `${p.year}-${pad(p.month)}-${pad(p.day)}`;
 }
+
+/** "2026-11-09" + 3 → "2026-11-12" (ngày thuần, không phụ thuộc múi giờ). */
+export function addDays(isoDate: string, days: number): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const next = new Date(Date.UTC(y, m - 1, d + days));
+  return next.toISOString().slice(0, 10);
+}
+
+/** Số ngày từ `from` tới `to` (ngày thuần). */
+export function daysBetween(from: string, to: string): number {
+  const parse = (iso: string) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  return Math.round((parse(to) - parse(from)) / 86_400_000);
+}
+
+/** 1 = Thứ Hai … 7 = Chủ Nhật của một ngày thuần. */
+export function isoWeekday(isoDate: string): number {
+  return weekdayIndex(toParts(isoDate)) + 1;
+}
+
+/** "Thứ Năm, 12/11" */
+export function formatDayShort(isoDate: string): string {
+  const p = toParts(isoDate);
+  return `${WEEKDAYS_VN[weekdayIndex(p)]}, ${pad(p.day)}/${pad(p.month)}`;
+}
+
+/** "12/11" */
+export function formatDayMonth(isoDate: string): string {
+  const p = toParts(isoDate);
+  return `${pad(p.day)}/${pad(p.month)}`;
+}
+
+/** Thời điểm 00:00 (giờ Việt Nam) của một ngày thuần. */
+export function startOfDayVn(isoDate: string): Date {
+  return new Date(`${isoDate}T00:00:00+07:00`);
+}

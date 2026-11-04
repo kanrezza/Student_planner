@@ -57,7 +57,7 @@ def sql(statement: str) -> None:
 
 
 def setup(snapshot_path: str) -> None:
-    task_list = call("POST", "/lists", {"name": f"{PREFIX} Danh sách"})
+    task_list = call("POST", "/lists", {"name": f"{PREFIX} Danh sách", "emoji": "📚"})
     task = call(
         "POST",
         "/tasks",
@@ -70,6 +70,19 @@ def setup(snapshot_path: str) -> None:
             "list_id": task_list["id"],
         },
     )
+    # Task trong Thùng rác (feature 002 FR-030) phải còn ở Thùng rác sau khởi động lại.
+    trashed = call(
+        "POST",
+        "/tasks",
+        {
+            "title": f"{PREFIX} Đã chuyển vào Thùng rác",
+            "list_id": task_list["id"],
+            "work_date": "2099-02-01",
+            "work_start": "19:00",
+            "work_end": "21:00",
+        },
+    )
+    trashed = call("DELETE", f"/tasks/{trashed['id']}")
     semester = call(
         "POST",
         "/semesters",
@@ -102,13 +115,15 @@ def setup(snapshot_path: str) -> None:
     snapshot = {
         "list": task_list,
         "task": task,
+        "trashed": trashed,
         "semester": semester,
         "subject": call("GET", f"/subjects/{subject_id}"),
         "extra_task": None,
     }
     write(snapshot_path, snapshot)
     print(
-        f"Đã tạo: 1 danh sách, 1 task, 1 học kỳ, 1 môn ({len(sessions)} buổi; 1 huỷ, 1 đổi phòng)"
+        f"Đã tạo: 1 danh sách, 1 task, 1 task trong Thùng rác, 1 học kỳ, 1 môn ({len(sessions)} "
+        "buổi; 1 huỷ, 1 đổi phòng)"
     )
 
 
@@ -135,9 +150,18 @@ def verify(snapshot_path: str) -> None:
         ),
     }
     lists = {item["id"]: item for item in call("GET", "/lists")}
-    checks["danh sách"] = (
-        snapshot["list"]["name"],
-        lists.get(snapshot["list"]["id"], {}).get("name"),
+    saved_list = lists.get(snapshot["list"]["id"], {})
+    checks["danh sách (tên, emoji)"] = (
+        (snapshot["list"]["name"], snapshot["list"]["emoji"]),
+        (saved_list.get("name"), saved_list.get("emoji")),
+    )
+    trash = {t["id"]: t for t in call("GET", "/tasks?view=trash")}
+    kept = ("title", "deleted_at", "work_date", "work_start", "work_end")
+    expected_trashed = snapshot["trashed"]
+    got_trashed = trash.get(expected_trashed["id"], {})
+    checks["task trong Thùng rác"] = (
+        {k: expected_trashed[k] for k in kept},
+        {k: got_trashed.get(k) for k in kept},
     )
     semesters = {s["id"]: s for s in call("GET", "/semesters")}
     saved_sem = dict(snapshot["semester"])
@@ -177,6 +201,10 @@ def cleanup() -> None:
     for task_list in call("GET", "/lists"):
         if task_list["name"].startswith(PREFIX):
             call("DELETE", f"/lists/{task_list['id']}?delete_tasks=true")
+    # Xoá danh sách đưa task vào Thùng rác → xoá hẳn các task test ở đó.
+    for task in call("GET", "/tasks?view=trash"):
+        if task["title"].startswith(PREFIX):
+            call("DELETE", f"/tasks/{task['id']}?permanent=true")
 
 
 def without(data: dict, key: str) -> dict:

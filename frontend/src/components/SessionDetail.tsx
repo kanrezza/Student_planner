@@ -4,7 +4,10 @@ import type { ClassSession } from '../api/types';
 import { t } from '../i18n/vi';
 import { formatDayLong, formatTime } from '../lib/dates';
 import { blankToNull, sessionTimeRange } from '../lib/format';
-import { FormField } from './FormField';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { FormActions } from './FormActions';
+import { FormField, FormRow } from './FormField';
 import {
   choiceToOverride,
   ImportanceSelect,
@@ -13,7 +16,6 @@ import {
 } from './ImportantToggle';
 import { Modal } from './Modal';
 import { TagPicker } from './TagPicker';
-import { FormActions } from './TaskForm';
 
 /**
  * Chi tiết một buổi học (US4): huỷ/khôi phục, đổi giờ hoặc phòng chỉ cho buổi này (FR-011, FR-012),
@@ -57,22 +59,20 @@ export function SessionDetail({
 
   return (
     <Modal title={session.subject_name} onClose={onClose}>
-      <p>
-        <strong>{formatDayLong(session.date)}</strong> · {sessionTimeRange(session)}
-        {session.shift_label && ` (${session.shift_label})`}
-        <br />
-        {session.room ?? t('session.noRoom')}
-        {session.lecturer && ` · ${session.lecturer}`}
-      </p>
-      <div className="row-actions">
-        {session.is_cancelled && (
-          <span className="badge badge--danger">{t('session.cancelled')}</span>
-        )}
-        {session.time_overridden && <span className="badge">{t('session.timeOverridden')}</span>}
-        {session.room_overridden && <span className="badge">{t('session.roomOverridden')}</span>}
-        <button
-          type="button"
-          className={session.is_cancelled ? 'button--primary' : 'button--danger'}
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-text">
+          <span className="font-semibold">{formatDayLong(session.date)}</span> ·{' '}
+          <span className="tabular-nums">{sessionTimeRange(session)}</span>
+          {session.shift_label && ` (${session.shift_label})`}
+          <br />
+          <span className="text-muted">
+            {session.room ?? t('session.noRoom')}
+            {session.lecturer && ` · ${session.lecturer}`}
+          </span>
+        </p>
+        <Button
+          variant={session.is_cancelled ? 'primary' : 'danger'}
+          size="sm"
           disabled={setCancelled.isPending}
           onClick={() =>
             setCancelled.mutate(
@@ -82,12 +82,21 @@ export function SessionDetail({
           }
         >
           {session.is_cancelled ? t('session.restore') : t('session.cancel')}
-        </button>
+        </Button>
       </div>
+      {(session.is_cancelled || session.time_overridden || session.room_overridden) && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {session.is_cancelled && <Badge tone="danger">{t('session.cancelled')}</Badge>}
+          {session.time_overridden && <Badge>{t('session.timeOverridden')}</Badge>}
+          {session.room_overridden && <Badge>{t('session.roomOverridden')}</Badge>}
+        </div>
+      )}
 
-      <form onSubmit={submit} noValidate>
-        <h3>{t('session.editOnly')}</h3>
-        <div className="form-row">
+      <form onSubmit={submit} noValidate className="mt-4 border-t border-border pt-4">
+        <h3 className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-muted">
+          {t('session.editOnly')}
+        </h3>
+        <FormRow>
           <FormField label={t('subjects.fieldStartTime')} name="start_time" error={update.error}>
             <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
           </FormField>
@@ -97,7 +106,7 @@ export function SessionDetail({
           <FormField label={t('subjects.fieldRoom')} name="room" error={update.error}>
             <input value={room} onChange={(e) => setRoom(e.target.value)} />
           </FormField>
-        </div>
+        </FormRow>
         <FormField label={t('important.label')} name="important_override" error={update.error}>
           <ImportanceSelect
             value={importance}

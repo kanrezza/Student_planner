@@ -6,6 +6,7 @@ from sqlalchemy import or_, select
 
 from app.extensions import db
 from app.models import ClassSession, SessionTag, SubjectTag, Task, TaskTag
+from app.services.tasks import active_tasks
 
 MAX_RANGE_DAYS = 62  # đủ cho chế độ xem tháng (tối đa 6 tuần) kèm phần đệm
 
@@ -28,8 +29,10 @@ def sessions_in_range(start: date, end: date, tag_ids: list[int]) -> list[ClassS
 
 
 def tasks_in_range(start: date, end: date, tag_ids: list[int]) -> list[Task]:
-    """Task có hạn chót trong [start, end]; task không có hạn chót không hiện trên lịch."""
-    query = select(Task).where(Task.due_date.between(start, end))
+    """Task có hạn chót hoặc khung giờ làm trong [start, end] (mỗi task một lần, feature 002)."""
+    query = active_tasks().where(
+        or_(Task.due_date.between(start, end), Task.work_date.between(start, end))
+    )
     if tag_ids:
         query = query.where(Task.id.in_(select(TaskTag.task_id).where(TaskTag.tag_id.in_(tag_ids))))
     return list(db.session.scalars(query.order_by(Task.due_date, Task.due_time)))

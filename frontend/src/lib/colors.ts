@@ -24,3 +24,51 @@ const FALLBACK = PALETTE.c11;
 export function colorHex(code: string | null | undefined): string {
   return (code && PALETTE[code]) || FALLBACK;
 }
+
+export type ColorScheme = 'light' | 'dark';
+
+/** Nền cửa sổ của từng chế độ (khớp `--color-bg` trong index.css). */
+export const SCHEME_BACKGROUND: Record<ColorScheme, string> = {
+  light: '#ffffff',
+  dark: '#1d1e21',
+};
+
+function hexToRgb(hex: string): [number, number, number] {
+  const value = hex.replace('#', '');
+  return [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16)) as [number, number, number];
+}
+
+function rgbToHex([r, g, b]: [number, number, number]): string {
+  return `#${[r, g, b].map((c) => Math.round(c).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Trộn hai màu: `amount` = tỉ lệ của màu `b` (0 → a, 1 → b). */
+export function mixHex(a: string, b: string, amount: number): string {
+  const ca = hexToRgb(a);
+  const cb = hexToRgb(b);
+  return rgbToHex(
+    [0, 1, 2].map((i) => ca[i] + (cb[i] - ca[i]) * amount) as [number, number, number],
+  );
+}
+
+/** Nền nhạt của khối trên lịch, chip nhãn (feature 002 FR-023). */
+export function colorSoft(code: string | null | undefined, scheme: ColorScheme): string {
+  const base = colorHex(code);
+  return scheme === 'light'
+    ? mixHex(base, '#ffffff', 0.86)
+    : mixHex(base, SCHEME_BACKGROUND.dark, 0.7);
+}
+
+/** Màu chữ/viền đậm đi kèm `colorSoft`, đủ tương phản 4.5:1 trên nền nhạt (FR-032). */
+export function colorStrong(code: string | null | undefined, scheme: ColorScheme): string {
+  const base = colorHex(code);
+  return scheme === 'light' ? mixHex(base, '#000000', 0.2) : mixHex(base, '#ffffff', 0.6);
+}
+
+/** Chế độ màu hiện tại của macOS/trình duyệt. */
+export function currentScheme(): ColorScheme {
+  return typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+}

@@ -17,7 +17,7 @@ def list_lists():
 @bp.post("/lists")
 def create_list():
     data = ListIn.model_validate(request.get_json(silent=True) or {})
-    task_list = service.create_list(data.name, data.color)
+    task_list = service.create_list(data.name, data.color, data.emoji)
     return serialize_list(task_list, 0), 201
 
 
