@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-04
 
-**Status**: Draft
+**Status**: Ready (đã có plan và tasks)
 
 **Input**: User description: "Thiết kế lại giao diện và đóng gói thành app macOS cho Lịch Học Cá Nhân.
 Bố cục 3 cột lấy cảm hứng từ các app quản lý công việc phổ biến (tên, logo, màu sắc là của riêng
@@ -310,7 +310,7 @@ tắt; đi qua mọi chức năng của feature 001 trong bố cục mới.
 
 1. **Given** macOS chuyển sang chế độ Tối, **Then** app đổi sang giao diện tối ngay, không cần mở
    lại; chữ và màu nhãn vẫn đủ tương phản.
-2. **Given** bảng phím tắt (FR-031), **When** nhấn từng phím, **Then** thao tác tương ứng xảy ra;
+2. **Given** bảng phím tắt (FR-034), **When** nhấn từng phím, **Then** thao tác tương ứng xảy ra;
    menu "Trợ giúp → Phím tắt" (hoặc ⌘/) liệt kê đủ các phím bằng tiếng Việt.
 3. **Given** thanh biểu tượng, **When** chọn Môn học, **Then** thấy học kỳ, danh sách môn, thêm môn
    một lần hoặc nhiều môn, nhập từ ảnh (khi feature 001 hoàn thành phần này).
@@ -327,8 +327,9 @@ tắt; đi qua mọi chức năng của feature 001 trong bố cục mới.
   khoảng 700 điểm ảnh, cột danh sách thu gọn và mở lại bằng nút.
 - Số đếm danh sách thông minh chỉ tính task chưa hoàn thành và không ở Thùng rác; Hôm nay gồm cả task
   quá hạn.
-- Sang ngày mới khi app đang mở: các nhóm Hôm nay/Ngày mai/7 ngày tới, số đếm và đường kẻ giờ hiện
-  tại tự cập nhật, không cần mở lại app.
+- Sang ngày mới khi app đang mở (kể cả khi máy ngủ qua nửa đêm rồi cửa sổ được mở lại): các nhóm Hôm
+  nay/Ngày mai/7 ngày tới, số đếm và đường kẻ giờ hiện tại tự cập nhật lúc 00:00 hoặc ngay khi cửa sổ
+  được focus lại, không cần mở lại app.
 - Task có khung giờ làm ở ngày sau hạn chót: vẫn lưu được nhưng bảng chi tiết hiện cảnh báo "Khung
   giờ làm sau hạn chót".
 - Khung giờ làm vắt qua nửa đêm: không cho phép; khung giờ làm nằm trong một ngày.
@@ -346,7 +347,8 @@ tắt; đi qua mọi chức năng của feature 001 trong bố cục mới.
   buổi.
 - Thùng rác rỗng: hiện "Thùng rác trống".
 - Task trong Thùng rác vẫn được giữ khi tắt app hoặc khởi động lại máy; việc xoá hẳn sau 30 ngày diễn
-  ra ở lần mở app hoặc lần kiểm tra định kỳ kế tiếp.
+  ra ở lần mở app kế tiếp hoặc trong vòng 1 giờ nhờ lần đồng bộ định kỳ của trình đồng bộ Lịch (nếu
+  đang chạy).
 - Emoji không hợp lệ (nhiều hơn một emoji, hoặc là chữ thường): app từ chối; danh sách không có emoji
   hiện biểu tượng mặc định.
 - Mở app lần thứ hai khi đã mở: đưa cửa sổ đang có lên trước, không mở cửa sổ mới.
@@ -396,7 +398,8 @@ tắt; đi qua mọi chức năng của feature 001 trong bố cục mới.
   (xa hơn), màu đỏ nếu quá hạn; nếu có khung giờ làm thì hiện thêm khung giờ làm.
 - **FR-012**: Danh sách Hôm nay PHẢI có khối "Lịch hôm nay" ở đầu, gồm buổi thi rồi buổi học của hôm
   nay (giờ, tên, phòng, trạng thái huỷ) và các cảnh báo hiện có của trang Hôm nay; Hôm nay là màn hình
-  mặc định khi mở app.
+  mặc định mỗi lần mở app
+  (app không nhớ mục hay danh sách đã chọn lần trước).
 - **FR-013**: Bấm vào task PHẢI mở bảng chi tiết bên phải để xem và sửa mọi trường của task; thay đổi
   được lưu khi rời ô hoặc nhấn Enter ở ô một dòng; lỗi nhập hiện ngay dưới ô bằng tiếng Việt; Esc
   hoặc nút đóng thì đóng bảng.
@@ -411,9 +414,10 @@ tắt; đi qua mọi chức năng của feature 001 trong bố cục mới.
 - **FR-016**: Đầu khu vực chính PHẢI có ô "Thêm công việc"; nhấn Enter với tiêu đề không trống thì tạo
   task ngay, xoá trống ô và giữ con trỏ trong ô.
 - **FR-017**: Giá trị mặc định của task thêm nhanh theo danh sách đang xem: Hôm nay → hạn hôm nay;
-  Ngày mai → hạn ngày mai; 7 ngày tới → hạn hôm nay; Tất cả, Đã hoàn thành, Thùng rác → không hạn;
+  Ngày mai → hạn ngày mai; 7 ngày tới → hạn hôm nay; Tất cả → không hạn;
   danh sách người dùng → thuộc danh sách đó; nhãn → gắn nhãn đó. Danh sách của task mặc định là "Học
-  tập" khi không xem một danh sách cụ thể. Ưu tiên Trung bình, không Quan trọng, nhắc theo mặc định.
+  tập" khi không xem một danh sách cụ thể. Ưu tiên Trung bình, không Quan trọng, nhắc theo mặc định. Ô
+  "Thêm công việc" không hiện ở Đã hoàn thành và Thùng rác.
 
 **Khung giờ làm**
 
@@ -428,8 +432,10 @@ tắt; đi qua mọi chức năng của feature 001 trong bố cục mới.
   Ngày/Tuần/Tháng, nút trước/sau và "Hôm nay"; tuần bắt đầu Thứ Hai; mặc định chế độ Tuần.
 - **FR-021**: Ở chế độ Ngày và Tuần: hàng tên thứ (T2 … CN) phía trên hàng số ngày; số ngày hôm nay
   được tô tròn bằng màu nhấn; có đường kẻ đỏ tại giờ hiện tại kèm nhãn giờ màu đỏ ở cột giờ, tự di
-  chuyển theo thời gian; có hàng "Cả ngày" ngay dưới hàng số ngày cho task chỉ có ngày hạn; có nút ẩn/
-  hiện cột bên để lịch rộng hơn.
+  chuyển theo thời gian; có hàng "Cả ngày" ngay dưới hàng số ngày cho task chỉ có ngày hạn; có cột bên
+  gồm lịch tháng nhỏ để chọn ngày (bấm một ngày → lịch chuyển tới ngày/tuần chứa ngày đó; hôm nay
+  và khoảng đang xem được tô) và bộ lọc nhãn (FR-037); nút ở đầu trang ẩn/hiện cột bên để lịch rộng
+  hơn.
 - **FR-022**: Vị trí của task trên lưới: có khung giờ làm → khối theo khung giờ làm; không có khung
   giờ làm nhưng có giờ hạn → khối ngắn 30 phút bắt đầu tại giờ hạn kèm biểu tượng hạn chót; chỉ có
   ngày hạn → hàng "Cả ngày".
@@ -497,7 +503,9 @@ tắt; đi qua mọi chức năng của feature 001 trong bố cục mới.
 - **Danh sách** (mở rộng): thêm emoji (không bắt buộc, đúng một emoji).
 - **Danh sách thông minh** (suy ra, không lưu): Hôm nay, Ngày mai, 7 ngày tới, Tất cả, Đã hoàn thành,
   Thùng rác; nội dung và số đếm tính từ task theo FR-009.
-- **Trạng thái cửa sổ** (lưu trên máy): kích thước, vị trí, mục và danh sách đang chọn gần nhất.
+- **Trạng thái cửa sổ và giao diện** (lưu trên máy): kích thước và vị trí cửa sổ, chế độ lịch gần
+  nhất (Ngày/Tuần/Tháng), các nhóm task đã thu gọn. Mục và danh sách đang chọn KHÔNG được nhớ: mở
+  app luôn vào Công việc → Hôm nay (FR-012).
 
 ## Success Criteria *(mandatory)*
 

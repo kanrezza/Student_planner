@@ -742,6 +742,8 @@ tạo trùng.
   (ví dụ `Thứ Hai, 16/11/2026`, giờ 24h).
 - **FR-027**: Mọi thao tác xoá (task, danh sách, môn học, học kỳ, ca học, nhãn, buổi thi) PHẢI yêu
   cầu xác nhận.
+  *Được thay một phần bởi feature 002 FR-030: xoá task chuyển task vào Thùng rác ngay, không hỏi xác
+  nhận, có "Hoàn tác"; "Xoá vĩnh viễn", "Dọn sạch Thùng rác" và các loại xoá khác vẫn hỏi xác nhận.*
 
 ### Key Entities
 

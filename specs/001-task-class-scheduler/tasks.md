@@ -1296,7 +1296,7 @@ T146 (Phase 10).
   lichhoc`).
 - [ ] T140 [P] Tạo `backend/app/cli.py` với lệnh `flask seed-demo`: 1 học kỳ, 6 môn (2 môn
   E-Learning, 1 môn 20:30), 200 task rải trong học kỳ, vài nhãn. Đăng ký trong `create_app`.
-- [ ] T141 Viết `README.md` bằng tiếng Việt:
+- [ ] T141 Viết `README.md` bằng tiếng Việt (*gộp vào feature 002 T092, làm ở đó*):
   - Giới thiệu; yêu cầu (macOS 14+, OrbStack, cần internet chỉ ở lần build đầu).
   - Chạy bằng `docker compose up -d --build`; mở `http://127.0.0.1:8080`.
   - Cài agent (`mac-agent/scripts/install.sh`) và bật đồng bộ; lưu ý chữ ký ad-hoc có thể khiến

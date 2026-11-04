@@ -129,7 +129,8 @@ xác trong `package.json`/`Cargo.toml` và `package-lock.json`/`Cargo.lock`).
 | Khối màu nhạt có checkbox, tiêu đề, giờ, phòng | `eventContent` render component `CalendarBlock` |
 | Kéo thả / kéo dãn / chọn vùng | `editable` theo từng sự kiện (`startEditable`, `durationEditable`), `selectable: true`, `snapDuration: '00:15'`, `eventDrop`, `eventResize`, `select` |
 | Cuộn tới giờ hiện tại | `scrollTime` = giờ hiện tại − 1 giờ (tuần có hôm nay), ngược lại `06:00` |
-| Lọc theo nhãn | giữ `TagFilter` hiện có, lọc ở truy vấn `/calendar?tags=` |
+| Lọc theo nhãn | giữ `TagFilter` hiện có (đặt trong cột bên), lọc ở truy vấn `/calendar?tags=` |
+| Cột bên: lịch tháng nhỏ + lọc nhãn | component `CalendarSidebar` tự làm (không dùng FullCalendar thứ hai): lưới tháng từ hàm thuần `monthGrid(month)` (tuần bắt đầu Thứ Hai, 6 hàng), bấm ngày → `gotoDate`; tô hôm nay và khoảng đang xem; ẩn/hiện bằng nút ở đầu trang, nhớ trong `localStorage` |
 
 Ánh xạ dữ liệu → sự kiện là hàm thuần `toCalendarEvents` (mở rộng bản hiện có) để test bằng Vitest;
 ánh xạ kéo thả → PATCH là hàm thuần `dropToPatch(event, newStart, newEnd, allDay)` (data-model
@@ -148,8 +149,10 @@ chỉ thêm timeline/resource, không cần).
 sync_feed, digest, reminders, auto_deadlines, task_lists đếm) chuyển sang dùng nó.
 - Xoá hẳn tự động: hàm `purge_expired_trash(now)` xoá task có `deleted_at < now − 30 ngày`; gọi khi
   backend khởi động và ở đầu các request đọc danh sách (`/task-counts`, `/tasks?view=trash`,
-  `/today`). Rẻ (một câu DELETE có index), đảm bảo SC-006 "trong vòng một ngày" vì app được mở hằng
-  ngày; không cần tiến trình định kỳ riêng.
+  `/today`), và ở `/sync/feed` qua `purge_expired_trash_throttled(now)` (tối đa 1 lần/giờ, mốc lần chạy
+  cuối giữ trong bộ nhớ của tiến trình backend). Agent gọi feed mỗi phút nên task quá hạn bị xoá trong
+  vòng 1 giờ dù không mở app, đảm bảo SC-006; không cần tiến trình định kỳ riêng. Rẻ (một câu DELETE có
+  index).
 - Task tự tạo vào Thùng rác: đặt `class_sessions.auto_task_suppressed = true` như khi xoá hiện nay;
   `auto_deadlines.reconcile` bỏ qua task đã ở Thùng rác. Khôi phục: `deleted_at = NULL`,
   `auto_task_suppressed = false`, rồi reconcile buổi đó (task đã có nên không tạo mới).
