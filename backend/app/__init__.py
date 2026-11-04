@@ -1,5 +1,6 @@
 """Lịch Học Cá Nhân — Flask REST API."""
 
+import logging
 from pathlib import Path
 
 from flask import Flask
@@ -7,6 +8,8 @@ from flask import Flask
 from app import config
 from app.api.errors import register_error_handlers
 from app.extensions import db, migrate
+
+log = logging.getLogger(__name__)
 
 MIGRATIONS_DIR = str(Path(__file__).resolve().parent.parent / "migrations")
 
@@ -25,7 +28,28 @@ def create_app(config_overrides: dict | None = None) -> Flask:
 
     register_blueprints(app)
     register_error_handlers(app)
+    purge_trash_on_startup(app)
     return app
+
+
+def purge_trash_on_startup(app: Flask) -> None:
+    """Xoá hẳn task ở Thùng rác quá 30 ngày khi backend khởi động (feature 002 research R6).
+
+    Lỗi (ví dụ database chưa chạy migration khi gọi `flask db upgrade`) chỉ được ghi log.
+    """
+    if app.config.get("TESTING"):
+        return
+    from app.lib import timeutil
+    from app.services.tasks import purge_expired_trash
+
+    with app.app_context():
+        try:
+            purge_expired_trash(timeutil.now())
+        except Exception as err:  # noqa: BLE001 — không được chặn việc khởi động
+            log.warning("Bỏ qua dọn Thùng rác lúc khởi động: %s", err)
+            db.session.rollback()
+        finally:
+            db.session.remove()
 
 
 def register_blueprints(app: Flask) -> None:

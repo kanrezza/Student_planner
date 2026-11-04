@@ -152,6 +152,12 @@ def serialize_subject(subject, session_count: int | None = None) -> dict:
     return data
 
 
+def _active_auto_task_id(session) -> int | None:
+    """Task tự tạo đã ở Thùng rác coi như không có (feature 002 FR-031)."""
+    task = session.auto_task
+    return task.id if task is not None and task.deleted_at is None else None
+
+
 def serialize_session(session) -> dict:
     """Buổi học (đọc) — contracts/rest-api.md "Session (đọc)"."""
     subject = session.subject
@@ -176,7 +182,7 @@ def serialize_session(session) -> dict:
         "shift_label": (
             None if session.time_overridden else shift_label(subject.start_shift, subject.end_shift)
         ),
-        "auto_task_id": session.auto_task.id if session.auto_task else None,
+        "auto_task_id": _active_auto_task_id(session),
         "is_important": session.is_important,
         "important_override": session.important_override,
         "subject_is_important": subject.is_important,

@@ -2,6 +2,7 @@ import { useTags } from '../api/tags';
 import { t } from '../i18n/vi';
 import { colorHex } from '../lib/colors';
 import { toggleTag } from '../lib/tagFilter';
+import { TagChip } from './TagChip';
 
 /**
  * Chọn nhiều nhãn; giữ thứ tự chọn vì nhãn đầu tiên quyết định màu hiển thị (FR-043, FR-044).
@@ -18,28 +19,20 @@ export function TagPicker({
 }) {
   const tags = useTags();
   const available = (tags.data ?? []).filter((tag) => !exclude.includes(tag.id));
-  if (available.length === 0) return <span className="muted">{t('tags.none')}</span>;
+  if (available.length === 0) return <span className="text-muted">{t('tags.none')}</span>;
   return (
-    <div className="tag-chips" role="group" aria-label={t('tags.pick')}>
+    <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('tags.pick')}>
       {available.map((tag) => {
         const index = value.indexOf(tag.id);
-        const selected = index >= 0;
         return (
-          <button
+          <TagChip
             key={tag.id}
-            type="button"
-            aria-pressed={selected}
-            className={`tag-chip${selected ? ' is-selected' : ''}`}
-            style={
-              selected
-                ? { backgroundColor: colorHex(tag.color), borderColor: colorHex(tag.color) }
-                : { borderColor: colorHex(tag.color) }
-            }
+            name={tag.name}
+            color={colorHex(tag.color)}
+            selected={index >= 0}
+            order={index >= 0 && value.length > 1 ? index + 1 : undefined}
             onClick={() => onChange(toggleTag(value, tag.id))}
-          >
-            {selected && value.length > 1 && <span className="tag-chip__order">{index + 1}</span>}
-            {tag.name}
-          </button>
+          />
         );
       })}
     </div>

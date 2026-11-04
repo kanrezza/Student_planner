@@ -40,16 +40,16 @@ người dùng: bố cục + danh sách công việc → Lịch → kéo thả �
 
 **Purpose**: Thêm công cụ cho giao diện mới; chưa đổi giao diện đang chạy.
 
-- [ ] T001 Cài phụ thuộc frontend (bản ổn định mới nhất đã phát hành ≥ 2 tuần, ghi chính xác phiên
+- [X] T001 Cài phụ thuộc frontend (bản ổn định mới nhất đã phát hành ≥ 2 tuần, ghi chính xác phiên
   bản trong `frontend/package.json` và `package-lock.json`, research R4): `tailwindcss`,
   `@tailwindcss/vite`, `@radix-ui/react-dialog`, `@radix-ui/react-popover`,
   `@radix-ui/react-dropdown-menu`, `@radix-ui/react-tooltip`. Không thêm thư viện icon, phím tắt
   hay UI kit.
-- [ ] T002 Bật Tailwind: thêm plugin `tailwindcss()` vào `frontend/vite.config.ts`; tạo
+- [X] T002 Bật Tailwind: thêm plugin `tailwindcss()` vào `frontend/vite.config.ts`; tạo
   `frontend/src/index.css` với `@import "tailwindcss";` và import trong `frontend/src/main.tsx`
   (song song với `styles.css` cũ cho tới Phase 7). Kiểm tra `npm run build` và Docker build của
   service `web` vẫn chạy.
-- [ ] T003 [P] Cấu hình Prettier/ESLint cho class Tailwind: không thêm plugin; xác nhận
+- [X] T003 [P] Cấu hình Prettier/ESLint cho class Tailwind: không thêm plugin; xác nhận
   `npm run lint` pass với file `.css` mới (bỏ qua `@theme`, `@custom-variant` nếu Prettier báo lỗi
   bằng cách cập nhật `frontend/.prettierignore` chỉ khi cần).
 
@@ -64,70 +64,70 @@ khung 3 cột. Mọi user story phụ thuộc phase này.
 
 ### Backend: migration và model
 
-- [ ] T004 Tạo `backend/migrations/versions/0004_redesign.py` (`down_revision =
+- [X] T004 Tạo `backend/migrations/versions/0004_redesign.py` (`down_revision =
   "0003_auto_deadline_reminder"`) theo [data-model](data-model.md):
   - `tasks`: `work_date date NULL`, `work_start time NULL`, `work_end time NULL`, `deleted_at
     timestamptz NULL`, `trashed_from_list_name text NULL`; CHECK `(work_date IS NULL) = (work_start
     IS NULL) AND (work_date IS NULL) = (work_end IS NULL)`; CHECK `work_end IS NULL OR work_end >
     work_start`; index một phần `(deleted_at) WHERE deleted_at IS NOT NULL`; index `(work_date)`.
-  - `task_lists`: `emoji text NULL` với CHECK `emoji IS NULL OR octet_length(emoji) <= 16`.
+  - `task_lists`: `emoji text NULL` với CHECK `emoji IS NULL OR octet_length(emoji) <= 64`.
   - `class_sessions`: `original_date date NULL`.
   - `downgrade()` xoá đúng các cột/ràng buộc trên.
-- [ ] T005 Cập nhật model: `backend/app/models/task.py` (5 cột + 2 CheckConstraint cùng tên với
+- [X] T005 Cập nhật model: `backend/app/models/task.py` (5 cột + 2 CheckConstraint cùng tên với
   migration), `backend/app/models/task_list.py` (`emoji` + CHECK), `backend/app/models/class_session.py`
   (`original_date`; `has_exception` gồm `original_date is not None`; property `is_moved`).
   `test_migrations_match_models` phải pass.
-- [ ] T006 Hàm dùng chung `active_tasks()` (select `Task` với `deleted_at IS NULL`) trong
+- [X] T006 Hàm dùng chung `active_tasks()` (select `Task` với `deleted_at IS NULL`) trong
   `backend/app/services/tasks.py`; thay mọi truy vấn `select(Task)` đọc task cho người dùng/đồng bộ
   bằng nó: `services/tasks.py` (`list_tasks`, `get_task` — task trong Thùng rác → 404 trừ khi gọi với
   `include_trashed=True`), `services/today.py`, `services/calendar.py`, `services/sync_feed.py`,
   `services/digest.py`, `services/reminders.py` (`upcoming`), `services/task_lists.py` (số đếm),
   `services/auto_deadlines.py` (`reconcile` bỏ qua task trong Thùng rác, `drop_for_sessions` không
   xoá task trong Thùng rác).
-- [ ] T007 [P] Test trong `backend/tests/integration/test_trash_filtering.py`: đặt `deleted_at` trực
+- [X] T007 [P] Test trong `backend/tests/integration/test_trash_filtering.py`: đặt `deleted_at` trực
   tiếp cho một task có nhãn, hạn hôm nay, nhắc → task không có trong `/api/tasks`, `/api/today`,
   `/api/calendar`, `/api/sync/feed` (`reminders`), `/api/digest`, `/api/reminders/upcoming`, số đếm
   `/api/lists`; task tự tạo trong Thùng rác không bị reconcile cập nhật hay tạo lại.
 
 ### Frontend: token, component, khung
 
-- [ ] T008 Token màu và kiểu chữ trong `frontend/src/index.css` (research R4): `@theme` với
+- [X] T008 Token màu và kiểu chữ trong `frontend/src/index.css` (research R4): `@theme` với
   `--color-bg`, `--color-surface`, `--color-surface-2`, `--color-border`, `--color-text`,
   `--color-muted`, `--color-accent` (xanh lam ngọc đậm), `--color-accent-contrast`,
   `--color-danger`, `--color-warning`, `--color-today`, `--radius-*`, font `-apple-system`; giá trị
   chế độ tối trong `@media (prefers-color-scheme: dark)`. Không có nút chọn giao diện.
-- [ ] T009 [P] Bảng màu nhãn/môn hai biến thể trong `frontend/src/lib/colors.ts`: giữ `colorHex`
+- [X] T009 [P] Bảng màu nhãn/môn hai biến thể trong `frontend/src/lib/colors.ts`: giữ `colorHex`
   hiện có; thêm `colorSoft(code, scheme)` (nền khối lịch) và `colorStrong(code, scheme)` (chữ, viền)
   cho `c01`…`c12` ở cả `light` và `dark`.
-- [ ] T010 [P] `frontend/src/lib/contrast.ts`: `contrastRatio(fg, bg)` theo công thức WCAG 2.x.
+- [X] T010 [P] `frontend/src/lib/contrast.ts`: `contrastRatio(fg, bg)` theo công thức WCAG 2.x.
   Test `frontend/tests/contrast.test.ts`: mọi cặp chữ/nền dùng trong app (text/bg, muted/surface,
   accent-contrast/accent, `colorStrong`/`colorSoft` của 12 màu, cả hai chế độ) ≥ 4.5 (FR-032).
-- [ ] T011 [P] Biểu tượng SVG nét mảnh tự vẽ trong `frontend/src/ui/icons.tsx` (component nhận
+- [X] T011 [P] Biểu tượng SVG nét mảnh tự vẽ trong `frontend/src/ui/icons.tsx` (component nhận
   `size`, `className`, `aria-hidden`): checklist, calendar, book, exam, gear, sun, sunrise, week,
   inbox, check-circle, trash, tag, star, star-filled, plus, chevron-left/right/down, close, more,
   clock, flag (hạn chót), repeat (tự tạo), sidebar, alert, link.
-- [ ] T012 [P] Component dùng chung trong `frontend/src/ui/`: `Button.tsx` (primary, secondary,
+- [X] T012 [P] Component dùng chung trong `frontend/src/ui/`: `Button.tsx` (primary, secondary,
   ghost, danger), `IconButton.tsx` (bắt buộc `label` tiếng Việt cho aria/tooltip), `Checkbox.tsx`
   (vuông bo góc, trạng thái mờ khi xong), `Switch.tsx`, `Input.tsx`, `Textarea.tsx`, `Select.tsx`,
   `Badge.tsx`, `EmptyState.tsx` — chỉ dùng class Tailwind và token.
-- [ ] T013 [P] Bọc Radix trong `frontend/src/ui/`: `Dialog.tsx` (thay `components/Modal.tsx`,
+- [X] T013 [P] Bọc Radix trong `frontend/src/ui/`: `Dialog.tsx` (thay `components/Modal.tsx`,
   `ConfirmDialog.tsx` giữ API cũ để không phải sửa nơi dùng), `Popover.tsx`, `Menu.tsx`
   (dropdown-menu), `Tooltip.tsx`.
-- [ ] T014 [P] Toast có nút hành động trong `frontend/src/ui/Toast.tsx` + `useToast()`: hàng đợi, tự
+- [X] T014 [P] Toast có nút hành động trong `frontend/src/ui/Toast.tsx` + `useToast()`: hàng đợi, tự
   ẩn sau 5 giây, nút "Hoàn tác" (FR-029, FR-030); thay `components/WarningToast.tsx`.
-- [ ] T015 [P] `frontend/src/app/useHotkeys.ts`: đăng ký phím theo [ui-shortcuts](contracts/ui-shortcuts.md)
+- [X] T015 [P] `frontend/src/app/useHotkeys.ts`: đăng ký phím theo [ui-shortcuts](contracts/ui-shortcuts.md)
   (⌘ = `metaKey`), bỏ qua phím một ký tự khi đang gõ trong `input`/`textarea`/`contenteditable`,
   ⌘ và Esc luôn chạy; test `frontend/tests/hotkeys.test.ts` (bỏ qua trong ô nhập, ⌘N vẫn chạy, gỡ
   đăng ký khi unmount).
-- [ ] T016 Khung `frontend/src/app/AppShell.tsx` + `frontend/src/app/IconRail.tsx`: thanh biểu tượng
+- [X] T016 Khung `frontend/src/app/AppShell.tsx` + `frontend/src/app/IconRail.tsx`: thanh biểu tượng
   hẹp (Công việc, Lịch, Môn học, Lịch thi, Cài đặt; Tooltip tiếng Việt; mục đang chọn tô màu nhấn),
   vùng nội dung theo route; `frontend/src/routes.tsx` theo [ui-shortcuts](contracts/ui-shortcuts.md)
   ("/" → `/cong-viec/hom-nay`); các route chưa làm tạm dùng trang hiện có bọc trong khung mới. Xoá
   `components/Layout.tsx` khi không còn dùng.
-- [ ] T017 [P] `frontend/src/app/ConnectionBanner.tsx`: lắng nghe lỗi mạng của TanStack Query
+- [X] T017 [P] `frontend/src/app/ConnectionBanner.tsx`: lắng nghe lỗi mạng của TanStack Query
   (QueryCache `onError` với `TypeError`/không có phản hồi ≥ 2 lần liên tiếp) → dải "Mất kết nối với
   dữ liệu trên máy — đang thử lại…"; ẩn khi có truy vấn thành công (desktop-shell §2).
-- [ ] T018 [P] `frontend/src/app/desktopBridge.ts`: đăng ký `window.lichhoc = { navigate,
+- [X] T018 [P] `frontend/src/app/desktopBridge.ts`: đăng ký `window.lichhoc = { navigate,
   showShortcuts }` (desktop-shell §4) dùng router và trạng thái mở bảng phím tắt; gọi trong `App.tsx`.
 
 **Checkpoint**: Backend lọc Thùng rác ở mọi nơi; giao diện cũ vẫn chạy trong khung mới.
@@ -143,24 +143,24 @@ hoàn thành, Thùng rác), task nhóm theo ngày, bảng chi tiết bên phải
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T019 [P] [US2] Test API trong `backend/tests/integration/test_smart_views_api.py` (giờ cố định
+- [X] T019 [P] [US2] Test API trong `backend/tests/integration/test_smart_views_api.py` (giờ cố định
   Thứ Hai 09/11/2026 09:00): tạo task hạn hôm nay, quá hạn, ngày mai, D+5, D+10, không hạn, đã xong,
   có `work_date` = D+1 nhưng hạn D+10 → `GET /api/tasks?view=today|tomorrow|next7|all|completed`
   trả đúng tập theo bảng "Danh sách thông minh" của data-model; `list_id=`, `tag_id=` lọc đúng;
   `GET /api/task-counts` = `{today, tomorrow, next7, all, lists}` khớp; task trong Thùng rác không
   được đếm.
-- [ ] T020 [P] [US2] Test emoji trong `backend/tests/integration/test_lists_api.py`: POST/PATCH
+- [X] T020 [P] [US2] Test emoji trong `backend/tests/integration/test_lists_api.py`: POST/PATCH
   `emoji: "🏠"` lưu và trả về; `"👨‍👩‍👧"` (một cụm) hợp lệ; `"ab"`, `"🏠🏠"`, `""` → 400
   `fields.emoji = "Chỉ chọn một emoji"`; `null` bỏ emoji.
-- [ ] T021 [P] [US2] Test hàm thuần `frontend/tests/groupTasks.test.ts` cho
+- [X] T021 [P] [US2] Test hàm thuần `frontend/tests/groupTasks.test.ts` cho
   `frontend/src/features/tasks/groupTasks.ts`: nhóm Quá hạn/Hôm nay/Ngày mai/từng ngày trong 7 ngày
   tới (tiêu đề "Thứ Năm, 12/11")/Sau này/Không có hạn; ngày tham chiếu `min(due_date, work_date)`;
   sắp xếp trong nhóm (giờ, không giờ cuối, ưu tiên); nhóm trống bị bỏ; sang ngày mới (đổi `now`) thì
   nhóm đổi.
-- [ ] T022 [P] [US2] Test component `frontend/tests/taskRow.test.tsx`: `TaskRow` hiện checkbox,
+- [X] T022 [P] [US2] Test component `frontend/tests/taskRow.test.tsx`: `TaskRow` hiện checkbox,
   ★ khi Quan trọng, chấm màu nhãn, biểu tượng Tự tạo, giờ hạn canh phải (đỏ khi quá hạn), khung giờ
   làm "T5 19:00–21:00"; bấm checkbox gọi complete; bấm dòng gọi `onOpen`.
-- [ ] T023 [P] [US2] Test `frontend/tests/useNow.test.tsx` cho `frontend/src/app/useNow.ts` bằng giờ
+- [X] T023 [P] [US2] Test `frontend/tests/useNow.test.tsx` cho `frontend/src/app/useNow.tsx` bằng giờ
   giả lập (`vi.useFakeTimers()` + `vi.setSystemTime`): đặt 23:59:30 → sau 30 giây `today` đổi sang ngày
   mới và các query `task-counts`, `tasks` (danh sách thông minh), `today` được làm mới đúng một lần;
   đổi giờ hệ thống sang ngày hôm sau rồi phát sự kiện `focus`/`visibilitychange` → cập nhật ngay; focus
@@ -168,56 +168,56 @@ hoàn thành, Thùng rác), task nhóm theo ngày, bảng chi tiết bên phải
 
 ### Implementation for User Story 2
 
-- [ ] T024 [US2] Backend `GET /api/tasks?view=` và `GET /api/task-counts` trong
+- [X] T024 [US2] Backend `GET /api/tasks?view=` và `GET /api/task-counts` trong
   `backend/app/services/tasks.py` (`smart_view(view, now)`, `counts(now)` theo data-model) và
   `backend/app/api/tasks.py`; giữ tham số cũ (`list_id`, `tags`, `include_completed`); `view=trash`
   để Phase 6. Cập nhật contract nếu khác.
-- [ ] T025 [US2] Backend emoji, **không thêm thư viện**: trong `backend/app/schemas/tasks.py` (`ListIn`)
+- [X] T025 [US2] Backend emoji, **không thêm thư viện**: trong `backend/app/schemas/tasks.py` (`ListIn`)
   thêm `emoji: str | None` và hàm thuần `is_single_emoji(text)` tự kiểm tra theo dải mã (quy tắc ở
   data-model, bảng `task_lists`): ký tự đầu thuộc dải mã emoji; theo sau chỉ được là VS16 (U+FE0F),
   modifier màu da (U+1F3FB–U+1F3FF), cặp ZWJ (U+200D) + emoji, hoặc đúng một chỉ báo vùng nữa (cờ);
-  tối đa 16 byte; sai → "Chỉ chọn một emoji". Test đơn vị `backend/tests/unit/test_emoji.py`: 🏠, ❤️,
+  tối đa 64 byte; sai → "Chỉ chọn một emoji". Test đơn vị `backend/tests/unit/test_emoji.py`: 🏠, ❤️,
   👍🏽, 👨‍👩‍👧, 🇻🇳 hợp lệ; "a", "ab", "🏠🏠", "🏠a", " 🏠", "1️⃣", "" không hợp lệ.
   `backend/app/services/task_lists.py`, `backend/app/api/lists.py` lưu và trả `emoji`.
-- [ ] T026 [P] [US2] API frontend: `frontend/src/api/tasks.ts` thêm `useSmartTasks(view | {listId} |
+- [X] T026 [P] [US2] API frontend: `frontend/src/api/tasks.ts` thêm `useSmartTasks(view | {listId} |
   {tagId})`, `useTaskCounts()`; mọi mutation task làm mới cả hai key; `frontend/src/api/types.ts`
   thêm `work_date`, `work_start`, `work_end`, `deleted_at`, `days_left_in_trash`,
   `trashed_from_list_name` cho `Task`, `emoji` cho `TaskList`.
-- [ ] T027 [US2] `frontend/src/features/tasks/groupTasks.ts` (hàm thuần, làm T021 pass).
-- [ ] T028 [US2] `frontend/src/app/useNow.ts` (làm T023 pass): context `NowProvider` đặt trong
+- [X] T027 [US2] `frontend/src/features/tasks/groupTasks.ts` (hàm thuần, làm T021 pass).
+- [X] T028 [US2] `frontend/src/app/useNow.tsx` (làm T023 pass): context `NowProvider` đặt trong
   `App.tsx` cung cấp `now` (cập nhật mỗi phút) và `today` (`YYYY-MM-DD`); hẹn timer tới 00:00 kế tiếp,
   khi đổi ngày thì `queryClient.invalidateQueries` cho `task-counts`, `tasks`, `today`, `calendar`; nghe
   `focus` và `visibilitychange` để kiểm tra lại ngày (máy ngủ qua nửa đêm). `groupTasks`, `ListColumn`
   (biểu tượng số ngày), `quickAddDefaults` và `CalendarScreen` lấy giờ từ đây (edge case "Sang ngày
   mới").
-- [ ] T029 [US2] `frontend/src/features/tasks/ListColumn.tsx`: Hôm nay (biểu tượng có số ngày hôm
+- [X] T029 [US2] `frontend/src/features/tasks/ListColumn.tsx`: Hôm nay (biểu tượng có số ngày hôm
   nay), Ngày mai, 7 ngày tới, Tất cả kèm số đếm xám canh phải; tiêu đề nhỏ "Danh sách" + danh sách
   người dùng (emoji hoặc biểu tượng mặc định, tên, số đếm); "Nhãn" (chấm màu, tên); phần dưới cùng tách
   riêng "Đã hoàn thành", "Thùng rác"; mục đang chọn có nền nhạt bo tròn; điều hướng theo route.
-- [ ] T030 [US2] `frontend/src/features/tasks/TaskRow.tsx` (làm T022 pass): dòng cao vừa, nền nhạt
+- [X] T030 [US2] `frontend/src/features/tasks/TaskRow.tsx` (làm T022 pass): dòng cao vừa, nền nhạt
   bo tròn khi rê/chọn; dùng `Checkbox`, `icons`; giờ canh phải màu nhấn (đỏ nếu quá hạn).
-- [ ] T031 [US2] `frontend/src/features/tasks/TaskGroups.tsx`: tiêu đề nhóm đậm + số lượng + mũi tên
+- [X] T031 [US2] `frontend/src/features/tasks/TaskGroups.tsx`: tiêu đề nhóm đậm + số lượng + mũi tên
   thu gọn; trạng thái thu gọn lưu `localStorage` theo khoá view+nhóm (bọc try/catch).
-- [ ] T032 [US2] `frontend/src/features/tasks/SmartListView.tsx`: tiêu đề lớn của view, vùng cho ô thêm
+- [X] T032 [US2] `frontend/src/features/tasks/SmartListView.tsx`: tiêu đề lớn của view, vùng cho ô thêm
   nhanh (Phase 4), `TaskGroups`; view `completed` nhóm theo ngày hoàn thành (mới nhất trước), bỏ chọn
   checkbox thì task quay lại danh sách cũ (FR-014); trạng thái trống dùng `EmptyState`.
-- [ ] T033 [US2] Khối "Lịch hôm nay" trong `frontend/src/features/tasks/TodaySchedule.tsx`: dùng
+- [X] T033 [US2] Khối "Lịch hôm nay" trong `frontend/src/features/tasks/TodaySchedule.tsx`: dùng
   `useToday()` hiện có — buổi thi (khi có) rồi buổi học (giờ, tên, phòng, "Đã huỷ"), các `notices`
   hiện có; bấm buổi học mở `SessionDetail`; chỉ hiện ở view Hôm nay (FR-012).
-- [ ] T034 [US2] `frontend/src/features/tasks/TaskDetailPanel.tsx` (bảng bên phải, `SidePanel` trong
+- [X] T034 [US2] `frontend/src/features/tasks/TaskDetailPanel.tsx` (bảng bên phải, `SidePanel` trong
   `frontend/src/ui/SidePanel.tsx`): mở theo `?task=:id`; các trường tiêu đề, ghi chú, hạn chót (ngày,
   giờ), ưu tiên, danh sách, nhãn (`TagPicker`), Quan trọng (`ImportantToggle`), nhắc
   (`ReminderSelect`), liên kết buổi học nếu tự tạo (`SessionLink`), nút Xoá; lưu từng trường khi
   rời ô/Enter (PATCH chỉ trường đổi), lỗi hiện dưới ô; Esc đóng. Tái dùng logic validate của
   `components/TaskForm.tsx`; khung giờ làm thêm ở Phase 5.
-- [ ] T035 [US2] Trang `frontend/src/features/tasks/TasksScreen.tsx` ghép `ListColumn` +
+- [X] T035 [US2] Trang `frontend/src/features/tasks/TasksScreen.tsx` ghép `ListColumn` +
   `SmartListView` + `TaskDetailPanel`; route `/cong-viec/*` theo ui-shortcuts; cửa sổ hẹp
   (< 900px) bảng chi tiết phủ lên, (< 700px) cột danh sách thu gọn bằng nút `sidebar` (edge case).
-- [ ] T036 [US2] Quản lý danh sách (thêm, đổi tên, màu, emoji, xoá) chuyển từ
+- [X] T036 [US2] Quản lý danh sách (thêm, đổi tên, màu, emoji, xoá) chuyển từ
   `frontend/src/pages/TasksPage.tsx` sang menu ⋯ của từng danh sách trong `ListColumn` + hộp thoại
   `frontend/src/features/tasks/ListDialog.tsx` (ô emoji: gõ hoặc bảng chọn emoji của macOS ⌃⌘Space,
   gợi ý 24 emoji thường dùng trong Popover); xoá `TasksPage.tsx` khi không còn dùng.
-- [ ] T037 [US2] Chuỗi tiếng Việt mới trong `frontend/src/i18n/vi.ts` (nhóm `smart`, `groups`,
+- [X] T037 [US2] Chuỗi tiếng Việt mới trong `frontend/src/i18n/vi.ts` (nhóm `smart`, `groups`,
   `detail`, `listColumn`).
 
 **Checkpoint**: Dùng được Công việc → Hôm nay/Ngày mai/7 ngày tới/Tất cả/danh sách/nhãn/Đã hoàn
@@ -233,21 +233,21 @@ thành, sửa task trong bảng chi tiết.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T038 [P] [US3] Test hàm thuần `frontend/tests/quickAddDefaults.test.ts` cho
+- [X] T038 [P] [US3] Test hàm thuần `frontend/tests/quickAddDefaults.test.ts` cho
   `frontend/src/features/tasks/quickAddDefaults.ts`: đúng bảng "Giá trị mặc định khi thêm nhanh"
   của data-model cho today, tomorrow, next7, all, `list:{id}`, `tag:{id}` (không có completed,
   trash: ô thêm nhanh bị ẩn ở hai view này, FR-017).
-- [ ] T039 [P] [US3] Test component `frontend/tests/quickAdd.test.tsx`: Enter với "Nộp bài Toán" gọi
+- [X] T039 [P] [US3] Test component `frontend/tests/quickAdd.test.tsx`: Enter với "Nộp bài Toán" gọi
   POST đúng payload, ô xoá trống và vẫn focus; Enter với ô trống/chỉ khoảng trắng không gọi API; Esc
   bỏ focus; task hiện ngay trong danh sách (cập nhật lạc quan).
 
 ### Implementation for User Story 3
 
-- [ ] T040 [US3] `frontend/src/features/tasks/quickAddDefaults.ts` (hàm thuần, làm T038 pass).
-- [ ] T041 [US3] `frontend/src/features/tasks/QuickAdd.tsx`: ô nền xám nhạt bo tròn có "+ Thêm công
+- [X] T040 [US3] `frontend/src/features/tasks/quickAddDefaults.ts` (hàm thuần, làm T038 pass).
+- [X] T041 [US3] `frontend/src/features/tasks/QuickAdd.tsx`: ô nền xám nhạt bo tròn có "+ Thêm công
   việc", Enter tạo, cập nhật lạc quan cache `useSmartTasks`/`useTaskCounts` rồi đồng bộ lại; lỗi hiện
   bằng Toast; đặt trong `SmartListView` (ẩn ở Đã hoàn thành, Thùng rác).
-- [ ] T042 [US3] Phím ⌘N trong `frontend/src/app/AppShell.tsx`: về Công việc (giữ view nếu đang ở
+- [X] T042 [US3] Phím ⌘N trong `frontend/src/app/AppShell.tsx`: về Công việc (giữ view nếu đang ở
   Công việc) và focus ô thêm nhanh (ref qua context `QuickAddFocusContext`).
 
 **Checkpoint**: Thêm task dưới 5 giây từ mọi view (SC-002).
@@ -263,7 +263,7 @@ sách thông minh. Phần hiển thị trên lịch nằm ở Phase 8.
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T043 [P] [US6] Test API `backend/tests/integration/test_work_window_api.py`: POST/PATCH đủ ba
+- [X] T043 [P] [US6] Test API `backend/tests/integration/test_work_window_api.py`: POST/PATCH đủ ba
   trường lưu được; thiếu một trường → 400 `fields.work_date` "Cần chọn đủ ngày, giờ bắt đầu và giờ
   kết thúc"; `work_end <= work_start` → 400 `fields.work_end` "Giờ kết thúc phải sau giờ bắt đầu"; ba
   trường `null` bỏ khung giờ làm; `work_date > due_date` → cảnh báo `work_after_due`; feed đồng bộ,
@@ -273,12 +273,12 @@ sách thông minh. Phần hiển thị trên lịch nằm ở Phase 8.
 
 ### Implementation for User Story 6
 
-- [ ] T044 [US6] Backend: `backend/app/schemas/tasks.py` (`work_date`, `work_start`, `work_end`,
+- [X] T044 [US6] Backend: `backend/app/schemas/tasks.py` (`work_date`, `work_start`, `work_end`,
   validator "cả ba hoặc không" và "kết thúc sau bắt đầu", serialize), `backend/app/services/tasks.py`
   (cảnh báo `work_after_due`, trả `{task, warnings}` cho POST/PATCH nếu có cảnh báo — giữ dạng trả
   hiện tại khi không có), `backend/app/services/today.py`, `backend/app/services/calendar.py`
   (điều kiện `due_date` hoặc `work_date`), làm T043 pass.
-- [ ] T045 [US6] Bảng chi tiết: mục "Khung giờ làm" trong `TaskDetailPanel.tsx` (Switch bật/tắt, ngày,
+- [X] T045 [US6] Bảng chi tiết: mục "Khung giờ làm" trong `TaskDetailPanel.tsx` (Switch bật/tắt, ngày,
   giờ bắt đầu, giờ kết thúc, lỗi dưới ô, cảnh báo "Khung giờ làm sau hạn chót"); `TaskRow.tsx` hiện
   khung giờ làm; `groupTasks` đã xét `work_date` (T021).
 
@@ -294,7 +294,7 @@ sách thông minh. Phần hiển thị trên lịch nằm ở Phase 8.
 
 ### Tests for User Story 7 ⚠️
 
-- [ ] T046 [P] [US7] Test API `backend/tests/integration/test_trash_api.py`:
+- [X] T046 [P] [US7] Test API `backend/tests/integration/test_trash_api.py`:
   - `DELETE /api/tasks/{id}` → 200 kèm task, `deleted_at` có giá trị, `revision` tăng, task biến mất
     khỏi feed; gọi lại → 404.
   - `POST /api/tasks/{id}/restore` → mọi trường (tiêu đề, ghi chú, hạn, khung giờ làm, ưu tiên, danh
@@ -312,14 +312,14 @@ sách thông minh. Phần hiển thị trên lịch nằm ở Phase 8.
     `DELETE /api/trash` trả `{deleted: n}`.
   - `DELETE /api/lists/{id}?delete_tasks=true` → task vào Thùng rác, chuyển sang Học tập,
     `trashed_from_list_name` = tên cũ; khôi phục trả cảnh báo `list_replaced`.
-- [ ] T047 [P] [US7] Test component `frontend/tests/trash.test.tsx`: ⌘⌫ trên task đang chọn gọi
+- [X] T047 [P] [US7] Test component `frontend/tests/trash.test.tsx`: ⌘⌫ trên task đang chọn gọi
   DELETE và hiện Toast "Đã chuyển vào Thùng rác" có "Hoàn tác" (gọi restore); TrashView hiện "Còn N
   ngày", nút Khôi phục, "Xoá vĩnh viễn" và "Dọn sạch Thùng rác" hỏi xác nhận; Thùng rác rỗng hiện
   "Thùng rác trống".
 
 ### Implementation for User Story 7
 
-- [ ] T048 [US7] Backend trong `backend/app/services/tasks.py`: `trash_task`, `restore_task`,
+- [X] T048 [US7] Backend trong `backend/app/services/tasks.py`: `trash_task`, `restore_task`,
   `delete_permanently`, `empty_trash`, `purge_expired_trash(now)` (data-model "Vòng đời Thùng rác");
   `backend/app/api/tasks.py`: đổi `DELETE /tasks/{id}`, thêm `/restore`, `?permanent=true`,
   `DELETE /trash`, `view=trash`; gọi `purge_expired_trash` ở `/task-counts`, `view=trash`, `/today`
@@ -327,15 +327,15 @@ sách thông minh. Phần hiển thị trên lịch nằm ở Phase 8.
   `purge_expired_trash_throttled(now)` (mốc lần chạy cuối trong bộ nhớ của tiến trình, tối đa 1 lần/giờ)
   gọi ở đầu `GET /api/sync/feed` trong `backend/app/api/sync.py` (lỗi purge chỉ ghi log, không làm hỏng
   feed).
-- [ ] T049 [US7] Backend xoá danh sách với `delete_tasks=true` trong `backend/app/services/task_lists.py`
+- [X] T049 [US7] Backend xoá danh sách với `delete_tasks=true` trong `backend/app/services/task_lists.py`
   theo data-model (chuyển sang Học tập + vào Thùng rác + `trashed_from_list_name`).
-- [ ] T050 [US7] Cập nhật test cũ của feature 001 phụ thuộc xoá hẳn (`tests/integration/test_tasks_api.py`,
+- [X] T050 [US7] Cập nhật test cũ của feature 001 phụ thuộc xoá hẳn (`tests/integration/test_tasks_api.py`,
   `test_lists_api.py`, `test_auto_deadlines_api.py`) sang hành vi Thùng rác; ghi lý do trong commit.
-- [ ] T051 [US7] Frontend: `frontend/src/api/tasks.ts` (`useTrashTask`, `useRestoreTask`,
+- [X] T051 [US7] Frontend: `frontend/src/api/tasks.ts` (`useTrashTask`, `useRestoreTask`,
   `useDeletePermanently`, `useEmptyTrash`), `frontend/src/features/tasks/TrashView.tsx` (ngày xoá,
   "Còn N ngày", Khôi phục, Xoá vĩnh viễn, Dọn sạch), nút Xoá trong bảng chi tiết và ⌘⌫ dùng Toast
   Hoàn tác; Toast cảnh báo `list_replaced` khi khôi phục.
-- [ ] T052 [US7] `scripts/test-persistence.sh`: thêm bước tạo task, chuyển vào Thùng rác, khởi động lại
+- [X] T052 [US7] `scripts/test-persistence.sh`: thêm bước tạo task, chuyển vào Thùng rác, khởi động lại
   → task vẫn ở Thùng rác (constitution V).
 
 **Checkpoint**: Không còn mất task do bấm nhầm.
@@ -351,37 +351,37 @@ thi, Cài đặt giữ đủ chức năng.
 
 ### Tests for User Story 8 ⚠️
 
-- [ ] T053 [P] [US8] Test `frontend/tests/shortcuts.test.tsx`: ⌘1…⌘5 đổi route; ⌘, mở Cài đặt; ⌘/ mở
+- [X] T053 [P] [US8] Test `frontend/tests/shortcuts.test.tsx`: ⌘1…⌘5 đổi route; ⌘, mở Cài đặt; ⌘/ mở
   `ShortcutsDialog` liệt kê đủ phím của ui-shortcuts; ↑/↓ đổi task đang chọn, ↩ mở chi tiết, ⌘↩ hoàn
   thành; Esc đóng theo thứ tự hộp thoại → bảng chi tiết → bỏ focus.
-- [ ] T054 [P] [US8] Cập nhật test hiện có trong `frontend/tests/components.test.tsx` cho component đã
+- [X] T054 [P] [US8] Cập nhật test hiện có trong `frontend/tests/components.test.tsx` cho component đã
   chuyển chỗ/đổi giao diện (SessionDetail, ShiftPicker, ImportantToggle, EveReminderField) — giữ nguyên
   hành vi được kiểm tra.
 
 ### Implementation for User Story 8
 
-- [ ] T055 [US8] Phím tắt toàn cục trong `frontend/src/app/AppShell.tsx` và
+- [X] T055 [US8] Phím tắt toàn cục trong `frontend/src/app/AppShell.tsx` và
   `frontend/src/features/tasks/SmartListView.tsx` theo ui-shortcuts (⌘1…⌘5, ⌘,, ⌘/, ↑/↓, ↩, ⌘↩, ⌘⌫,
   Esc); `frontend/src/app/ShortcutsDialog.tsx` (bảng tiếng Việt).
-- [ ] T056 [P] [US8] Trang Môn học `frontend/src/features/subjects/SubjectsScreen.tsx`: chuyển
+- [X] T056 [P] [US8] Trang Môn học `frontend/src/features/subjects/SubjectsScreen.tsx`: chuyển
   `pages/SubjectsPage.tsx`, `pages/SemestersPage.tsx`, `components/SubjectForm.tsx`,
   `BulkSubjectForm.tsx`, `SemesterForm.tsx`, `ShiftPicker.tsx`, `WeekdayPicker.tsx`, `ColorPicker.tsx`
   sang `features/subjects/` và style Tailwind; giữ mọi chức năng (học kỳ, thêm một/nhiều môn, sửa,
   xoá có xác nhận, xem buổi); chỗ cho "Nhập từ ảnh" (hiện "Sắp có" tới khi US6 của feature 001 xong).
-- [ ] T057 [P] [US8] Trang Lịch thi `frontend/src/features/exams/ExamsScreen.tsx`: `EmptyState` "Sắp có —
+- [X] T057 [P] [US8] Trang Lịch thi `frontend/src/features/exams/ExamsScreen.tsx`: `EmptyState` "Sắp có —
   lịch thi sẽ có khi phần Lịch thi được làm xong" (FR-036, US8 kịch bản 5).
-- [ ] T058 [P] [US8] Trang Cài đặt `frontend/src/features/settings/SettingsScreen.tsx`: cột mục bên
+- [X] T058 [P] [US8] Trang Cài đặt `frontend/src/features/settings/SettingsScreen.tsx`: cột mục bên
   trái (Nhắc lịch và đồng bộ, Thông báo tổng hợp, Mốc nhắc quan trọng, Học kỳ, Ca học, Nhãn, Danh
   sách, Tự tạo deadline) + nội dung; chuyển `pages/ReminderSettings.tsx`, `AutoDeadlineSettings.tsx`,
   `ShiftsPage.tsx`, `TagsPage.tsx` vào `features/settings/` với style mới; mục Danh sách dùng lại
   `ListDialog`.
-- [ ] T059 [P] [US8] Chuyển các component còn lại sang style Tailwind: `SessionDetail`, `TagPicker`,
+- [X] T059 [P] [US8] Chuyển các component còn lại sang style Tailwind: `SessionDetail`, `TagPicker`,
   `TagFilter`, `ReminderSelect`, `ImportantToggle`, `SessionLink`, `SyncPrompt`, `FormField` (giữ
   API).
-- [ ] T060 [US8] Xoá `frontend/src/styles.css` và các trang/component cũ không còn dùng
+- [X] T060 [US8] Xoá `frontend/src/styles.css` và các trang/component cũ không còn dùng
   (`pages/TodayPage.tsx`, `pages/PlaceholderPage.tsx`, `components/TaskItem.tsx`,
   `components/TaskForm.tsx` nếu đã thay hết); `npm run build` không còn tham chiếu.
-- [ ] T061 [US8] Rà toàn bộ giao diện ở chế độ Tối (macOS → Giao diện → Tối): sửa chỗ thiếu token;
+- [X] T061 [US8] Rà toàn bộ giao diện ở chế độ Tối (macOS → Giao diện → Tối): sửa chỗ thiếu token;
   trạng thái `prefers-color-scheme` đổi khi app đang mở không cần tải lại (D11).
 
 **Checkpoint (hết Đợt 1)**: `./scripts/test.sh` pass; commit; hướng dẫn thử D1–D6, D11, D12.

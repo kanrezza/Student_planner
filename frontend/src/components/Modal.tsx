@@ -1,7 +1,7 @@
-import { useEffect, useRef, type ReactNode } from 'react';
-import { t } from '../i18n/vi';
+import type { ReactNode } from 'react';
+import { Dialog } from '../ui/Dialog';
 
-/** Hộp thoại dùng thẻ <dialog> có sẵn; đóng bằng Esc hoặc nút "Đóng". */
+/** Hộp thoại có tiêu đề; giữ API của feature 001, bên trong dùng `ui/Dialog` (Radix). */
 export function Modal({
   title,
   onClose,
@@ -13,36 +13,14 @@ export function Modal({
   children: ReactNode;
   wide?: boolean;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (dialog && !dialog.open) dialog.showModal?.();
-    return () => dialog?.close?.();
-  }, []);
-
   return (
-    <dialog
-      ref={ref}
-      className={`dialog${wide ? ' dialog--wide' : ''}`}
-      onCancel={(e) => {
-        e.preventDefault();
-        onClose();
-      }}
-      aria-labelledby="modal-title"
+    <Dialog
+      open
+      onOpenChange={(open) => !open && onClose()}
+      title={title}
+      size={wide ? 'lg' : 'md'}
     >
-      <div className="dialog__header">
-        <h2 id="modal-title">{title}</h2>
-        <button
-          type="button"
-          className="button--ghost"
-          onClick={onClose}
-          aria-label={t('common.close')}
-        >
-          ✕
-        </button>
-      </div>
       {children}
-    </dialog>
+    </Dialog>
   );
 }

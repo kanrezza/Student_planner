@@ -52,7 +52,7 @@ Thay đổi nằm trong một migration mới `backend/migrations/versions/0004_
 
 | Cột | Kiểu | Ràng buộc |
 |-----|------|-----------|
-| emoji | text | tuỳ chọn; đúng một emoji, tối đa 16 byte (CHECK). Kiểm tra ở `backend/app/schemas/tasks.py` (`ListIn`) không cần thư viện mới: ký tự đầu là emoji (dải mã emoji: U+1F000–U+1FAFF, U+2600–U+27BF, U+2B00–U+2BFF, U+2300–U+23FF, U+3030, U+303D, U+3297, U+3299, U+00A9, U+00AE, U+203C, U+2049, U+2122, U+2139, U+2194–U+21AA), theo sau chỉ là VS16 (U+FE0F), modifier màu da (U+1F3FB–U+1F3FF), chỉ báo vùng (U+1F1E6–U+1F1FF, cờ là đúng 2 ký tự) hoặc cặp ZWJ (U+200D) + emoji; không có chữ, số, khoảng trắng; `""` → lỗi, `null` → bỏ emoji |
+| emoji | text | tuỳ chọn; đúng một emoji, tối đa 64 byte (CHECK; cụm ZWJ như 👨‍👩‍👧 đã là 18 byte). Kiểm tra ở `backend/app/schemas/tasks.py` (`ListIn`) không cần thư viện mới: ký tự đầu là emoji (dải mã emoji: U+1F000–U+1FAFF, U+2600–U+27BF, U+2B00–U+2BFF, U+2300–U+23FF, U+3030, U+303D, U+3297, U+3299, U+00A9, U+00AE, U+203C, U+2049, U+2122, U+2139, U+2194–U+21AA), theo sau chỉ là VS16 (U+FE0F), modifier màu da (U+1F3FB–U+1F3FF), chỉ báo vùng (U+1F1E6–U+1F1FF, cờ là đúng 2 ký tự) hoặc cặp ZWJ (U+200D) + emoji; không có chữ, số, khoảng trắng; `""` → lỗi, `null` → bỏ emoji |
 
 - Xoá danh sách với `delete_tasks=true` (feature 001): các task chưa ở Thùng rác được chuyển sang
   danh sách "Học tập", vào Thùng rác và ghi `trashed_from_list_name` = tên danh sách bị xoá.

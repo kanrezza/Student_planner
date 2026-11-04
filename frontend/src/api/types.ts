@@ -26,6 +26,14 @@ export type Task = {
   reminder_at: string | null;
   reminder_times: string[];
   is_important: boolean;
+  /** Khung giờ làm (feature 002 FR-018): cả ba cùng có hoặc cùng null. */
+  work_date: string | null;
+  work_start: string | null;
+  work_end: string | null;
+  /** Thùng rác (feature 002 FR-030). */
+  deleted_at: string | null;
+  days_left_in_trash: number | null;
+  trashed_from_list_name: string | null;
 };
 
 export type TaskInput = {
@@ -38,6 +46,9 @@ export type TaskInput = {
   list_id: number;
   reminder_minutes?: number | null;
   is_important?: boolean;
+  work_date?: string | null;
+  work_start?: string | null;
+  work_end?: string | null;
 };
 
 export type TaskList = {
@@ -46,6 +57,17 @@ export type TaskList = {
   color: string;
   is_default_study: boolean;
   open_task_count: number;
+  /** Đúng một emoji hoặc null (feature 002 FR-015). */
+  emoji: string | null;
+};
+
+/** Số task chưa xong của các danh sách thông minh và từng danh sách (GET /task-counts). */
+export type TaskCounts = {
+  today: number;
+  tomorrow: number;
+  next7: number;
+  all: number;
+  lists: Record<string, number>;
 };
 
 export type Semester = {

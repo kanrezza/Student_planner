@@ -12,7 +12,7 @@ from app.extensions import db
 from app.lib.timeutil import TZ, combine
 from app.models import ClassSession, Settings, Task
 from app.services.digest import digests_for_range
-from app.services.tasks import due_at
+from app.services.tasks import active_tasks, due_at
 
 OFF = -1
 CATCH_UP = timedelta(minutes=1)  # nhắc đã qua quá 1 phút thì bỏ, không hiện dồn
@@ -119,7 +119,7 @@ def upcoming(now: datetime, hours: int) -> list[dict]:
                 )
 
     tasks = db.session.scalars(
-        select(Task).where(
+        active_tasks().where(
             Task.completed_at.is_(None),
             Task.due_date.is_not(None),
             Task.due_date <= window_end.date() + timedelta(days=1),

@@ -1,5 +1,6 @@
 """/api/sync/* cho mac-agent (contracts/calendar-sync.md) và /api/reminders/upcoming (FR-021)."""
 
+import logging
 from datetime import date, timedelta
 
 from flask import Blueprint, request
@@ -13,8 +14,10 @@ from app.lib.timeutil import iso
 from app.models import AgentStatus
 from app.schemas.common import ApiModel
 from app.services import digest, reminders, sync_feed
+from app.services.tasks import purge_expired_trash_throttled
 
 bp = Blueprint("sync", __name__)
+log = logging.getLogger(__name__)
 
 AGENT_OFFLINE_AFTER = timedelta(minutes=2)
 
@@ -43,7 +46,13 @@ def changes():
 
 @bp.get("/sync/feed")
 def feed():
-    return sync_feed.build_feed(timeutil.now())
+    now = timeutil.now()
+    try:  # agent gọi feed mỗi phút → task quá 30 ngày bị xoá trong vòng 1 giờ (SC-006)
+        purge_expired_trash_throttled(now)
+    except Exception:  # lỗi dọn Thùng rác không được làm hỏng việc đồng bộ
+        log.exception("Không dọn được Thùng rác")
+        db.session.rollback()
+    return sync_feed.build_feed(now)
 
 
 @bp.put("/sync/agent-status")

@@ -4,6 +4,7 @@ import { toCalendarEvents } from '../src/lib/calendarEvents';
 import { colorHex } from '../src/lib/colors';
 import { shiftRanges } from '../src/lib/shifts';
 import { formatTagParam, parseTagParam, toggleTag } from '../src/lib/tagFilter';
+import { makeTask } from './fixtures';
 
 const tag = (id: number, color: string) => ({ id, name: `N${id}`, color, system_key: null });
 
@@ -32,30 +33,16 @@ const session = (over: Partial<ClassSession> = {}): ClassSession => ({
   ...over,
 });
 
-const task = (over: Partial<Task> = {}): Task => ({
-  id: 5,
-  title: 'Nộp bài',
-  notes: null,
-  due_date: '2026-11-17',
-  due_time: '17:00',
-  due_at: '2026-11-17T17:00:00+07:00',
-  priority: 2,
-  list_id: 1,
-  list_name: 'Học tập',
-  completed: false,
-  completed_at: null,
-  is_overdue: false,
-  is_auto: false,
-  source_session_id: null,
-  user_modified: false,
-  tags: [],
-  display_color: 'c02',
-  reminder_minutes: null,
-  reminder_times: [],
-  is_important: false,
-  reminder_at: null,
-  ...over,
-});
+const task = (over: Partial<Task> = {}): Task =>
+  makeTask({
+    id: 5,
+    title: 'Nộp bài',
+    due_date: '2026-11-17',
+    due_time: '17:00',
+    due_at: '2026-11-17T17:00:00+07:00',
+    display_color: 'c02',
+    ...over,
+  });
 
 const data = (sessions: ClassSession[], tasks: Task[]): CalendarData => ({ sessions, tasks });
 

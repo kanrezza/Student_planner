@@ -101,7 +101,9 @@ def test_patch_complete_uncomplete_delete(client, list_id):
     undone = client.post(f"/api/tasks/{task_id}/uncomplete").get_json()
     assert undone["completed"] is False and undone["completed_at"] is None
 
-    assert client.delete(f"/api/tasks/{task_id}").status_code == 204
+    # Feature 002 FR-030: xoá = chuyển vào Thùng rác, trả task để Hoàn tác.
+    resp = client.delete(f"/api/tasks/{task_id}")
+    assert resp.status_code == 200 and resp.get_json()["deleted_at"] is not None
     assert client.get(f"/api/tasks/{task_id}").status_code == 404
 
 

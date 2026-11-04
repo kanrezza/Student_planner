@@ -23,8 +23,11 @@ def e_learning(db_session):
 
 
 def auto_tasks(db_session):
+    """Task tự tạo đang dùng (task trong Thùng rác không tính, feature 002)."""
     db_session.expire_all()
-    return db_session.scalars(select(Task).where(Task.is_auto).order_by(Task.due_date)).all()
+    return db_session.scalars(
+        select(Task).where(Task.is_auto, Task.deleted_at.is_(None)).order_by(Task.due_date)
+    ).all()
 
 
 def setup(client, e_learning, **fields):
@@ -57,7 +60,7 @@ def test_cancel_restore_and_manual_delete(client, db_session, e_learning):
     assert len(auto_tasks(db_session)) == 4
 
     task_id = next(t.id for t in auto_tasks(db_session) if t.source_session_id == second["id"])
-    assert client.delete(f"/api/tasks/{task_id}").status_code == 204
+    assert client.delete(f"/api/tasks/{task_id}").status_code == 200  # vào Thùng rác (002 FR-030)
     client.patch(f"/api/sessions/{second['id']}", json={"room": "B1"})  # kích hoạt reconcile
     assert len(auto_tasks(db_session)) == 3  # không tạo lại
 

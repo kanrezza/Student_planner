@@ -4,11 +4,12 @@ from sqlalchemy import func, select
 
 from app.api.errors import ApiError, not_found
 from app.extensions import db
+from app.lib import timeutil
 from app.lib.text import ci_key
 from app.models import Task, TaskList
 from app.services.colors import is_palette_color, next_color
 from app.services.revision import bump_revision
-from app.services.tasks import delete_task_rows
+from app.services.tasks import move_to_trash
 
 
 def _invalid(field: str, message: str) -> ApiError:
@@ -26,7 +27,7 @@ def lists_with_open_counts() -> list[tuple[TaskList, int]]:
     counts = dict(
         db.session.execute(
             select(Task.list_id, func.count())
-            .where(Task.completed_at.is_(None))
+            .where(Task.completed_at.is_(None), Task.deleted_at.is_(None))
             .group_by(Task.list_id)
         ).all()
     )
@@ -36,7 +37,9 @@ def lists_with_open_counts() -> list[tuple[TaskList, int]]:
 
 def open_count(list_id: int) -> int:
     return db.session.scalar(
-        select(func.count()).where(Task.list_id == list_id, Task.completed_at.is_(None))
+        select(func.count()).where(
+            Task.list_id == list_id, Task.completed_at.is_(None), Task.deleted_at.is_(None)
+        )
     )
 
 
@@ -51,12 +54,12 @@ def _check_color(color: str) -> None:
         raise _invalid("color", "Màu không hợp lệ")
 
 
-def create_list(name: str, color: str | None) -> TaskList:
+def create_list(name: str, color: str | None, emoji: str | None = None) -> TaskList:
     _check_name(name)
     if color is None:
         color = next_color(list(db.session.scalars(select(TaskList.color))))
     _check_color(color)
-    task_list = TaskList(name=name, color=color)
+    task_list = TaskList(name=name, color=color, emoji=emoji)
     db.session.add(task_list)
     db.session.commit()
     return task_list
@@ -70,6 +73,8 @@ def update_list(list_id: int, changes: dict) -> TaskList:
     if changes.get("color") is not None:
         _check_color(changes["color"])
         task_list.color = changes["color"]
+    if "emoji" in changes:  # gửi `null` để bỏ emoji
+        task_list.emoji = changes["emoji"]
     db.session.commit()
     return task_list
 
@@ -91,19 +96,23 @@ def delete_list(list_id: int, move_to: int | None, delete_tasks: bool) -> None:
         )
 
     tasks = list(db.session.scalars(select(Task).where(Task.list_id == list_id)))
-    if tasks and target is None and not delete_tasks:
+    active = [t for t in tasks if t.deleted_at is None]
+    if active and target is None and not delete_tasks:
         raise ApiError(
             409,
             "conflict",
             "Danh sách còn công việc: hãy chuyển sang danh sách khác hoặc xoá luôn",
-            details={"task_count": len(tasks)},
+            details={"task_count": len(active)},
         )
 
+    # Không chuyển thì task vào Thùng rác, nằm tạm ở "Học tập" (feature 002 FR-030, FR-031);
+    # task đã ở Thùng rác từ trước cũng chuyển theo (khoá ngoại tới danh sách).
+    study = target or db.session.scalars(select(TaskList).where(TaskList.is_default_study)).one()
+    now = timeutil.now()
     for task in tasks:
-        if target is not None:
-            task.list_id = target.id
-        else:
-            delete_task_rows(task)
+        task.list_id = study.id
+        if target is None:
+            move_to_trash(task, task.deleted_at or now, from_list_name=task_list.name)
     if task_list.is_default_study:
         task_list.is_default_study = False
         db.session.flush()  # tránh vi phạm "đúng một danh sách mặc định" khi chuyển cờ

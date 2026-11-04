@@ -3,6 +3,8 @@ import type { QueryClient } from '@tanstack/react-query';
 /** Khoá cache TanStack Query; thay đổi dữ liệu thì làm mới các nhóm liên quan. */
 export const keys = {
   tasks: ['tasks'] as const,
+  /** Nằm dưới 'tasks' để mọi thay đổi task cũng làm mới số đếm. */
+  taskCounts: ['tasks', 'counts'] as const,
   lists: ['lists'] as const,
   today: ['today'] as const,
   calendar: ['calendar'] as const,
