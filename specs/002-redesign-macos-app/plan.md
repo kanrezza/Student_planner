@@ -119,8 +119,9 @@ frontend/
 │   ├── features/
 │   │   ├── tasks/                # ListColumn, SmartListView, TaskGroups, TaskRow, QuickAdd,
 │   │   │                         # TaskDetailPanel, TrashView, groupTasks.ts, quickAddDefaults.ts
-│   │   ├── calendar/             # CalendarPage, CalendarHeader, CalendarBlock, toCalendarEvents.ts,
-│   │   │                         # dropToPatch.ts, MoveSessionDialog
+│   │   ├── calendar/             # CalendarScreen, CalendarHeader, CalendarSidebar (lịch tháng
+│   │   │                         # nhỏ + lọc nhãn), CalendarBlock, toCalendarEvents.ts,
+│   │   │                         # calendarTitle.ts, monthGrid.ts, dropToPatch.ts, MoveSessionDialog
 │   │   ├── subjects/             # chuyển từ pages/ + components/ hiện có (SubjectForm, BulkSubjectForm…)
 │   │   ├── exams/                # trang Lịch thi ("Sắp có" khi chưa có US11)
 │   │   └── settings/             # ReminderSettings, AutoDeadlineSettings, Semesters, Shifts, Tags, Lists
@@ -156,7 +157,8 @@ style mới, không viết lại logic nghiệp vụ.
    TaskRow, QuickAdd, TaskDetailPanel, Thùng rác; phím tắt; chuyển Môn học, Lịch thi, Cài đặt sang
    bố cục mới; bỏ `styles.css` cũ.
 2. **Đợt 2 — Trang Lịch** (US4, US6 phần lịch): CalendarHeader, cấu hình FullCalendar theo R5,
-   CalendarBlock, `toCalendarEvents` mở rộng, buổi thi nổi bật (khi có), lọc nhãn.
+   CalendarBlock, cột bên (lịch tháng nhỏ + lọc nhãn), chế độ tạo mới của bảng chi tiết (nút "+"),
+   `toCalendarEvents` mở rộng, buổi thi nổi bật (khi có).
 3. **Đợt 3 — Kéo thả** (US5): `dropToPatch`, Hoàn tác, chọn vùng tạo task; backend dời buổi học
    (`original_date`, ngày khoá trong `plan_regeneration`), MoveSessionDialog.
 4. **Đợt 4 — Đóng gói app** (US1): `desktop/` Tauri 2, trang chờ, kiểm tra kết nối, menu, cửa sổ,

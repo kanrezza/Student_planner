@@ -30,7 +30,7 @@ Thùng rác).
 | Method | Path | Mô tả |
 |--------|------|-------|
 | GET | `/lists` | thêm `emoji` (null nếu không có) |
-| POST · PATCH | `/lists`, `/lists/{id}` | nhận `emoji?`; không phải đúng một emoji → `400 {fields: {emoji: "Chỉ chọn một emoji"}}`; `null` để bỏ |
+| POST · PATCH | `/lists`, `/lists/{id}` | nhận `emoji?`; không phải đúng một emoji (quy tắc ở [data-model](../data-model.md)) → `400 {fields: {emoji: "Chỉ chọn một emoji"}}`; `null` để bỏ |
 | DELETE | `/lists/{id}?delete_tasks=true` | **đổi nghĩa**: task của danh sách vào Thùng rác (chuyển sang Học tập, ghi `trashed_from_list_name`) thay vì bị xoá hẳn |
 
 ## Lịch
@@ -50,6 +50,8 @@ Thùng rác).
 
 ## Không đổi
 
+- `/api/sync/feed`: thêm việc gọi `purge_expired_trash_throttled` (tối đa 1 lần/giờ) trước khi đọc;
+  dạng phản hồi không đổi.
 - `/api/sync/*`, `/api/reminders/upcoming`, `/api/digest`: dữ liệu tự loại task trong Thùng rác; khung
   giờ làm không xuất hiện trong feed (FR-019); buổi đã dời xuất hiện theo ngày mới.
 - `/api/health`: dùng cho app Tauri kiểm tra kết nối ([desktop-shell](desktop-shell.md)).

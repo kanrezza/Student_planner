@@ -44,14 +44,15 @@ Thay đổi nằm trong một migration mới `backend/migrations/versions/0004_
   `class_sessions.auto_task_suppressed = true` (FR-031); `bump_revision`.
 - Khôi phục: `deleted_at = NULL`, `trashed_from_list_name = NULL`; nếu task tự tạo còn buổi nguồn thì
   `auto_task_suppressed = false` rồi reconcile buổi đó; `bump_revision`.
-- Xoá hẳn tự động: `deleted_at < now() − 30 ngày` (`purge_expired_trash`, research R6).
+- Xoá hẳn tự động: `deleted_at < now() − 30 ngày` (`purge_expired_trash`, research R6); chạy khi
+  backend khởi động, ở `/task-counts`, `/tasks?view=trash`, `/today`, và ở `/sync/feed` tối đa 1 lần/giờ.
 - **Còn N ngày** = `30 − số ngày đã qua kể từ deleted_at` (làm tròn lên, tối thiểu 0).
 
 ## task_lists — thêm cột
 
 | Cột | Kiểu | Ràng buộc |
 |-----|------|-----------|
-| emoji | text | tuỳ chọn; đúng một emoji (một cụm ký tự hiển thị, kiểm tra ở schema bằng biểu thức emoji của Unicode), tối đa 16 byte (CHECK) |
+| emoji | text | tuỳ chọn; đúng một emoji, tối đa 16 byte (CHECK). Kiểm tra ở `backend/app/schemas/tasks.py` (`ListIn`) không cần thư viện mới: ký tự đầu là emoji (dải mã emoji: U+1F000–U+1FAFF, U+2600–U+27BF, U+2B00–U+2BFF, U+2300–U+23FF, U+3030, U+303D, U+3297, U+3299, U+00A9, U+00AE, U+203C, U+2049, U+2122, U+2139, U+2194–U+21AA), theo sau chỉ là VS16 (U+FE0F), modifier màu da (U+1F3FB–U+1F3FF), chỉ báo vùng (U+1F1E6–U+1F1FF, cờ là đúng 2 ký tự) hoặc cặp ZWJ (U+200D) + emoji; không có chữ, số, khoảng trắng; `""` → lỗi, `null` → bỏ emoji |
 
 - Xoá danh sách với `delete_tasks=true` (feature 001): các task chưa ở Thùng rác được chuyển sang
   danh sách "Học tập", vào Thùng rác và ghi `trashed_from_list_name` = tên danh sách bị xoá.
@@ -117,9 +118,11 @@ hôm nay nhưng hạn tuần sau nằm ở nhóm Hôm nay).
 | today | D | Học tập | [] |
 | tomorrow | D+1 | Học tập | [] |
 | next7 | D | Học tập | [] |
-| all, completed, trash | null | Học tập | [] |
+| all | null | Học tập | [] |
 | list:{id} | null | id | [] |
 | tag:{id} | null | Học tập | [id] |
+
+Ở `completed` và `trash` không có ô thêm nhanh (FR-017), nên hàm không nhận hai view này.
 
 ### Khối trên lịch (FR-022, FR-023) — hàm thuần `toCalendarEvents`
 
@@ -150,5 +153,6 @@ Mọi thời điểm làm tròn 15 phút. **Hoàn tác** (FR-029) = gửi PATCH 
 
 ### Trạng thái giao diện (lưu trong trình duyệt/webview, không ở database)
 
-- `localStorage`: mục và view đang chọn gần nhất, các nhóm đã thu gọn, chế độ lịch gần nhất.
+- `localStorage`: chế độ lịch gần nhất (Ngày/Tuần/Tháng), trạng thái ẩn/hiện cột bên của Lịch và các
+  nhóm task đã thu gọn. Không lưu mục/view đang chọn: mở app luôn vào `/cong-viec/hom-nay` (FR-012).
 - Kích thước và vị trí cửa sổ: plugin window-state của Tauri (thư mục Application Support của app).
