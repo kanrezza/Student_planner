@@ -114,3 +114,10 @@ export function formatDayMonth(isoDate: string): string {
 export function startOfDayVn(isoDate: string): Date {
   return new Date(`${isoDate}T00:00:00+07:00`);
 }
+
+/** "T2 16/11" · "CN 22/11" — thứ viết tắt kèm ngày/tháng (dùng cho dấu "Đã dời (từ …)"). */
+export function formatDayAbbr(isoDate: string): string {
+  const p = toParts(isoDate);
+  const index = weekdayIndex(p);
+  return `${index === 6 ? 'CN' : `T${index + 2}`} ${pad(p.day)}/${pad(p.month)}`;
+}

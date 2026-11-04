@@ -33,13 +33,15 @@ def test_patch_time_and_room_sets_overrides(client):
         f"/api/sessions/{target['id']}", json={"start_time": "07:00", "end_time": "09:00"}
     )
     assert resp.status_code == 200
-    data = resp.get_json()
+    data = resp.get_json()["session"]
     assert data["start_at"] == "2026-11-23T07:00:00+07:00"
     assert data["end_at"] == "2026-11-23T09:00:00+07:00"
     assert data["time_overridden"] is True and data["room_overridden"] is False
     assert data["shift_label"] is None
 
-    data = client.patch(f"/api/sessions/{target['id']}", json={"room": "C1-204"}).get_json()
+    data = client.patch(f"/api/sessions/{target['id']}", json={"room": "C1-204"}).get_json()[
+        "session"
+    ]
     assert data["room"] == "C1-204" and data["room_overridden"] is True
 
     others = [s for s in sessions_of(client, subject_id) if s["id"] != target["id"]]
@@ -48,7 +50,9 @@ def test_patch_time_and_room_sets_overrides(client):
 
 def test_only_one_time_field_keeps_the_other(client):
     _, sessions = setup_subject(client)
-    data = client.patch(f"/api/sessions/{sessions[0]['id']}", json={"end_time": "10:00"}).get_json()
+    data = client.patch(
+        f"/api/sessions/{sessions[0]['id']}", json={"end_time": "10:00"}
+    ).get_json()["session"]
     assert data["start_at"].endswith("06:45:00+07:00")
     assert data["end_at"].endswith("10:00:00+07:00")
 

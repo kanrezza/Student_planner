@@ -148,11 +148,18 @@ describe('toCalendarEvents — khối trên lịch (data-model)', () => {
 
   it('buổi huỷ: class mờ, không kéo được; buổi đã dời có cờ moved', () => {
     const [cancelled, moved] = toCalendarEvents(
-      data([session({ is_cancelled: true }), session({ id: 2, is_moved: true })], []),
+      data(
+        [
+          session({ is_cancelled: true }),
+          session({ id: 2, is_moved: true, original_date: '2026-11-13' }),
+        ],
+        [],
+      ),
     );
     expect(cancelled.classNames).toContain('is-cancelled');
     expect(cancelled.startEditable).toBe(false);
     expect(props(moved).moved).toBe(true);
+    expect(props(moved).originalDate).toBe('2026-11-13');
   });
 
   it('buổi thi: class nổi bật, nền đậm, không kéo, không kéo dãn', () => {

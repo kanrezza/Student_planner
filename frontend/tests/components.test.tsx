@@ -24,7 +24,9 @@ const TAGS = [
 function mockApi() {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const body = url.startsWith('/api/shifts') ? SHIFTS : url.startsWith('/api/tags') ? TAGS : {};
-    return new Response(JSON.stringify(init?.method && init.method !== 'GET' ? {} : body), {
+    // PATCH /sessions/:id trả `{session, warnings}` (feature 002 FR-028).
+    const written = init?.method === 'PATCH' ? { session: {}, warnings: [] } : {};
+    return new Response(JSON.stringify(init?.method && init.method !== 'GET' ? written : body), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

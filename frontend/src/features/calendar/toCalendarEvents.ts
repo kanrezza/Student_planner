@@ -14,6 +14,8 @@ export type CalendarEventProps = {
   done: boolean;
   cancelled: boolean;
   moved: boolean;
+  /** Ngày gốc của buổi đã dời ("YYYY-MM-DD"), để ghi "Đã dời (từ T2 16/11)". */
+  originalDate: string | null;
   room: string | null;
   priority: number;
   /** Màu của các nhãn thứ 2 trở đi, hiện thành chấm nhỏ. */
@@ -53,6 +55,7 @@ function baseProps(kind: CalendarItemKind, id: number): CalendarEventProps {
     done: false,
     cancelled: false,
     moved: false,
+    originalDate: null,
     room: null,
     priority: 2,
     extraTagColors: [],
@@ -75,6 +78,7 @@ function sessionEvent(s: ClassSession, scheme: ColorScheme): EventInput {
       important: s.is_important,
       cancelled: s.is_cancelled,
       moved: Boolean(s.is_moved),
+      originalDate: s.original_date ?? null,
       room: s.room,
       extraTagColors: extraColors(s.tags),
     } satisfies CalendarEventProps,

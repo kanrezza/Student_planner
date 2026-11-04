@@ -37,6 +37,7 @@ def existing(
     cancelled=False,
     time_overridden=False,
     room_overridden=False,
+    original_date=None,
 ):
     return ExistingSession(
         id=id,
@@ -47,6 +48,7 @@ def existing(
         is_cancelled=cancelled,
         time_overridden=time_overridden,
         room_overridden=room_overridden,
+        original_date=original_date,
     )
 
 
@@ -84,3 +86,44 @@ def test_plan_regeneration_noop_when_unchanged():
     d1 = date(2026, 9, 7)
     plan = plan_regeneration([existing(1, d1)], [d1], time(6, 45), time(9, 25), "A101")
     assert plan.to_create == plan.to_update == plan.to_delete == plan.exception_conflicts == []
+
+
+def test_moved_session_is_keyed_by_original_date_and_kept():
+    """Buổi đã dời (feature 002 FR-028) khớp theo ngày gốc: không sinh buổi mới ở ngày gốc."""
+    original, moved_to = date(2026, 9, 14), date(2026, 9, 19)
+    moved = existing(1, moved_to, original_date=original)
+    assert moved.lock_date == original and moved.has_exception
+
+    plan = plan_regeneration(
+        [moved], [date(2026, 9, 7), original], time(6, 45), time(9, 25), "A101"
+    )
+    assert plan.to_create == [date(2026, 9, 7)]  # chỉ ngày khác; ngày gốc không bị sinh lại
+    assert plan.to_update == [] and plan.to_delete == [] and plan.exception_conflicts == []
+
+
+def test_moved_session_keeps_date_when_subject_time_and_room_change():
+    original, moved_to = date(2026, 9, 14), date(2026, 9, 19)
+    plan = plan_regeneration(
+        [existing(1, moved_to, original_date=original)],
+        [original],
+        time(9, 35),
+        time(12, 10),
+        "C3",
+    )
+    (update,) = plan.to_update
+    # Giờ/phòng mới của môn áp lên đúng ngày đã dời, không phải ngày gốc.
+    assert update.start_at == combine(moved_to, time(9, 35))
+    assert update.end_at == combine(moved_to, time(12, 10))
+    assert update.room == "C3"
+    assert plan.to_create == []
+
+
+def test_moved_session_with_original_date_out_of_range_is_a_conflict():
+    plan = plan_regeneration(
+        [existing(1, date(2026, 9, 19), original_date=date(2026, 9, 14))],
+        [date(2026, 9, 7)],
+        time(6, 45),
+        time(9, 25),
+        "A101",
+    )
+    assert plan.exception_conflicts == [1] and plan.to_delete == []

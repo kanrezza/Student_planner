@@ -153,6 +153,7 @@ def _existing(subject: Subject) -> list[ExistingSession]:
             is_cancelled=s.is_cancelled,
             time_overridden=s.time_overridden,
             room_overridden=s.room_overridden,
+            original_date=s.original_date,
         )
         for s in subject.sessions
     ]

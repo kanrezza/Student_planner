@@ -27,10 +27,22 @@ class ExistingSession:
     is_cancelled: bool
     time_overridden: bool
     room_overridden: bool
+    # Ngày gốc khi buổi đã được dời sang ngày khác (feature 002 FR-028); None = chưa dời.
+    original_date: date | None = None
+
+    @property
+    def lock_date(self) -> date:
+        """Ngày khoá để khớp với ngày sinh từ quy tắc lặp: ngày gốc nếu đã dời."""
+        return self.original_date or self.date
 
     @property
     def has_exception(self) -> bool:
-        return self.is_cancelled or self.time_overridden or self.room_overridden
+        return (
+            self.is_cancelled
+            or self.time_overridden
+            or self.room_overridden
+            or self.original_date is not None
+        )
 
 
 @dataclass(frozen=True)
@@ -65,9 +77,11 @@ def plan_regeneration(
     - Buổi không có ngoại lệ → cập nhật giờ và phòng theo môn; nằm ngoài khoảng → xoá.
     - Buổi đã huỷ → giữ nguyên hoàn toàn. Buổi đã sửa giờ → giữ giờ; đã sửa phòng → giữ phòng.
     - Buổi có ngoại lệ nằm ngoài khoảng mới → báo trong `exception_conflicts` (FR-013).
+    - Buổi đã dời khớp theo ngày gốc (`lock_date`), nên không sinh buổi mới ở ngày gốc; giờ/phòng
+      mới của môn áp lên ngày đã dời.
     """
     plan = Plan()
-    by_date = {s.date: s for s in existing}
+    by_date = {s.lock_date: s for s in existing}
     desired = set(desired_dates)
 
     for d in sorted(desired):
@@ -77,7 +91,7 @@ def plan_regeneration(
             continue
         if current.is_cancelled:
             continue
-        start_at, end_at = combine(d, start_time), combine(d, end_time)
+        start_at, end_at = combine(current.date, start_time), combine(current.date, end_time)
         new_times = not current.time_overridden and (
             current.start_at != start_at or current.end_at != end_at
         )
@@ -94,6 +108,6 @@ def plan_regeneration(
             )
 
     for s in existing:
-        if s.date not in desired:
+        if s.lock_date not in desired:
             (plan.exception_conflicts if s.has_exception else plan.to_delete).append(s.id)
     return plan

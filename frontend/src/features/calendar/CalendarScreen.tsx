@@ -4,6 +4,8 @@ import type {
   EventContentArg,
   NowIndicatorContentArg,
 } from '@fullcalendar/core';
+import type { DateSelectArg, EventDropArg } from '@fullcalendar/core';
+import type { EventResizeDoneArg } from '@fullcalendar/interaction';
 import viLocale from '@fullcalendar/core/locales/vi';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -14,7 +16,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCalendar } from '../../api/calendar';
 import { keys } from '../../api/keys';
-import type { CalendarData, ClassSession } from '../../api/types';
+import { useSessionActions } from '../../api/sessions';
+import { useUpdateTask } from '../../api/tasks';
+import type { CalendarData, ClassSession, Task } from '../../api/types';
 import { useColorScheme } from '../../app/useColorScheme';
 import { useHotkeys } from '../../app/useHotkeys';
 import { useNow } from '../../app/useNow';
@@ -24,11 +28,22 @@ import { t } from '../../i18n/vi';
 import { formatTime } from '../../lib/dates';
 import { useStoredState } from '../../lib/storage';
 import { cx } from '../../ui/cx';
+import { useToast } from '../../ui/Toast';
 import { NewTaskPanel, TaskDetailPanel, parseNewTaskParams } from '../tasks/TaskDetailPanel';
 import { useTaskActions } from '../tasks/useTaskActions';
 import { CalendarBlock } from './CalendarBlock';
 import { CalendarHeader } from './CalendarHeader';
 import { CalendarSidebar } from './CalendarSidebar';
+import {
+  dropToPatch,
+  localHhmm,
+  localIsoDate,
+  resizeToPatch,
+  selectionToNew,
+  undoPatch,
+  type TaskPatch,
+} from './dropToPatch';
+import { MoveSessionDialog, type SessionMove } from './MoveSessionDialog';
 import {
   FC_VIEW,
   calendarTitle,
@@ -70,6 +85,9 @@ export function CalendarScreen() {
   const scheme = useColorScheme();
   const qc = useQueryClient();
   const actions = useTaskActions();
+  const toast = useToast();
+  const updateTask = useUpdateTask();
+  const { update: updateSession } = useSessionActions();
   const calendarRef = useRef<FullCalendar>(null);
 
   const [storedMode, setStoredMode] = useStoredState<CalendarMode>('calendar.mode', 'tuan');
@@ -87,21 +105,22 @@ export function CalendarScreen() {
   const range = useMemo(() => queryRange(mode, date), [mode, date]);
   const calendar = useCalendar(range, tagIds);
   const [openSession, setOpenSession] = useState<ClassSession | null>(null);
+  const [pendingMove, setPendingMove] = useState<{
+    move: SessionMove;
+    revert: () => void;
+  } | null>(null);
+  // Esc khi đang kéo: huỷ lần kéo (FullCalendar không tự làm việc này).
+  const dragging = useRef(false);
+  const dragCancelled = useRef(false);
 
   const taskParam = params.get('task');
   const openTaskId = Number(taskParam) || null;
   const creating = taskParam === 'new';
 
-  // Đợt 2 chưa có kéo thả (Đợt 3 dùng cờ `startEditable`/`durationEditable` của từng khối).
+  // Cờ kéo/kéo dãn của từng khối do `toCalendarEvents` quyết định (buổi thi, buổi huỷ, task xong
+  // khoá cứng); chế độ Tháng tắt kéo thả ở `editable` (FR-026 chỉ cho Ngày và Tuần).
   const events = useMemo(
-    () =>
-      calendar.data
-        ? toCalendarEvents(calendar.data, scheme).map((e) => ({
-            ...e,
-            startEditable: false,
-            durationEditable: false,
-          }))
-        : [],
+    () => (calendar.data ? toCalendarEvents(calendar.data, scheme) : []),
     [calendar.data, scheme],
   );
 
@@ -170,12 +189,116 @@ export function CalendarScreen() {
   }
 
   const panelOpen = creating || openTaskId !== null;
+  const gridMode = mode !== 'thang';
+
+  const findTask = (id: number): Task | undefined =>
+    calendar.data?.tasks.find((item) => item.id === id);
+
+  /** Lưu thay đổi của task; khối đã nằm ở chỗ mới nên chỉ `revert()` khi lỗi (FR-026, FR-029). */
+  function saveTaskPatch(before: Task, patch: TaskPatch, revert: () => void) {
+    updateTask.mutate(
+      { id: before.id, input: patch },
+      {
+        onSuccess: ({ warnings }) => {
+          for (const warning of warnings) toast.show(warning.message, { tone: 'warning' });
+          toast.show(t('calendar.timeChanged'), {
+            action: {
+              label: t('calendar.undo'),
+              onClick: () => updateTask.mutate({ id: before.id, input: undoPatch(before, patch) }),
+            },
+          });
+        },
+        onError: (err) => {
+          revert();
+          toast.show(t('detail.saveFailed', { message: err.message }), { tone: 'danger' });
+        },
+      },
+    );
+  }
+
+  function onEventDrop(info: EventDropArg) {
+    dragging.current = false;
+    const { kind, id } = info.event.extendedProps as CalendarEventProps;
+    const start = info.event.start;
+    if (!start) return info.revert();
+    if (kind === 'task') {
+      const task = findTask(id);
+      const patch = task && dropToPatch(task, start, info.event.allDay);
+      if (!task || !patch) return info.revert();
+      saveTaskPatch(task, patch, info.revert);
+    } else if (kind === 'session') {
+      const session = calendar.data?.sessions.find((s) => s.id === id);
+      const end = info.event.end;
+      if (!session || !end || info.event.allDay) return info.revert();
+      const move: SessionMove = {
+        sessionId: id,
+        fromDate: session.date,
+        toDate: localIsoDate(start),
+        startTime: localHhmm(start),
+        endTime: localHhmm(end),
+      };
+      if (move.toDate === session.date && move.startTime === formatTime(session.start_at)) {
+        return info.revert();
+      }
+      setPendingMove({ move, revert: info.revert });
+    } else info.revert();
+  }
+
+  function onEventResize(info: EventResizeDoneArg) {
+    dragging.current = false;
+    const { kind, id } = info.event.extendedProps as CalendarEventProps;
+    const task = kind === 'task' ? findTask(id) : undefined;
+    const patch = task && info.event.end && resizeToPatch(task, info.event.end);
+    if (!task || !patch) return info.revert();
+    saveTaskPatch(task, patch, info.revert);
+  }
+
+  function confirmMove({ move, revert }: NonNullable<typeof pendingMove>) {
+    const patch = {
+      ...(move.toDate !== move.fromDate ? { date: move.toDate } : {}),
+      start_time: move.startTime,
+      end_time: move.endTime,
+    };
+    updateSession.mutate(
+      { id: move.sessionId, patch },
+      {
+        onSuccess: ({ warnings }) => {
+          setPendingMove(null);
+          for (const warning of warnings) toast.show(warning.message, { tone: 'warning' });
+        },
+        onError: (err) => {
+          setPendingMove(null);
+          revert();
+          const message = (err as { fields?: Record<string, string> }).fields?.date ?? err.message;
+          toast.show(t('calendar.moveFailed', { message }), { tone: 'danger' });
+        },
+      },
+    );
+  }
+
+  /** Kéo trên vùng trống → bảng tạo task mới với khung giờ làm = vùng đã kéo (FR-027). */
+  function onSelect(info: DateSelectArg) {
+    const values = selectionToNew(info.start, info.end, info.allDay);
+    updateParams({
+      task: 'new',
+      due: values.due,
+      work_date: values.work_date ?? null,
+      work_start: values.work_start ?? null,
+      work_end: values.work_end ?? null,
+    });
+    calendarRef.current?.getApi().unselect();
+  }
 
   // Phím tắt Lịch (contracts/ui-shortcuts.md): ←/→, T, D/W/M; Esc đóng bảng chi tiết.
   useHotkeys([
     {
       key: 'Escape',
       handler: () => {
+        if (dragging.current) {
+          dragCancelled.current = true;
+          return;
+        }
+        if (pendingMove) return false; // hộp xác nhận tự đóng bằng Esc
         if (!panelOpen) return false;
         // Rời ô đang sửa trước để trường đó kịp được lưu.
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -236,6 +359,29 @@ export function CalendarScreen() {
             moreLinkText={(n) => t('calendar.more', { n })}
             eventDisplay="block"
             events={events}
+            editable={gridMode}
+            eventStartEditable={gridMode}
+            snapDuration="00:15:00"
+            selectable={gridMode}
+            selectMinDistance={4}
+            select={onSelect}
+            eventDragStart={() => {
+              dragging.current = true;
+              dragCancelled.current = false;
+            }}
+            eventResizeStart={() => {
+              dragging.current = true;
+              dragCancelled.current = false;
+            }}
+            eventDragStop={() => {
+              dragging.current = false;
+            }}
+            eventResizeStop={() => {
+              dragging.current = false;
+            }}
+            eventAllow={() => !dragCancelled.current}
+            eventDrop={onEventDrop}
+            eventResize={onEventResize}
             eventClick={onEventClick}
             eventContent={(arg: EventContentArg) => (
               <CalendarBlock arg={arg} onToggle={toggleTask} />
@@ -246,6 +392,15 @@ export function CalendarScreen() {
         </div>
       </section>
 
+      <MoveSessionDialog
+        move={pendingMove?.move ?? null}
+        busy={updateSession.isPending}
+        onConfirm={() => pendingMove && confirmMove(pendingMove)}
+        onCancel={() => {
+          pendingMove?.revert();
+          setPendingMove(null);
+        }}
+      />
       {openSession && <SessionDetail session={openSession} onClose={() => setOpenSession(null)} />}
       {creating && (
         <NewTaskPanel
