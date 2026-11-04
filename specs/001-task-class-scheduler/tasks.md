@@ -862,8 +862,8 @@ research R2.
 
 ### Implementation for User Story 11
 
-- [ ] T110 [US11] Tạo migration `backend/migrations/versions/0004_exams.py` (sau
-  `0002_important_digest` của T147 và `0003_auto_deadline_reminder` của T160) và model
+- [ ] T110 [US11] Tạo migration `backend/migrations/versions/000N_exams.py`, N là số tiếp theo sau
+  migration mới nhất lúc làm (`0004`, hoặc `0005` nếu feature 002 đã có `0004_redesign`) và model
   `backend/app/models/exam.py` (`Exam`, `ExamTag`) đúng data-model.md, đăng ký trong
   `app/models/__init__.py`:
   - Cột: `course_code` (tuỳ chọn), `course_name` "1–200 ký tự", `attempt` "≥ 1, mặc định 1",
@@ -1348,7 +1348,7 @@ T146 (Phase 10).
 | US10 Deadline tự tạo (P3) | US1, US2, US9 | Cần nhãn E-Learning gắn được |
 | US11 Lịch thi (P2) | US2, US3, US5, US9, US6 (pipeline OCR), T010 | Làm cùng phase với US6; trùng giờ cần buổi học; hiển thị cần lịch và nhãn |
 | US7 Nhắc (P3) | US1, US2, T011 | Có thể làm trước US10; feed tự gồm task tự tạo khi US10 xong và buổi thi khi US11 xong |
-| US7 mở rộng (T147–T159) | T118–T138 | Làm trước Phase 10 thì T110 dùng migration `0004_exams`; phần buổi thi của tóm tắt và "Quan trọng" nằm ở T146 |
+| US7 mở rộng (T147–T159) | T118–T138 | Làm trước Phase 10 thì T110 dùng migration số tiếp theo (xem T110); phần buổi thi của tóm tắt và "Quan trọng" nằm ở T146 |
 
 ### Within Each User Story
 

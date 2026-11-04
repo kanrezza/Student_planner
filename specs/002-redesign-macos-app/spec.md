@@ -59,6 +59,8 @@ hiệu):
 
 - Q: Buổi học có được dời sang ngày khác (học bù) không, hay chỉ đổi giờ trong cùng ngày? → A: Cho
   dời sang ngày khác sau khi xác nhận; buổi đó được đánh dấu "Đã dời" kèm ngày gốc (FR-028).
+- Q: Khi phần lưu trữ chưa chạy, app tự khởi động nó hay hướng dẫn người dùng? → A: Hướng dẫn "Hãy mở
+  OrbStack" và tự thử kết nối lại (chỉ dẫn lúc lập plan, FR-002).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -66,23 +68,24 @@ hiệu):
 
 Người dùng mở "Lịch Học Cá Nhân" từ Dock, Launchpad hoặc Spotlight như mọi app khác. App có icon
 riêng, cửa sổ riêng (không có thanh địa chỉ hay tab của trình duyệt), nhớ kích thước và vị trí cửa
-sổ. Nếu phần lưu trữ dữ liệu trên máy chưa chạy, app tự khởi động nó và hiện màn hình chờ, rồi vào
-thẳng màn hình chính.
+sổ. Nếu phần lưu trữ dữ liệu trên máy chưa chạy, app hiện màn hình hướng dẫn mở môi trường chạy
+(OrbStack) và tự thử kết nối lại, rồi vào thẳng màn hình chính khi kết nối được.
 
 **Why this priority**: Là nền cho mọi phần giao diện mới; người dùng muốn dùng hằng ngày như một app
 bình thường thay vì mở trình duyệt và gõ địa chỉ.
 
-**Independent Test**: Cài app, mở từ Dock khi phần lưu trữ đang tắt; kiểm tra app tự khởi động, hiện
-màn hình chính với dữ liệu cũ còn nguyên, không có trình duyệt nào được mở.
+**Independent Test**: Cài app, mở từ Dock khi OrbStack đang tắt; kiểm tra app hiện hướng dẫn, mở
+OrbStack thì app tự vào màn hình chính với dữ liệu cũ còn nguyên, không có trình duyệt nào được mở.
 
 **Acceptance Scenarios**:
 
 1. **Given** app đã cài, **When** người dùng bấm icon trên Dock, **Then** app mở trong cửa sổ riêng
    với icon riêng trên Dock, không mở trình duyệt.
-2. **Given** phần lưu trữ dữ liệu chưa chạy, **When** mở app, **Then** app hiện "Đang khởi động…",
-   tự khởi động phần lưu trữ và vào màn hình chính khi sẵn sàng.
-3. **Given** không khởi động được phần lưu trữ (ví dụ chưa cài môi trường chạy), **When** mở app,
-   **Then** app hiện thông báo tiếng Việt nêu nguyên nhân và cách khắc phục, có nút "Thử lại".
+2. **Given** phần lưu trữ dữ liệu chưa chạy (OrbStack đang tắt), **When** mở app, **Then** app hiện
+   màn hình "Hãy mở OrbStack" bằng tiếng Việt kèm nút "Mở OrbStack" và "Thử lại", và tự thử kết nối
+   lại vài giây một lần.
+3. **Given** đang ở màn hình hướng dẫn, **When** OrbStack được mở và phần lưu trữ sẵn sàng, **Then** app
+   tự vào màn hình chính, không cần bấm gì thêm.
 4. **Given** người dùng đã đổi kích thước và vị trí cửa sổ, **When** mở lại app, **Then** cửa sổ
    về đúng kích thước và vị trí đó.
 5. **Given** người dùng đóng cửa sổ hoặc thoát app, **Then** dữ liệu còn nguyên và việc đồng bộ
@@ -359,9 +362,10 @@ tắt; đi qua mọi chức năng của feature 001 trong bố cục mới.
 - **FR-001**: Ứng dụng PHẢI được cài và mở như một app macOS riêng tên "Lịch Học Cá Nhân", có icon
   riêng (không dùng tên, logo hay màu của app khác), có cửa sổ riêng, mở được từ Dock, Launchpad và
   Spotlight, không cần mở trình duyệt.
-- **FR-002**: Khi mở, app PHẢI tự khởi động phần lưu trữ và xử lý dữ liệu trên máy nếu chưa chạy,
-  hiện màn hình "Đang khởi động…" và vào màn hình chính khi sẵn sàng; nếu thất bại thì hiện thông báo
-  tiếng Việt kèm cách khắc phục và nút "Thử lại".
+- **FR-002**: Khi mở mà phần lưu trữ và xử lý dữ liệu trên máy chưa sẵn sàng, app PHẢI hiện màn
+  hình hướng dẫn tiếng Việt "Hãy mở OrbStack" kèm nút "Mở OrbStack" và "Thử lại", tự thử kết nối lại
+  định kỳ (vài giây một lần) và vào màn hình chính ngay khi kết nối được. Nếu mất kết nối khi đang
+  dùng, app hiện thông báo và tự kết nối lại; không mất dữ liệu đã lưu.
 - **FR-003**: App PHẢI nhớ kích thước và vị trí cửa sổ; chỉ có một cửa sổ chính, mở lần hai thì đưa
   cửa sổ đang có lên trước.
 - **FR-004**: Đóng cửa sổ hoặc thoát app KHÔNG ĐƯỢC dừng việc đồng bộ Lịch/Lời nhắc và KHÔNG ĐƯỢC làm
@@ -500,7 +504,8 @@ tắt; đi qua mọi chức năng của feature 001 trong bố cục mới.
 ### Measurable Outcomes
 
 - **SC-001**: Từ lúc bấm icon trên Dock đến lúc dùng được màn hình Hôm nay: dưới 3 giây khi phần lưu
-  trữ đang chạy, dưới 60 giây khi phải khởi động nó.
+  trữ đang chạy; khi OrbStack vừa được mở, app vào màn hình chính trong vòng 5 giây sau khi phần lưu
+  trữ sẵn sàng.
 - **SC-002**: Thêm một task bằng ô "Thêm công việc" mất dưới 5 giây (gõ tiêu đề ngắn và Enter), và
   task xuất hiện trong danh sách ngay khi nhấn Enter.
 - **SC-003**: 100% kịch bản kiểm chứng của feature 001 (quickstart V1–V21, trừ phần chưa làm) vẫn pass
@@ -523,9 +528,9 @@ tắt; đi qua mọi chức năng của feature 001 trong bố cục mới.
 
 - Feature này dựa trên dữ liệu và chức năng của feature `001-task-class-scheduler`; các phần còn dở ở
   feature 001 (nhập ảnh, lịch thi) xuất hiện trong bố cục mới khi được làm xong.
-- Phần lưu trữ và xử lý dữ liệu tiếp tục chạy trên máy như hiện tại; app mới là cửa sổ riêng thay cho
-  trình duyệt, không đổi nơi lưu dữ liệu. App vẫn cần môi trường chạy đã cài sẵn trên máy như hiện
-  tại.
+- Phần lưu trữ và xử lý dữ liệu tiếp tục chạy trên máy như hiện tại (trong OrbStack, tự chạy lại khi
+  OrbStack mở); app mới là cửa sổ riêng thay cho trình duyệt, không đổi nơi lưu dữ liệu. App không tự
+  khởi động phần lưu trữ mà hướng dẫn người dùng mở OrbStack.
 - Đóng cửa sổ không thoát app (theo thói quen macOS); thoát app (⌘Q) không dừng phần lưu trữ và trình
   đồng bộ Lịch, để nhắc trên iPhone vẫn được cập nhật.
 - Bố cục theo hai ảnh tham khảo người dùng gửi (mục "Ảnh tham khảo bố cục"); phần nào ảnh không thể
