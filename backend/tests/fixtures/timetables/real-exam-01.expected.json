@@ -1,0 +1,71 @@
+{
+  "image": "real-exam-01.png",
+  "kind": "exam_table",
+  "note": "Ảnh thật, đã che thông tin sinh viên (giá trị bịa).",
+  "rows": [
+    {
+      "course_code": "CSE703057",
+      "course_name": "Tối ưu hóa",
+      "attempt": 1,
+      "date": "2026-11-30",
+      "start_time": "18:30",
+      "end_time": "20:00",
+      "end_time_source": "image",
+      "exam_format": "Trắc nghiệm trên máy 90p",
+      "room": "A6-101.102 (PC)",
+      "candidate_number": "13"
+    },
+    {
+      "course_code": "CSE703004",
+      "course_name": "An toàn và bảo mật thông tin",
+      "attempt": 1,
+      "date": "2026-11-25",
+      "start_time": "19:05",
+      "end_time": "20:05",
+      "end_time_source": "image",
+      "exam_format": "Trắc nghiệm trên máy 60p",
+      "room": "A6-103 (PC)",
+      "candidate_number": "46"
+    },
+    {
+      "course_code": "CSE703014",
+      "course_name": "Đồ án liên ngành",
+      "attempt": 1,
+      "date": "2026-11-19",
+      "start_time": "08:00",
+      "end_time": "17:00",
+      "end_time_source": "image",
+      "exam_format": "Bài tập lớn",
+      "room": null,
+      "candidate_number": "63"
+    },
+    {
+      "course_code": "CSE703010",
+      "course_name": "Đánh giá và kiểm định chất lượng phần mềm*",
+      "attempt": 1,
+      "date": "2026-11-14",
+      "start_time": "10:45",
+      "end_time": "11:45",
+      "end_time_source": "image",
+      "exam_format": "Trắc nghiệm trên máy 60p",
+      "room": "A6-501 (PC)",
+      "candidate_number": "37"
+    },
+    {
+      "course_code": "CSE702049",
+      "course_name": "Quản trị dự án công nghệ thông tin",
+      "attempt": 1,
+      "date": "2026-11-12",
+      "start_time": "19:05",
+      "end_time": "20:05",
+      "end_time_source": "image",
+      "exam_format": "Trắc nghiệm trên máy 60p",
+      "room": "A6-101.102 (PC)",
+      "candidate_number": "16"
+    }
+  ],
+  "student_values_must_not_appear": [
+    "Nguyễn Văn Test",
+    "21010999"
+  ]
+}

@@ -47,16 +47,23 @@ const task = (over: Partial<Task> = {}): Task =>
     ...over,
   });
 
-/** Buổi thi giả (US11 của feature 001 chưa có ở backend). */
+/** Buổi thi giả (dạng API trả về). */
 const exam = (over: Partial<CalendarExam> = {}): CalendarExam => ({
   id: 3,
+  course_code: null,
   course_name: 'Cơ sở dữ liệu',
+  attempt: 1,
   date: '2026-11-18',
   start_at: '2026-11-18T07:30:00+07:00',
   end_at: '2026-11-18T08:30:00+07:00',
+  exam_format: null,
   room: 'A5-310',
+  candidate_number: null,
+  is_past: false,
   display_color: 'c07',
   is_important: true,
+  reminder_offsets: null,
+  conflicts: [],
   tags: [],
   ...over,
 });

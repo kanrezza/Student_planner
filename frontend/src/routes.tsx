@@ -3,6 +3,7 @@ import { AppShell } from './app/AppShell';
 import { TASKS_HOME } from './app/navigation';
 import { CalendarScreen } from './features/calendar/CalendarScreen';
 import { ExamsScreen } from './features/exams/ExamsScreen';
+import { ImportScreen } from './features/imports/ImportScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
 import { SubjectsScreen } from './features/subjects/SubjectsScreen';
 import { TasksScreen } from './features/tasks/TasksScreen';
@@ -20,7 +21,7 @@ export const routes: RouteObject[] = [
       { path: 'cong-viec/*', element: <TasksScreen /> },
       { path: 'lich', element: <CalendarScreen /> },
       { path: 'mon-hoc', element: <SubjectsScreen /> },
-      { path: 'mon-hoc/nhap-anh', element: <SubjectsScreen /> },
+      { path: 'mon-hoc/nhap-anh', element: <ImportScreen /> },
       { path: 'lich-thi', element: <ExamsScreen /> },
       { path: 'cai-dat', element: <SettingsScreen /> },
       { path: 'cai-dat/:section', element: <SettingsScreen /> },

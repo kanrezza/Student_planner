@@ -4,7 +4,7 @@ import { cx } from '../ui/cx';
 import { IconKeyboard } from '../ui/icons';
 import { IconButton } from '../ui/IconButton';
 import { Tooltip } from '../ui/Tooltip';
-import { SECTIONS, sectionTarget } from './navigation';
+import { SECTIONS, isSectionActive, sectionTarget } from './navigation';
 import { useShell } from './shell';
 
 /** Thanh biểu tượng hẹp bên trái (feature 002 FR-007). */
@@ -27,7 +27,7 @@ export function IconRail() {
                 aria-label={section.label}
                 className={cx(
                   'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
-                  pathname.startsWith(section.path)
+                  isSectionActive(section, pathname)
                     ? 'bg-accent text-accent-contrast'
                     : 'text-muted hover:bg-surface-3 hover:text-text',
                 )}

@@ -1,0 +1,132 @@
+{
+  "synthetic": true,
+  "warning": "Ảnh giả lập, không phải ảnh chụp thật. Kết quả spike cần kiểm chứng lại bằng ảnh thật.",
+  "image": "sample-01.png",
+  "screen": "2880x1800",
+  "menu_bar_text": "Th 4 4 thg 11 14:05",
+  "mini_calendar_title": "Tháng 11/2026",
+  "week": {
+    "monday": "2026-11-02",
+    "sunday": "2026-11-08"
+  },
+  "notes": "Retina 2880×1800, PNG. Mọi buổi theo tiết chuẩn. Tháng/năm lấy từ lịch thu nhỏ.",
+  "rows": [
+    {
+      "name": "Giải tích 1",
+      "weekday": 1,
+      "tiet": "1-3",
+      "class_code": "MAT1101-1-1-26(N01)",
+      "room": "A2-301",
+      "lecturer": "ThS. Nguyễn Văn An",
+      "date": "2026-11-02",
+      "start_time": "06:45",
+      "end_time": "09:25",
+      "time_label": "06:45 - 09:25 (Tiết 1-3)",
+      "e_learning": false
+    },
+    {
+      "name": "Lập trình hướng đối tượng",
+      "weekday": 1,
+      "tiet": "7-9",
+      "class_code": "CSE2203-1-1-26(N03)",
+      "room": "A5-402",
+      "lecturer": "TS. Trần Thị Bình",
+      "date": "2026-11-02",
+      "start_time": "13:00",
+      "end_time": "15:40",
+      "time_label": "13:00 - 15:40 (Tiết 7-9)",
+      "e_learning": false
+    },
+    {
+      "name": "Triết học Mác - Lênin",
+      "weekday": 2,
+      "tiet": "4-6",
+      "class_code": "PHI1001-1-1-26(N12)",
+      "room": "B1-205",
+      "lecturer": "TS. Lê Minh Châu",
+      "date": "2026-11-03",
+      "start_time": "09:35",
+      "end_time": "12:10",
+      "time_label": "09:35 - 12:10 (Tiết 4-6)",
+      "e_learning": false
+    },
+    {
+      "name": "Cơ sở dữ liệu",
+      "weekday": 3,
+      "tiet": "1-3",
+      "class_code": "CSE2301-1-1-26(N02)",
+      "room": "A5-310",
+      "lecturer": "ThS. Phạm Quốc Dũng",
+      "date": "2026-11-04",
+      "start_time": "06:45",
+      "end_time": "09:25",
+      "time_label": "06:45 - 09:25 (Tiết 1-3)",
+      "e_learning": false
+    },
+    {
+      "name": "Tiếng Anh 2",
+      "weekday": 3,
+      "tiet": "10-12",
+      "class_code": "ENG1002-1-1-26(N08)",
+      "room": "C2-104",
+      "lecturer": "ThS. Hoàng Thu Hà",
+      "date": "2026-11-04",
+      "start_time": "15:45",
+      "end_time": "18:25",
+      "time_label": "15:45 - 18:25 (Tiết 10-12)",
+      "e_learning": false
+    },
+    {
+      "name": "Kiến trúc máy tính",
+      "weekday": 4,
+      "tiet": "4-6",
+      "class_code": "CSE2105-1-1-26(N01)",
+      "room": "A2-508",
+      "lecturer": "TS. Vũ Đức Huy",
+      "date": "2026-11-05",
+      "start_time": "09:35",
+      "end_time": "12:10",
+      "time_label": "09:35 - 12:10 (Tiết 4-6)",
+      "e_learning": false
+    },
+    {
+      "name": "Xác suất thống kê",
+      "weekday": 5,
+      "tiet": "7-9",
+      "class_code": "MAT1205-1-1-26(N05)",
+      "room": "A2-301",
+      "lecturer": "ThS. Đặng Thị Lan",
+      "date": "2026-11-06",
+      "start_time": "13:00",
+      "end_time": "15:40",
+      "time_label": "13:00 - 15:40 (Tiết 7-9)",
+      "e_learning": false
+    },
+    {
+      "name": "Lập trình hướng đối tượng",
+      "weekday": 6,
+      "tiet": "1-3",
+      "class_code": "CSE2203-1-1-26(N03)",
+      "room": "A5-402",
+      "lecturer": "TS. Trần Thị Bình",
+      "date": "2026-11-07",
+      "start_time": "06:45",
+      "end_time": "09:25",
+      "time_label": "06:45 - 09:25 (Tiết 1-3)",
+      "e_learning": false
+    },
+    {
+      "name": "Giáo dục thể chất 2",
+      "weekday": 7,
+      "tiet": "10-12",
+      "class_code": "PES1002-1-1-26(N20)",
+      "room": "Sân thể thao",
+      "lecturer": "ThS. Bùi Văn Long",
+      "date": "2026-11-08",
+      "start_time": "15:45",
+      "end_time": "18:25",
+      "time_label": "15:45 - 18:25 (Tiết 10-12)",
+      "e_learning": false
+    }
+  ]
+}

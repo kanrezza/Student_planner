@@ -15,9 +15,14 @@ from sqlalchemy import select
 
 from app.extensions import db
 from app.lib.timeutil import TZ, combine, iso
-from app.models import ClassSession, SyncState, Task
+from app.models import ClassSession, Exam, SyncState, Task
 from app.services.digest import DAYS_AHEAD, digests_for_range
-from app.services.reminders import get_settings, session_alarm_minutes, task_alarm_times
+from app.services.reminders import (
+    exam_alarm_offsets,
+    get_settings,
+    session_alarm_minutes,
+    task_alarm_times,
+)
 from app.services.tasks import active_tasks, due_at
 
 CONTAINER_NAME = "Lịch Học Cá Nhân"
@@ -57,6 +62,24 @@ def build_feed(now: datetime) -> dict:
             }
         )
         for s in sessions
+    ]
+    # Buổi thi: không có số báo danh, hình thức thi, mã học phần (FR-064, constitution IV).
+    exams = db.session.scalars(
+        select(Exam).where(Exam.start_at >= start_of_today).order_by(Exam.start_at)
+    )
+    events += [
+        _with_fingerprint(
+            {
+                "sync_key": f"exam:{e.id}",
+                "title": _star(f"Thi: {e.course_name}", e.is_important),
+                "location": e.room,
+                "start_at": iso(e.start_at),
+                "end_at": iso(e.end_at),
+                "important": e.is_important,
+                "alarms_minutes_before": exam_alarm_offsets(e, settings),
+            }
+        )
+        for e in exams
     ]
     tasks = db.session.scalars(
         active_tasks()

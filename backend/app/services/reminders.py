@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from app.extensions import db
 from app.lib.timeutil import TZ, combine
-from app.models import ClassSession, Settings, Task
+from app.models import ClassSession, Exam, Settings, Task
 from app.services.digest import digests_for_range
 from app.services.tasks import active_tasks, due_at
 
@@ -49,6 +49,13 @@ def session_alarm_minutes(session, settings) -> list[int]:
         settings.session_reminder_minutes,
         settings,
     )
+
+
+def exam_alarm_offsets(exam, settings) -> list[int]:
+    """Phút báo trước của buổi thi (FR-063, FR-069)."""
+    from app.services.exams import resolve_offsets
+
+    return resolve_offsets(exam.reminder_offsets, exam.is_important, settings)
 
 
 def task_alarm_times(task, settings) -> list[datetime]:
@@ -115,6 +122,29 @@ def upcoming(now: datetime, hours: int) -> list[dict]:
                         "body": f"{_fmt_time(s.start_at)} – {_fmt_time(s.end_at)}{room}",
                         "fire_at": fire.astimezone(TZ).isoformat(timespec="seconds"),
                         "important": s.is_important,
+                    }
+                )
+
+    # Buổi thi nhắc sớm tới 7 ngày nên quét rộng hơn buổi học.
+    exams = db.session.scalars(
+        select(Exam).where(
+            Exam.start_at >= now - CATCH_UP, Exam.start_at <= window_end + timedelta(days=30)
+        )
+    )
+    for e in exams:
+        offsets = exam_alarm_offsets(e, settings)
+        for minutes in offsets:
+            fire = e.start_at - timedelta(minutes=minutes)
+            if now - CATCH_UP <= fire <= window_end:
+                room = f" · Phòng {e.room}" if e.room else " · Chưa có phòng"
+                items.append(
+                    {
+                        "sync_key": _key("exam", e.id, minutes, len(offsets)),
+                        "kind": "exam",
+                        "title": f"Thi: {e.course_name}",
+                        "body": f"{_fmt_time(e.start_at)} – {_fmt_time(e.end_at)}{room}",
+                        "fire_at": fire.astimezone(TZ).isoformat(timespec="seconds"),
+                        "important": e.is_important,
                     }
                 )
 

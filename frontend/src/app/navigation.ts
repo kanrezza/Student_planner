@@ -33,3 +33,11 @@ export const SECTIONS: Section[] = [
 export function sectionTarget(section: Section): string {
   return section.id === 'tasks' ? TASKS_HOME : section.path;
 }
+
+/**
+ * Mục có đang được chọn không. So khớp theo đoạn đường dẫn trọn vẹn: `/lich-thi` KHÔNG thuộc mục
+ * `/lich` (trước đây dùng `startsWith` nên hai mục cùng sáng).
+ */
+export function isSectionActive(section: Section, pathname: string): boolean {
+  return pathname === section.path || pathname.startsWith(`${section.path}/`);
+}

@@ -150,7 +150,7 @@ describe('Phím tắt (FR-034)', () => {
 
   it('⌘N đưa con trỏ vào ô "Thêm công việc", kể cả từ mục khác', async () => {
     const { press, path } = setup('/lich-thi');
-    await screen.findByText('Sắp có');
+    await screen.findByText(/Chưa có buổi thi nào/);
     press('n', true);
     await waitFor(() => expect(path()).toBe('/cong-viec/hom-nay'));
     await waitFor(() =>

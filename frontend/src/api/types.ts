@@ -154,23 +154,57 @@ export type ClassSession = {
 
 export type TodayData = {
   date: string;
+  exams?: Exam[];
   sessions: ClassSession[];
   tasks_due_today: Task[];
   overdue_tasks: Task[];
   notices: { code: string; message: string }[];
 };
 
-/** Buổi thi trên lịch (feature 001 US11; backend chưa trả `exams` thì coi như rỗng). */
-export type CalendarExam = {
+/** Trùng giờ của buổi thi với buổi học hoặc buổi thi khác (FR-058). */
+export type ExamConflict = {
+  kind: 'session' | 'exam';
   id: number;
+  title: string;
+  start_at: string;
+};
+
+/** Buổi thi (feature 001 US11). */
+export type Exam = {
+  id: number;
+  course_code: string | null;
   course_name: string;
+  attempt: number;
   date: string;
   start_at: string;
   end_at: string;
+  exam_format: string | null;
   room: string | null;
-  display_color: string;
+  candidate_number: string | null;
+  is_past: boolean;
   is_important: boolean;
+  /** null = theo mặc định; [] = tắt nhắc; số phút báo trước. */
+  reminder_offsets: number[] | null;
   tags: Tag[];
+  display_color: string;
+  conflicts: ExamConflict[];
 };
+
+export type ExamInput = {
+  course_name: string;
+  course_code: string | null;
+  attempt: number;
+  date: string;
+  start_time: string;
+  end_time: string;
+  exam_format: string | null;
+  room: string | null;
+  candidate_number: string | null;
+  tag_ids?: number[];
+  reminder_offsets: number[] | null;
+  is_important: boolean;
+};
+
+export type CalendarExam = Exam;
 
 export type CalendarData = { sessions: ClassSession[]; tasks: Task[]; exams?: CalendarExam[] };

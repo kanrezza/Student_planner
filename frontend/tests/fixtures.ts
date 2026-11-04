@@ -41,3 +41,27 @@ export function makeTask(fields: Partial<Task> = {}): Task {
     due_at,
   };
 }
+
+/** Buổi thi dạng API trả về. */
+export function makeExam(over: Partial<import('../src/api/types').Exam> = {}) {
+  const exam: import('../src/api/types').Exam = {
+    id: 1,
+    course_code: 'CSE2301',
+    course_name: 'Cơ sở dữ liệu',
+    attempt: 1,
+    date: '2026-11-20',
+    start_at: '2026-11-20T07:30:00+07:00',
+    end_at: '2026-11-20T08:30:00+07:00',
+    exam_format: 'Trắc nghiệm trên máy 60p',
+    room: null,
+    candidate_number: '125',
+    is_past: false,
+    is_important: true,
+    reminder_offsets: null,
+    tags: [{ id: 9, name: 'Thi', color: 'c07', system_key: 'exam' }],
+    display_color: 'c07',
+    conflicts: [],
+    ...over,
+  };
+  return exam;
+}

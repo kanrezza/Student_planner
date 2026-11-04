@@ -52,3 +52,12 @@ class TaskTag(_TagLinkMixin, db.Model):
         BigInteger, ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True
     )
     tag = relationship("Tag", lazy="joined")
+
+
+class ExamTag(_TagLinkMixin, db.Model):
+    __tablename__ = "exam_tags"
+
+    exam_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("exams.id", ondelete="CASCADE"), primary_key=True
+    )
+    tag = relationship("Tag", lazy="joined")

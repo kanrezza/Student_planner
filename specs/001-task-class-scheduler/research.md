@@ -59,7 +59,22 @@ và FR-029: lúc chạy không cần internet.
   nhận diện..." và không chặn thao tác khác.
 - Kích thước image backend lớn (~1.5–2 GB do PyTorch). Chấp nhận được với máy cá nhân.
 
-**Spike cần làm**: chạy EasyOCR trên 3–5 ảnh chụp thật từ cổng thông tin của người dùng, đo độ
+**Kết quả spike trên ảnh THẬT (2026-11-05)** — `backend/spikes/real_spike.py`, 2 ảnh thật (bảng "Lịch
+thi cá nhân" 2344×816 và lưới tuần 2672×1336), 8 ô nhìn thấy đủ, so từng từ trong vùng của ô:
+
+| Cỡ ảnh đưa vào OCR | Đúng nguyên văn | Đúng gần đúng (≥ 80%/từ) | Thời gian |
+|--------------------|-----------------|--------------------------|-----------|
+| ×1.0 (nguyên cỡ)   | 5/8 = 62,5%     | 6/8 = 75%                | 19–39 giây |
+| ×1.5               | 8/8 = 100%      | 8/8 = 100%               | 28–57 giây |
+| ×2.0               | 7/8 = 87,5%     | 5/8 = 62,5%              | 31–42 giây |
+
+Kết luận: vượt ngưỡng 80%. **Phóng ảnh lên cạnh dài ~3600 px (tối đa ×1.5)**, KHÔNG thu nhỏ ảnh về
+2560 px như dự kiến ban đầu (ảnh 2672 px thu về 2560 px chỉ đạt 62,5%) — xem `ocr/preprocess.py`.
+Lỗi thường gặp trên ảnh thật: chữ trắng trên nền màu (tiêu đề ô) đọc kém, "Tiết" thành "Tlết", ":"
+thành "."/"-", "60p" thành "6Op", O↔0 trong mã lớp, mất dấu ("báo" thay "bảo"); đã có xử lý trong
+`ocr/fields.py` (ưu tiên tên môn ở thân ô, chuẩn hoá giờ, sửa O↔0) và bảng xem trước để người dùng sửa.
+
+**Spike cần làm (đã làm ở trên)**: chạy EasyOCR trên 3–5 ảnh chụp thật từ cổng thông tin của người dùng, đo độ
 chính xác ký tự và thời gian. Nếu tên môn sai dấu quá nhiều, thử thêm tham số `decoder='beamsearch'`
 và tiền xử lý (phóng to ×1.5, tăng tương phản) trước khi bàn đến phương án khác.
 

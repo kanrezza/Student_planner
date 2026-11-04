@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { ApiWarning } from '../../api/client';
 import { useSemesters } from '../../api/semesters';
 import { useDeleteSubject, useSubjects } from '../../api/subjects';
@@ -20,7 +21,7 @@ import { useToast } from '../../ui/Toast';
 
 /**
  * Mục Môn học (feature 002 US8 kịch bản 3): môn theo học kỳ, thêm một môn, nhập nhiều môn, sửa,
- * xoá có xác nhận. "Nhập từ ảnh" hiện "Sắp có" tới khi phần đó của feature 001 xong.
+ * xoá có xác nhận, và lối vào "Nhập từ ảnh" (feature 001 US6).
  */
 export function SubjectsScreen() {
   const semesters = useSemesters();
@@ -79,9 +80,12 @@ export function SubjectsScreen() {
               </option>
             ))}
           </select>
-          <Button disabled title={t('import.comingSoon')}>
-            {t('import.comingSoon')}
-          </Button>
+          <Link
+            to="/mon-hoc/nhap-anh"
+            className="inline-flex h-8 items-center rounded-lg border border-border bg-surface px-3 hover:bg-surface-3"
+          >
+            {t('import.open')}
+          </Link>
           <Button onClick={() => setDialog('bulk')}>{t('subjects.bulk')}</Button>
           <Button variant="primary" onClick={() => setDialog('add')}>
             <IconPlus size={15} />

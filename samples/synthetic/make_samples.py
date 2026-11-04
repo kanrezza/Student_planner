@@ -544,6 +544,109 @@ SAMPLES = [
 ]
 
 
+# ---------------------------------------------------------------------------------------------------
+# Ảnh bảng "Lịch thi cá nhân" GIẢ LẬP (feature 001 T109, US11). Họ tên và mã SV là giá trị BỊA, dùng để
+# kiểm tra các giá trị này không bao giờ lọt vào kết quả nhận diện (FR-061, SC-020).
+# ---------------------------------------------------------------------------------------------------
+FAKE_STUDENT = "Nguyễn Văn Test - 21010999 -"
+EXAM_HEADERS = [
+    ("STT", 0.04),
+    ("Mã học phần", 0.11),
+    ("Tên học phần", 0.22),
+    ("Lần thi", 0.06),
+    ("Ngày thi", 0.10),
+    ("Thời gian thi", 0.09),
+    ("Hình thức", 0.14),
+    ("Phòng thi", 0.09),
+    ("Số báo danh", 0.07),
+    ("Thông tin sinh viên ( Họ tên, mã số)", 0.20),
+]
+# (mã, tên, lần, ngày, giờ ghi trên ảnh, hình thức, phòng, SBD, ghi chú)
+EXAM_ROWS = [
+    ("MAT1101", "Giải tích 1", 1, date(2026, 10, 12), "07:30 - 09:00", "Tự luận 90 phút", "A2-301", "101", "đã qua"),
+    ("PHI1001", "Triết học Mác - Lênin", 1, date(2026, 10, 20), "13:00 - 14:30", "Trắc nghiệm trên máy 90p", "A5-310", "102", "đã qua"),
+    ("CSE2301", "Cơ sở dữ liệu", 1, date(2026, 12, 15), "07:30", "Trắc nghiệm trên máy 60p", "A5-310", "103", "chỉ giờ bắt đầu"),
+    ("CSE2302", "Lập trình hướng đối tượng", 2, date(2026, 12, 18), "09:35 - 11:05", "Thực hành trên máy", "A8-101", "104", "lần thi 2"),
+    ("INT1306", "Cấu trúc dữ liệu và giải thuật nâng cao", 1, date(2026, 12, 22), "13:00 - 15:00", "Tự luận 120 phút", "", "105", "phòng trống"),
+    ("ENG1001", "Tiếng Anh chuyên ngành", 1, date(2026, 12, 29), "15:45 - 17:15", "Vấn đáp", "B1-204", "106", ""),
+]
+
+
+def render_exam_table(scale: int) -> Image.Image:
+    W, H = 1440 * scale, 900 * scale
+    img = Image.new("RGB", (W, H), WHITE)
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, W, 24 * scale], fill=MENU_BAR)
+    d.text((16 * scale, 5 * scale), "Safari   Tệp   Sửa   Xem", font=load_font("regular", 13 * scale), fill=TEXT_DARK)
+    d.text((W - 150 * scale, 5 * scale), "Th 4 4 thg 11 14:05", font=load_font("regular", 13 * scale), fill=TEXT_DARK)
+    left, right = 40 * scale, W - 40 * scale
+    d.text((left, 70 * scale), "Lịch thi cá nhân", font=load_font("bold", 22 * scale), fill=TEXT_DARK)
+    font, bold = load_font("regular", 14 * scale), load_font("bold", 14 * scale)
+
+    xs, x = [], left
+    for _, share in EXAM_HEADERS:
+        xs.append(x)
+        x += int((right - left) * share)
+    xs.append(right)
+    top = 120 * scale
+    d.rectangle([left, top, right, top + 54 * scale], fill=(238, 244, 252))
+    for i, (title, _) in enumerate(EXAM_HEADERS):
+        for j, line in enumerate(wrap(d, title, bold, xs[i + 1] - xs[i] - 12 * scale)):
+            d.text((xs[i] + 6 * scale, top + (8 + 18 * j) * scale), line, font=bold, fill=(90, 100, 115))
+    y = top + 54 * scale
+    row_h = 64 * scale
+    for n, (code, name, attempt, day, hours, fmt, room, sbd, _note) in enumerate(EXAM_ROWS, start=1):
+        if n % 2 == 0:
+            d.rectangle([left, y, right, y + row_h], fill=(247, 247, 247))
+        cells = [str(n), code, name, str(attempt), day.strftime("%d/%m/%Y"), hours, fmt, room, sbd, FAKE_STUDENT]
+        for i, text in enumerate(cells):
+            lines = wrap(d, text, font, xs[i + 1] - xs[i] - 12 * scale) or [""]
+            start = y + (row_h - 18 * scale * len(lines)) // 2
+            for j, line in enumerate(lines):
+                d.text((xs[i] + 6 * scale, start + 18 * scale * j), line, font=font, fill=TEXT_DARK)
+        d.line([left, y + row_h, right, y + row_h], fill=GRID_LINE, width=scale)
+        y += row_h
+    d.text((W - 150 * scale, H - 22 * scale), "ẢNH GIẢ LẬP", font=load_font("regular", 11 * scale), fill=TEXT_MUTED)
+    return img
+
+
+def exam_expected(file_name: str, scale: int) -> dict:
+    from datetime import datetime
+
+    rows = []
+    for code, name, attempt, day, hours, fmt, room, sbd, note in EXAM_ROWS:
+        start = hours.split(" - ")[0]
+        end = hours.split(" - ")[1] if " - " in hours else None
+        if end is None:  # chỉ ghi giờ bắt đầu: kết thúc = bắt đầu + thời lượng trong hình thức thi
+            minutes = int(fmt.split()[-1].rstrip("p"))
+            begin = datetime.strptime(start, "%H:%M")
+            end = (begin + timedelta(minutes=minutes)).strftime("%H:%M")
+        rows.append(
+            {
+                "course_code": code,
+                "course_name": name,
+                "attempt": attempt,
+                "date": day.isoformat(),
+                "start_time": start,
+                "end_time": end,
+                "end_time_source": "image" if " - " in hours else "format_duration",
+                "exam_format": fmt,
+                "room": room or None,
+                "candidate_number": sbd,
+                "note": note,
+            }
+        )
+    return {
+        "synthetic": True,
+        "warning": "Ảnh giả lập, không phải ảnh chụp thật. Kết quả phải kiểm chứng lại bằng ảnh thật.",
+        "image": file_name,
+        "kind": "exam_table",
+        "screen": f"{1440 * scale}x{900 * scale}",
+        "rows": rows,
+        "student_values_must_not_appear": ["Nguyễn Văn Test", "21010999"],
+    }
+
+
 def main() -> None:
     for sample in SAMPLES:
         img = render(sample)
@@ -560,6 +663,14 @@ def main() -> None:
             f"{path.name}: {img.size[0]}x{img.size[1]}, "
             f"{len(sample.sessions)} buổi → {exp_path.name}"
         )
+    for number, scale in ((1, 2), (2, 1)):  # exam-01: Retina 2880×1800; exam-02: 1440×900
+        name = f"exam-0{number}.png"
+        render_exam_table(scale).save(OUT_DIR / name, "PNG")
+        (OUT_DIR / f"exam-0{number}.expected.json").write_text(
+            json.dumps(exam_expected(name, scale), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        print(f"{name}: {1440 * scale}x{900 * scale}, {len(EXAM_ROWS)} buổi thi")
 
 
 if __name__ == "__main__":
