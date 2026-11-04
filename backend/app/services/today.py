@@ -9,7 +9,7 @@ from sqlalchemy import or_, select
 
 from app.extensions import db
 from app.lib import timeutil
-from app.models import ClassSession, Task
+from app.models import ClassSession, Exam, Task
 from app.services.tasks import active_tasks, sort_key
 
 
@@ -19,6 +19,7 @@ def today_view():
     sessions = db.session.scalars(
         select(ClassSession).where(ClassSession.date == today).order_by(ClassSession.start_at)
     ).all()
+    exams = db.session.scalars(select(Exam).where(Exam.date == today).order_by(Exam.start_at)).all()
     # Gồm task có khung giờ làm hôm nay dù hạn chót ở ngày khác (feature 002 US6).
     due_today = db.session.scalars(
         active_tasks().where(or_(Task.due_date == today, Task.work_date == today))
@@ -33,4 +34,4 @@ def today_view():
     ]
     # Task đã xong xếp cuối nhóm hôm nay.
     due_today = sorted(due_today, key=lambda t: (t.completed_at is not None, sort_key(t)))
-    return now, today, sessions, due_today, sorted(overdue, key=sort_key)
+    return now, today, sessions, exams, due_today, sorted(overdue, key=sort_key)

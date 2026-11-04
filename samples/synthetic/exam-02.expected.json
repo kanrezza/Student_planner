@@ -1,0 +1,91 @@
+{
+  "synthetic": true,
+  "warning": "Ảnh giả lập, không phải ảnh chụp thật. Kết quả phải kiểm chứng lại bằng ảnh thật.",
+  "image": "exam-02.png",
+  "kind": "exam_table",
+  "screen": "1440x900",
+  "rows": [
+    {
+      "course_code": "MAT1101",
+      "course_name": "Giải tích 1",
+      "attempt": 1,
+      "date": "2026-10-12",
+      "start_time": "07:30",
+      "end_time": "09:00",
+      "end_time_source": "image",
+      "exam_format": "Tự luận 90 phút",
+      "room": "A2-301",
+      "candidate_number": "101",
+      "note": "đã qua"
+    },
+    {
+      "course_code": "PHI1001",
+      "course_name": "Triết học Mác - Lênin",
+      "attempt": 1,
+      "date": "2026-10-20",
+      "start_time": "13:00",
+      "end_time": "14:30",
+      "end_time_source": "image",
+      "exam_format": "Trắc nghiệm trên máy 90p",
+      "room": "A5-310",
+      "candidate_number": "102",
+      "note": "đã qua"
+    },
+    {
+      "course_code": "CSE2301",
+      "course_name": "Cơ sở dữ liệu",
+      "attempt": 1,
+      "date": "2026-12-15",
+      "start_time": "07:30",
+      "end_time": "08:30",
+      "end_time_source": "format_duration",
+      "exam_format": "Trắc nghiệm trên máy 60p",
+      "room": "A5-310",
+      "candidate_number": "103",
+      "note": "chỉ giờ bắt đầu"
+    },
+    {
+      "course_code": "CSE2302",
+      "course_name": "Lập trình hướng đối tượng",
+      "attempt": 2,
+      "date": "2026-12-18",
+      "start_time": "09:35",
+      "end_time": "11:05",
+      "end_time_source": "image",
+      "exam_format": "Thực hành trên máy",
+      "room": "A8-101",
+      "candidate_number": "104",
+      "note": "lần thi 2"
+    },
+    {
+      "course_code": "INT1306",
+      "course_name": "Cấu trúc dữ liệu và giải thuật nâng cao",
+      "attempt": 1,
+      "date": "2026-12-22",
+      "start_time": "13:00",
+      "end_time": "15:00",
+      "end_time_source": "image",
+      "exam_format": "Tự luận 120 phút",
+      "room": null,
+      "candidate_number": "105",
+      "note": "phòng trống"
+    },
+    {
+      "course_code": "ENG1001",
+      "course_name": "Tiếng Anh chuyên ngành",
+      "attempt": 1,
+      "date": "2026-12-29",
+      "start_time": "15:45",
+      "end_time": "17:15",
+      "end_time_source": "image",
+      "exam_format": "Vấn đáp",
+      "room": "B1-204",
+      "candidate_number": "106",
+      "note": ""
+    }
+  ],
+  "student_values_must_not_appear": [
+    "Nguyễn Văn Test",
+    "21010999"
+  ]
+}

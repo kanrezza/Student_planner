@@ -378,3 +378,35 @@ def delete_subject(subject_id: int) -> None:
     db.session.delete(get_subject(subject_id))
     bump_revision(db.session)
     db.session.commit()
+
+
+def create_many(items: list[dict], row_name: str = "rows") -> tuple[list[Subject], list[dict]]:
+    """Tạo nhiều môn trong MỘT transaction, mỗi môn có học kỳ và khoảng ngày riêng (nhập từ ảnh).
+
+    Dòng nào lỗi thì không lưu môn nào; lỗi báo theo `rows[i].<trường>` (contracts/rest-api.md).
+    """
+    errors: dict[str, str] = {}
+    resolved_rows: list[Resolved] = []
+    used = _used_colors()
+    for i, item in enumerate(items):
+        prefix = f"{row_name}[{i}]."
+        try:
+            semester = resolve_semester(item.get("semester_id"))
+            start, end = resolve_dates(
+                semester, item.get("start_date"), item.get("end_date"), prefix=prefix
+            )
+            resolved = resolve_subject(item, semester, start, end, used, prefix=prefix)
+        except FieldErrors as e:
+            errors.update(e.fields)
+            continue
+        used.append(resolved.values["color"])
+        resolved_rows.append(resolved)
+    if errors:
+        _raise_fields(errors)
+
+    subjects = [_insert(r) for r in resolved_rows]
+    auto_deadlines.reconcile(subject_ids=[s.id for s in subjects])
+    warnings = [w for s in subjects for w in _warnings(s)]
+    bump_revision(db.session)
+    db.session.commit()
+    return subjects, warnings

@@ -685,7 +685,7 @@ research R2.
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T087 [US6] Chuẩn bị ảnh mẫu trong `backend/tests/fixtures/timetables/`:
+- [X] T087 [US6] Chuẩn bị ảnh mẫu trong `backend/tests/fixtures/timetables/`:
   - ≥ 3 ảnh thật từ người dùng, đã che thông tin cá nhân, mỗi ảnh có file `*.expected.json`. Định
     dạng JSON: `{month_year, rows: [{name, class_code, date, weekday, start_time, end_time, room,
     lecturer}]}`.
@@ -695,25 +695,25 @@ research R2.
     - `synthetic-grid-02.png`: có một ô "E-Learning", một giờ lệch ca, thanh menu
       "Th 4 4 thg 11 14:05".
     Kèm file expected tương ứng.
-- [ ] T088 [P] [US6] Test thuần trong `backend/tests/unit/test_ocr_fields.py`:
+- [X] T088 [P] [US6] Test thuần trong `backend/tests/unit/test_ocr_fields.py`:
   - Giờ: "07:30 - 09:30", "7h30-9h30", "07g30–09g30".
   - "Ca 2", "Tiết 1-3".
   - Phòng: "A101", "P.B2-305", "Phòng: C1.204".
   - "GV: Nguyễn Văn A"; mã lớp "INT1234_01".
   - E-Learning: "E-Learning", "Elearning", "Online".
   - Tên môn là dòng còn lại dài nhất.
-- [ ] T089 [P] [US6] Test thuần trong `backend/tests/unit/test_ocr_layout.py` với danh sách
+- [X] T089 [P] [US6] Test thuần trong `backend/tests/unit/test_ocr_layout.py` với danh sách
   `TextBox` dựng tay:
   - Bỏ khối thuộc thanh menu, thanh địa chỉ và Dock.
   - Nhận dạng lưới tuần từ tiêu đề "Thứ 2…Chủ nhật/CN"; gán cột theo trục x; gom khối thành ô theo
     khoảng cách dọc < 1.2 × chiều cao dòng.
   - Nhận dạng bố cục danh sách theo tiêu đề cột.
-- [ ] T090 [P] [US6] Test thuần trong `backend/tests/unit/test_ocr_month_year.py`:
+- [X] T090 [P] [US6] Test thuần trong `backend/tests/unit/test_ocr_month_year.py`:
   - Thứ tự ưu tiên nguồn: ngày trong lưới → tiêu đề tuần → lịch thu nhỏ → thanh menu.
   - Mâu thuẫn giữa nguồn → chọn nguồn ưu tiên cao hơn, `certain=False`.
   - Thanh menu "Th 4 4 thg 11 14:05" kết hợp năm hiện tại.
   - Không có nguồn nào → `value=None`, `certain=False`.
-- [ ] T091 [P] [US6] Test thuần trong `backend/tests/unit/test_import_preview.py`:
+- [X] T091 [P] [US6] Test thuần trong `backend/tests/unit/test_import_preview.py`:
   - Ngày lệch thứ → `weekday.certain=False` với lý do.
   - Khớp ca → gán `shift`; không khớp → ghi chú "không khớp ca nào".
   - Phát hiện trùng với database (cùng tên hoặc mã lớp + ngày + giờ bắt đầu) và giữa các dòng trong
@@ -723,7 +723,7 @@ research R2.
   - `suggested_tags=['e_learning']`.
   - Độ tin cậy OCR < 0.6 → `certain=False`.
   - Tên gần giống môn đã có (rapidfuzz ≥ 90) → sửa theo tên đã có.
-- [ ] T092 [P] [US6] Test API trong `backend/tests/integration/test_imports_api.py` (monkeypatch
+- [X] T092 [P] [US6] Test API trong `backend/tests/integration/test_imports_api.py` (monkeypatch
   `app.ocr.reader.read_boxes` trả `TextBox` dựng sẵn):
   - `recognize` trả `ImportPreview` và **không** thay đổi số dòng của bất kỳ bảng nào.
   - Ảnh > 20 MB → `413`; file không phải ảnh → `415`.
@@ -732,7 +732,7 @@ research R2.
   - Dòng trùng bị bỏ qua (`skipped_duplicates`).
   - Commit lại cùng dữ liệu → 0 buổi mới (SC-012).
   - Ba dòng cùng `merge_group` với `merge_accepted=true` → 1 môn; với `false` → 3 môn.
-- [ ] T093 [P] [US6] Test OCR thật trong `backend/tests/ocr/test_ocr_fixtures.py`
+- [X] T093 [P] [US6] Test OCR thật trong `backend/tests/ocr/test_ocr_fixtures.py`
   (`@pytest.mark.ocr`):
   - Với mỗi ảnh mẫu, chạy toàn bộ pipeline và so với file expected.
   - In tỉ lệ dòng đúng hoàn toàn và assert ≥ 0.8 (SC-011).
@@ -742,30 +742,30 @@ research R2.
 
 ### Implementation for User Story 6
 
-- [ ] T094 [P] [US6] Tạo `backend/app/ocr/preprocess.py`: `load_image(bytes) -> PIL.Image`.
+- [X] T094 [P] [US6] Tạo `backend/app/ocr/preprocess.py`: `load_image(bytes) -> PIL.Image`.
   - Đăng ký `pillow_heif`; kiểm tra định dạng ∈ {PNG, JPEG, HEIC}, nếu không thì `ApiError 415`.
   - Chuyển sang RGB; thu nhỏ cạnh dài về ≤ 2560 px.
   - Chế độ `enhance` (×1.5, tăng tương phản) theo kết quả spike.
-- [ ] T095 [P] [US6] Tạo `backend/app/ocr/reader.py`:
+- [X] T095 [P] [US6] Tạo `backend/app/ocr/reader.py`:
   - `@dataclass TextBox(text, x0, y0, x1, y1, conf)`.
   - Singleton `easyocr.Reader(['vi','en'], gpu=False, model_storage_directory=EASYOCR_MODEL_DIR,
     download_enabled=False)` khởi tạo lười, kèm `threading.Lock`.
   - `read_boxes(image) -> list[TextBox]`, chuẩn hoá NFC.
-- [ ] T096 [US6] Tạo `backend/app/ocr/fields.py` theo research R3 bước 5: các regex và hàm
+- [X] T096 [US6] Tạo `backend/app/ocr/fields.py` theo research R3 bước 5: các regex và hàm
   `extract_fields(lines) -> dict[field, (value, conf)]`.
-- [ ] T097 [US6] Tạo `backend/app/ocr/layout.py`: `filter_chrome(boxes, image_size)`,
+- [X] T097 [US6] Tạo `backend/app/ocr/layout.py`: `filter_chrome(boxes, image_size)`,
   `detect_layout(boxes) -> "week_grid" | "list" | None`, `columns_for_weekdays`, `group_cells`,
   `rows_from_list_layout`, theo research R3 bước 2–4.
-- [ ] T098 [US6] Tạo `backend/app/ocr/month_year.py`: `infer_month_year(boxes, layout) ->
+- [X] T098 [US6] Tạo `backend/app/ocr/month_year.py`: `infer_month_year(boxes, layout) ->
   {value, source, certain}`, theo research R3 bước 6.
-- [ ] T099 [US6] Tạo `backend/app/ocr/preview.py`: `build_preview(boxes, db_context) ->
+- [X] T099 [US6] Tạo `backend/app/ocr/preview.py`: `build_preview(boxes, db_context) ->
   ImportPreview`:
   - Ghép layout → fields → month/year → đối chiếu ca (`shifts.match_shift_range`) → kiểm tra thứ và
     ngày → sửa tên bằng rapidfuzz → gán học kỳ → phát hiện trùng (`services/duplicates.py`, tạo mới
     với `find_duplicate(name, class_code, date, start_time)`) → gợi ý gộp các dòng cùng tên, thứ,
     giờ bằng cách gán chung `merge_group` (`merge_accepted` mặc định `false`).
   - Schema `ImportPreview` và `ImportRow` trong `backend/app/schemas/imports.py`, đúng data-model.md.
-- [ ] T100 [US6] Tạo `backend/app/services/imports.py`: `commit_import(rows)`:
+- [X] T100 [US6] Tạo `backend/app/services/imports.py`: `commit_import(rows)`:
   - Một transaction.
   - Từ chối trường bắt buộc `certain=False`.
   - Kiểm tra trùng lại phía server, kể cả giữa các dòng.
@@ -775,17 +775,17 @@ research R2.
     đầu là ngày sớm nhất trong nhóm, đến `until` của nhóm.
   - Gắn nhãn đã chọn.
   - Trả `{created_subjects, created_sessions, skipped_duplicates, warnings}`.
-- [ ] T101 [US6] Tạo blueprint `backend/app/api/imports.py`:
+- [X] T101 [US6] Tạo blueprint `backend/app/api/imports.py`:
   - `POST /api/imports/recognize`: multipart `image`; kiểm tra `request.content_length` và kích
     thước thực ≤ `MAX_IMAGE_BYTES` trước khi đọc (`413`).
   - Chỉ xử lý trong bộ nhớ: không `save()`, không ghi file tạm, không lưu database.
   - `POST /api/imports/commit`.
-- [ ] T102 [US6] Tạo `frontend/src/api/imports.ts` và `frontend/src/pages/ImportPage.tsx`:
+- [X] T102 [US6] Tạo `frontend/src/api/imports.ts` và `frontend/src/pages/ImportPage.tsx`:
   - Vùng kéo thả và nút "Chọn ảnh" (`accept="image/png,image/jpeg,image/heic,.heic"`).
   - Kiểm tra ≤ 20 MB phía client với thông báo tiếng Việt.
   - Hiện ảnh thu nhỏ và trạng thái "Đang nhận diện… (có thể mất tới 1 phút)".
   - Hiện lỗi `413`/`415`/`500` bằng tiếng Việt.
-- [ ] T103 [US6] Tạo `frontend/src/components/ImportPreviewTable.tsx`:
+- [X] T103 [US6] Tạo `frontend/src/components/ImportPreviewTable.tsx`:
   - Mỗi dòng một buổi; mọi ô sửa được.
   - Ô `certain=false` tô nền vàng, lý do hiện khi rê chuột.
   - Huy hiệu "Đã có trong lịch" (mặc định bỏ chọn); "Ca n" hoặc "Giờ tuỳ chỉnh – không khớp ca nào".
@@ -801,7 +801,7 @@ research R2.
 
 ### Tests for User Story 11 ⚠️
 
-- [ ] T104 [P] [US11] Test thuần trong `backend/tests/unit/test_exams.py`:
+- [X] T104 [P] [US11] Test thuần trong `backend/tests/unit/test_exams.py`:
   - `duration_from_format("Trắc nghiệm trên máy 60p")` = 60; `"Tự luận 90 phút"` = 90; `"Bài tập
     lớn"` = `None`.
   - `resolve_offsets` (dùng `reminders.alarm_offsets` của T151): `None` + quan trọng →
@@ -813,7 +813,7 @@ research R2.
   - `is_past` theo `end_at < now`.
   - `duplicate_key`: cùng mã học phần + ngày + giờ bắt đầu + lần thi → trùng; khác lần thi → không
     trùng; không có mã thì so theo tên (không phân biệt hoa thường, NFC).
-- [ ] T105 [P] [US11] Test API trong `backend/tests/integration/test_exams_api.py`:
+- [X] T105 [P] [US11] Test API trong `backend/tests/integration/test_exams_api.py`:
   - Tạo, sửa, xoá buổi thi (`204`); `revision` tăng ở mỗi thao tác.
   - Tên học phần rỗng → `400` `fields.course_name`; giờ kết thúc không sau giờ bắt đầu → `400`
     `fields.end_time`; `attempt = 0` → `400`; phòng trống được chấp nhận.
@@ -823,7 +823,7 @@ research R2.
     "time_conflict"` và `conflicts` trong phản hồi; với buổi học đã huỷ → không cảnh báo.
   - `GET /api/today` có `exams` của hôm nay (sắp theo giờ, kèm `conflicts`); `GET /api/calendar`
     có `exams` trong khoảng ngày; `?tags=<id nhãn Thi>` trả buổi thi.
-- [ ] T106 [P] [US11] Test thuần trong `backend/tests/unit/test_ocr_exam_table.py` với `TextBox`
+- [X] T106 [P] [US11] Test thuần trong `backend/tests/unit/test_ocr_exam_table.py` với `TextBox`
   dựng tay:
   - `detect_layout` → `"exam_table"` khi có ≥ 3 tiêu đề lịch thi và cột ngày `dd/mm/yyyy`;
     `"week_grid"` với tiêu đề "Thứ 2…CN"; `"unknown"` khi không đủ dấu hiệu.
@@ -833,12 +833,12 @@ research R2.
     bất kỳ đâu trong kết quả (`json.dumps` kết quả không chứa chuỗi đó).
   - Giờ "07:30 - 08:30"; giờ "07:30" + "Trắc nghiệm trên máy 60p" → kết thúc 08:30,
     `end_time_source="format_duration"`; không có thời lượng → `end_time.certain=False`.
-- [ ] T107 [P] [US11] Test thuần trong `backend/tests/unit/test_exam_preview.py`:
+- [X] T107 [P] [US11] Test thuần trong `backend/tests/unit/test_exam_preview.py`:
   - Buổi thi đã kết thúc → `is_past=True`, `selected=False`.
   - Trùng với buổi thi đã có trong database và giữa các dòng trong ảnh → `duplicate_of_exam_id`,
     `selected=False`.
   - Lần thi 2 của cùng học phần không bị coi là trùng với lần 1.
-- [ ] T108 [P] [US11] Test API trong `backend/tests/integration/test_imports_exams_api.py`
+- [X] T108 [P] [US11] Test API trong `backend/tests/integration/test_imports_exams_api.py`
   (monkeypatch `app.ocr.reader.read_boxes` trả khối chữ của một bảng lịch thi có họ tên và mã SV
   bịa):
   - `recognize` trả `kind="exam_table"`, `exam_rows` đúng; nội dung phản hồi **không** chứa họ tên
@@ -847,7 +847,7 @@ research R2.
   - `commit` với `kind="exam_table"` tạo buổi thi; dòng trùng bị bỏ qua (`skipped_duplicates`);
     commit lại → 0 buổi thi mới; dòng thiếu trường bắt buộc chắc chắn → `400`
     `fields["exam_rows[i].course_name"]`.
-- [ ] T109 [US11] Ảnh lịch thi giả lập: mở rộng `samples/synthetic/make_samples.py` tạo
+- [X] T109 [US11] Ảnh lịch thi giả lập: mở rộng `samples/synthetic/make_samples.py` tạo
   `exam-01.png` (2880×1800) và `exam-02.png` (1440×900) mô phỏng bảng "Lịch thi cá nhân":
   - Cột STT, Mã SV, Họ tên (giá trị bịa), Mã học phần, Tên học phần, Lần thi, Ngày thi (dd/mm/yyyy),
     Giờ thi, Hình thức thi, Phòng thi, SBD.
@@ -862,7 +862,7 @@ research R2.
 
 ### Implementation for User Story 11
 
-- [ ] T110 [US11] Tạo migration `backend/migrations/versions/000N_exams.py`, N là số tiếp theo sau
+- [X] T110 [US11] Tạo migration `backend/migrations/versions/000N_exams.py`, N là số tiếp theo sau
   migration mới nhất lúc làm (`0004`, hoặc `0005` nếu feature 002 đã có `0004_redesign`) và model
   `backend/app/models/exam.py` (`Exam`, `ExamTag`) đúng data-model.md, đăng ký trong
   `app/models/__init__.py`:
@@ -877,7 +877,7 @@ research R2.
   - Thêm nhãn hệ thống "Thi" (`system_key='exam'`, màu `c07`).
   - Không có cột nào cho họ tên hay mã số sinh viên (FR-061). `test_migrations_match_models` phải
     vẫn pass.
-- [ ] T111 [US11] Tạo `backend/app/schemas/exams.py`, `backend/app/services/exams.py`,
+- [X] T111 [US11] Tạo `backend/app/schemas/exams.py`, `backend/app/services/exams.py`,
   `backend/app/api/exams.py` theo contracts/rest-api.md "Lịch thi":
   - Hàm thuần `duration_from_format`, `resolve_offsets`, `find_conflicts`, `duplicate_key`,
     `is_past`.
@@ -885,10 +885,10 @@ research R2.
     `time_conflict` (FR-058); mọi thao tác ghi gọi `bump_revision`.
   - Nhận `is_important` (mặc định `true`) trong schema tạo/sửa buổi thi.
   - Đăng ký blueprint trong `create_app`.
-- [ ] T112 [US11] Hiển thị buổi thi ở backend: thêm `exams` (kèm `conflicts`, `display_color`) vào
+- [X] T112 [US11] Hiển thị buổi thi ở backend: thêm `exams` (kèm `conflicts`, `display_color`) vào
   `services/today.py`/`api/today.py` và `services/calendar.py`/`api/calendar.py` (lọc theo khoảng
   ngày và theo nhãn) (FR-057).
-- [ ] T113 [US11] Nhập ảnh lịch thi (research R14):
+- [X] T113 [US11] Nhập ảnh lịch thi (research R14):
   - `backend/app/ocr/layout.py`: `detect_layout` trả thêm `"exam_table"`.
   - `backend/app/ocr/exam_table.py`: phân tích bảng, ánh xạ tiêu đề đồng nghĩa, **loại cột thông
     tin sinh viên ngay sau khi xác định cột** và không ghi log nội dung của chúng; tính giờ kết thúc
@@ -897,25 +897,25 @@ research R2.
     `duplicate_of_exam_id`, `selected`).
   - `backend/app/services/imports.py` và `backend/app/api/imports.py`: `recognize` nhận `?kind=` để
     ép loại; `commit` xử lý `kind="exam_table"` trong một transaction (FR-059 đến FR-062).
-- [ ] T114 [P] [US11] Tạo `frontend/src/api/exams.ts` (hook CRUD, làm mới `today`, `calendar`,
+- [X] T114 [P] [US11] Tạo `frontend/src/api/exams.ts` (hook CRUD, làm mới `today`, `calendar`,
   `exams`), bổ sung kiểu `Exam` vào `frontend/src/api/types.ts`, và
   `frontend/src/components/ExamForm.tsx`: tên học phần, mã học phần, lần thi, ngày, giờ bắt đầu/kết
   thúc (24h), hình thức thi, phòng (để trống được), số báo danh; hiện `warnings` bằng `WarningToast`.
-- [ ] T115 [US11] Tạo `frontend/src/pages/ExamsPage.tsx`, route `/lich-thi`, mục điều hướng "Lịch
+- [X] T115 [US11] Tạo `frontend/src/pages/ExamsPage.tsx`, route `/lich-thi`, mục điều hướng "Lịch
   thi" giữa "Môn học" và "Nhập ảnh": danh sách buổi thi sắp tới theo ngày, công tắc "Hiện buổi thi đã
   qua", nhãn "Trùng giờ" khi có `conflicts`, nút sửa/xoá có `ConfirmDialog` (FR-027).
-- [ ] T116 [US11] Hiển thị buổi thi ở frontend (FR-057, FR-058):
+- [X] T116 [US11] Hiển thị buổi thi ở frontend (FR-057, FR-058):
   - `TodayPage.tsx`: khối "Buổi thi" phía trên "Buổi học" (giờ, tên học phần, phòng hoặc "Chưa có
     phòng", hình thức thi, SBD, nhãn "Trùng giờ").
   - `lib/calendarEvents.ts`: thêm buổi thi (tiêu đề "Thi: …", màu nhãn "Thi"); bổ sung test trong
     `frontend/tests/calendarEvents.test.ts`.
-- [ ] T117 [US11] Nhập ảnh lịch thi ở frontend: `ImportPage.tsx` và `ImportPreviewTable.tsx` xử lý
+- [X] T117 [US11] Nhập ảnh lịch thi ở frontend: `ImportPage.tsx` và `ImportPreviewTable.tsx` xử lý
   `kind`:
   - `"exam_table"`: bảng các cột buổi thi; nhãn "Đã qua" (bỏ chọn), "Đã có trong lịch" (bỏ chọn); ô
     chưa chắc chắn tô vàng; ghi chú "giờ kết thúc tính từ 60p" khi `end_time_source =
     "format_duration"`.
   - `"unknown"`: hỏi "Đây là lịch học hay lịch thi?" rồi gọi lại `recognize?kind=…`.
-- [ ] T146 [US11] Nhắc và đồng bộ buổi thi (phần của US7 được dời sang đây vì US7 làm trước US11;
+- [X] T146 [US11] Nhắc và đồng bộ buổi thi (phần của US7 được dời sang đây vì US7 làm trước US11;
   ID mới đặt sau T145 để không phải đánh số lại):
   - Backend: `reminders.exam_alarm_offsets(exam, settings)` dùng `services.exams.resolve_offsets`;
     `upcoming` trả một mục cho mỗi mốc với `sync_key="exam:{id}:{phút}"`; `sync_feed.build_feed`
@@ -932,8 +932,17 @@ research R2.
     Nhắc lịch: mốc thêm cho buổi thi quan trọng và mốc của buổi thi thường (cài đặt đã có từ T147).
     Agent không cần sửa (đã nhận `lichhoc://exam/{id}` và danh sách mốc).
 
+**Ghi chú thực hiện (2026-11-05)**:
+- T087: có 2 ảnh thật (lưới tuần, bảng lịch thi — bản lịch thi đã che họ tên/MSSV bằng giá trị bịa) và 5
+  ảnh giả lập; chưa đủ 3 ảnh thật. Dữ liệu OCR của ảnh thật cũng được lưu (`*.boxes.json`) để test
+  nhanh không cần chạy OCR.
+- T093: cách chấm ghi trong đầu file `test_ocr_fixtures.py` (trường có cấu trúc phải giống hệt, chữ tự
+  do giống ≥ 85%). Không thể bảo đảm "mọi trường sai đều `certain=False`": EasyOCR thường sai dấu với
+  độ tin cậy cao, nên chỉ có bảng xem trước bắt buộc để người dùng kiểm tra.
+- T109: ảnh lịch thi giả lập được thêm vào `samples/synthetic/make_samples.py` (hàm `render_exam_table`).
+
 **Checkpoint**: US6 và US11 pass; quickstart V7, V8, V18 pass; `pytest -m ocr` ≥ 80% cho cả hai loại
-ảnh.
+ảnh (lần chạy 2026-11-05: lịch học 22/26 = 85%, lịch thi 14/17 = 82%; ảnh thật 4/4 và 5/5).
 
 ---
 

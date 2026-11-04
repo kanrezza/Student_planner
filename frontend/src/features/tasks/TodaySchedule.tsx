@@ -17,7 +17,10 @@ export function TodaySchedule() {
   const today = useToday();
   const [open, setOpen] = useState<ClassSession | null>(null);
   const data = today.data;
-  if (!data || (data.sessions.length === 0 && data.notices.length === 0)) return null;
+  const exams = data?.exams ?? [];
+  if (!data || (data.sessions.length === 0 && exams.length === 0 && data.notices.length === 0)) {
+    return null;
+  }
 
   return (
     <section aria-label={t('schedule.title')} className="flex flex-col gap-2">
@@ -30,6 +33,46 @@ export function TodaySchedule() {
           {notice.message}
         </p>
       ))}
+      {exams.length > 0 && (
+        <div className="rounded-xl border border-danger/30 bg-surface p-2">
+          <h2 className="px-2 pb-1 pt-0.5 text-[12px] font-semibold uppercase tracking-wide text-danger">
+            {t('exams.today')}
+          </h2>
+          <ul className="flex flex-col">
+            {exams.map((exam) => (
+              <li
+                key={exam.id}
+                className="flex items-center gap-3 rounded-lg px-2 py-1.5"
+                data-testid="today-exam"
+              >
+                <span
+                  className="h-8 w-1 shrink-0 rounded-full"
+                  style={{ backgroundColor: colorHex(exam.display_color) }}
+                />
+                <span className="w-[92px] shrink-0 text-[12px] text-muted tabular-nums">
+                  {sessionTimeRange(exam)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1 truncate font-medium">
+                    {exam.is_important && (
+                      <span aria-label={t('important.label')} className="text-warning">
+                        <IconStarFilled size={13} />
+                      </span>
+                    )}
+                    {exam.course_name}
+                  </span>
+                  <span className="block truncate text-[12px] text-muted">
+                    {exam.room ?? t('exams.noRoom')}
+                    {exam.exam_format ? ` · ${exam.exam_format}` : ''}
+                    {exam.candidate_number ? ` · SBD ${exam.candidate_number}` : ''}
+                  </span>
+                </span>
+                {exam.conflicts.length > 0 && <Badge tone="warning">{t('exams.conflict')}</Badge>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {data.sessions.length > 0 && (
         <div className="rounded-xl border border-border bg-surface p-2">
           <h2 className="px-2 pb-1 pt-0.5 text-[12px] font-semibold uppercase tracking-wide text-muted">

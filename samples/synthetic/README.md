@@ -33,3 +33,12 @@ mã lớp, phòng, giảng viên, cờ E-Learning; cùng dòng chữ ở thanh m
   khử răng cưa khác.
 - Bố cục và khoảng cách lý tưởng: không có quảng cáo, banner, thanh cuộn, popup, chế độ tối.
 - Chưa có ảnh dạng danh sách (bảng) và chưa có ảnh chụp một phần màn hình.
+
+
+## Ảnh lịch thi giả lập (US11)
+
+`exam-01.png` (2880×1800) và `exam-02.png` (1440×900) mô phỏng bảng "Lịch thi cá nhân": 6 dòng gồm 2
+dòng đã qua, 1 dòng phòng trống, 1 dòng chỉ ghi giờ bắt đầu ("Trắc nghiệm trên máy 60p"), 1 dòng lần thi
+2. Cột "Thông tin sinh viên" chứa giá trị **bịa** (`Nguyễn Văn Test - 21010999 -`) để kiểm tra chúng không
+bao giờ xuất hiện trong kết quả nhận diện (FR-061). Tạo lại bằng `make_samples.py` (cùng lệnh ở trên;
+sẽ vẽ lại cả ảnh lịch tuần nên dùng font hiện có trên máy, ảnh có thể khác chút so với bản đã commit).

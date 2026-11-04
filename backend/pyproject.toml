@@ -33,6 +33,8 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.ruff.lint.per-file-ignores]
 # Code spike là thử nghiệm dùng một lần (research R2/R4), cho phép comment tiếng Việt dài.
 "spikes/*" = ["E501"]
+# Test OCR dựng bảng tay bằng các dòng `box(...)` dài, giữ nguyên bố cục (`# fmt: skip`).
+"tests/*" = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

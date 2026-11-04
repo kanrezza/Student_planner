@@ -94,6 +94,7 @@ def test_empty_day(client):
     data = client.get("/api/today").get_json()
     assert data == {
         "date": "2026-11-10",
+        "exams": [],
         "sessions": [],
         "tasks_due_today": [],
         "overdue_tasks": [],

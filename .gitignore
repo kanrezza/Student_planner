@@ -38,3 +38,9 @@ mac-agent/dist/
 backend/spikes/results/
 mac-agent/spikes/build/
 mac-agent/spikes/dist/
+
+# Ảnh chụp thật của người dùng (có thông tin cá nhân) — không commit; chỉ bản đã che nằm trong tests/fixtures
+/samples/*.jpg
+/samples/*.jpeg
+/samples/*.png
+/samples/*.heic

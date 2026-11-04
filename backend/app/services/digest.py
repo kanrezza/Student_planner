@@ -11,7 +11,7 @@ from sqlalchemy import select
 
 from app.extensions import db
 from app.lib.timeutil import TZ, combine
-from app.models import ClassSession, Task
+from app.models import ClassSession, Exam, Task
 from app.services.shifts import shift_label
 from app.services.tasks import active_tasks, due_at
 
@@ -142,7 +142,7 @@ def _session_info(s: ClassSession) -> DigestSession:
 
 
 def digests_for_range(start: date, days: int, settings) -> list[Digest]:
-    """Bản tóm tắt không trống của `days` ngày từ `start` (buổi thi được thêm ở T146, US11)."""
+    """Bản tóm tắt không trống của `days` ngày từ `start`; buổi thi đứng đầu (FR-065)."""
     if not settings.daily_digest_enabled:
         return []
     end = start + timedelta(days=days - 1)
@@ -155,6 +155,11 @@ def digests_for_range(start: date, days: int, settings) -> list[Digest]:
         )
     ):
         sessions_by_day.setdefault(s.date, []).append(_session_info(s))
+    exams_by_day: dict[date, list[DigestExam]] = {}
+    for e in db.session.scalars(select(Exam).where(Exam.date >= start, Exam.date <= end)):
+        exams_by_day.setdefault(e.date, []).append(
+            DigestExam(e.start_at, e.course_name, e.room, e.is_important)
+        )
     tasks = list(
         db.session.scalars(
             active_tasks().where(
@@ -166,7 +171,14 @@ def digests_for_range(start: date, days: int, settings) -> list[Digest]:
     for offset in range(days):
         day = start + timedelta(days=offset)
         due_today, overdue = classify_tasks(day, tasks)
-        digest = build_digest(day, [], sessions_by_day.get(day, []), due_today, overdue, settings)
+        digest = build_digest(
+            day,
+            exams_by_day.get(day, []),
+            sessions_by_day.get(day, []),
+            due_today,
+            overdue,
+            settings,
+        )
         if digest is not None:
             result.append(digest)
     return result
