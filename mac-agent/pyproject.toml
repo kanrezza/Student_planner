@@ -1,6 +1,6 @@
 [project]
 name = "lichhoc-agent"
-version = "0.1.0"
+version = "0.2.1"
 description = "Lịch Học Cá Nhân – tiến trình nền macOS đồng bộ buổi học/task vào Lịch và Lời nhắc (EventKit)"
 requires-python = ">=3.11,<3.12"
 dependencies = [
