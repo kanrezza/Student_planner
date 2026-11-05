@@ -151,15 +151,15 @@ describe('QuickAdd hiểu câu tiếng Việt (feature 003 US4)', () => {
 
   it('bấm vào cụm tô sáng để huỷ hiểu: giữ nguyên làm chữ trong tiêu đề', async () => {
     const { input, posts } = await ready();
-    type(input, 'Gọi chị Mai');
-    expect(marks()).toEqual(['Mai']);
+    type(input, 'Mua hoa mai');
+    expect(marks()).toEqual(['mai']);
     fireEvent.click(document.querySelector('mark')!);
     expect(marks()).toEqual([]);
     expect(screen.queryByRole('status')).toBeNull(); // hết gì để xem trước
     fireEvent.keyDown(input, { key: 'Enter' });
     await waitFor(() => expect(posts()).toHaveLength(1));
     expect(JSON.parse(String(posts()[0][1]?.body))).toMatchObject({
-      title: 'Gọi chị Mai',
+      title: 'Mua hoa mai',
       due_date: null,
     });
   });

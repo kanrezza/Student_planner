@@ -14,13 +14,28 @@ export type RecurrenceSpec = {
 
 export type RecurrenceRule = RecurrenceSpec & { end: { kind: 'never' } };
 
-export type TokenValue =
+/** Cụm chỉ ngày. */
+export type DateValue =
   | { type: 'rel'; days: number }
   | { type: 'weekday'; weekday: number; nextWeek: boolean }
   | { type: 'nextMonday' }
-  | { type: 'calendar'; day: number; month: number; year: number | null }
-  | { type: 'clock'; hour: number; minute: number; daypart: Daypart | null; alsoToday: boolean }
+  | { type: 'calendar'; day: number; month: number; year: number | null };
+
+export type TokenValue =
+  | DateValue
+  | {
+      type: 'clock';
+      hour: number;
+      minute: number;
+      daypart: Daypart | null;
+      alsoToday: boolean;
+      /** Có khi giờ đi liền cụm ngày và buổi: "sáng mai 9h", "9h tối thứ 6". */
+      date?: DateValue;
+    }
+  /** Buổi chỉ hợp lệ đứng riêng khi đi kèm "nay": "tối nay", "sáng nay". */
   | { type: 'daypart'; daypart: Daypart; today: boolean }
+  /** Buổi đi liền cụm ngày, không có giờ: "sáng mai", "chiều thứ 6", "thứ 6 chiều". */
+  | { type: 'dateDaypart'; date: DateValue; daypart: Daypart }
   | { type: 'tag'; tagId: number | null; name: string }
   | { type: 'list'; listId: number }
   | { type: 'important' }

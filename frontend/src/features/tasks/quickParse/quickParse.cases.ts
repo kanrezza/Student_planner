@@ -180,11 +180,9 @@ for (const part of Object.keys(WORDS) as (keyof typeof WORDS)[]) {
 const DEFAULTS = { sang: '08:00', trua: '12:00', chieu: '14:00', toi: '20:00', dem: '22:00' };
 for (const part of Object.keys(WORDS) as (keyof typeof WORDS)[]) {
   const time = DEFAULTS[part];
-  add(`Đi chơi ${WORDS[part]}`, {
-    title: 'Đi chơi',
-    due_time: time,
-    due_date: time > '10:00' ? TODAY : TOMORROW,
-  });
+  // Buổi đứng riêng KHÔNG được hiểu; chỉ "<buổi> nay" mới là cụm ngày.
+  add(`Đi chơi ${WORDS[part]}`, { title: `Đi chơi ${WORDS[part]}` });
+  add(`${WORDS[part]} đi chơi`, { title: `${WORDS[part]} đi chơi` });
   add(`Đi chơi ${WORDS[part]} nay`, {
     title: 'Đi chơi',
     due_time: time,
@@ -252,7 +250,7 @@ for (const [word, date] of [
 }
 add('Đọc một chương', { title: 'Đọc một chương' });
 add('Đọc một ngày một lần', { title: 'Đọc một ngày một lần' });
-add('Gọi chị Mai', { title: 'Gọi chị', due_date: TOMORROW, marks: ['Mai'] });
+add('Gọi chị Mai', { title: 'Gọi chị Mai', marks: [] }); // tên riêng, không phải ngày mai
 add('Gọi chị Mai', { title: 'Gọi chị Mai' }, { dismissed: ['date:8:Mai'] });
 add(
   'Gọi chị Mai thứ 6',
@@ -506,8 +504,9 @@ for (const view of [TODAY, TOMORROW]) {
     { title: 'Họp nhóm', due_date: view, due_time: '15:00' },
     { viewDefaultDate: view },
   );
+  add('Họp nhóm tối', { title: 'Họp nhóm tối' }, { viewDefaultDate: view });
   add(
-    'Họp nhóm tối',
+    'Họp nhóm 8h tối',
     { title: 'Họp nhóm', due_date: view, due_time: '20:00' },
     { viewDefaultDate: view },
   );
@@ -573,7 +572,8 @@ add('Gửi cho cn', { title: 'Gửi cho', due_date: '2026-11-08' });
 add('Họp mai thứ 6', { title: 'Họp thứ 6', due_date: TOMORROW });
 add('Họp thứ 6 mai', { title: 'Họp mai', due_date: TOMORROW });
 add('Họp 9h 10h', { title: 'Họp 10h', due_time: '09:00', due_date: TOMORROW });
-add('Họp sáng chiều', { title: 'Họp chiều', due_time: '08:00', due_date: TOMORROW });
+add('Họp sáng chiều', { title: 'Họp sáng chiều' });
+add('Họp mai sáng chiều', { title: 'Họp chiều', due_time: '08:00', due_date: TOMORROW });
 add('Họp * quan trọng', { title: 'Họp', is_important: true });
 
 // ---- 15. Huỷ hiểu ----
@@ -637,3 +637,111 @@ add('Họp 9h #Học tập ~Học tập', {
   tag_ids: [2],
   list_id: 1,
 });
+
+// ---- 18. Buổi chỉ hiểu khi kèm giờ hoặc nằm trong cụm ngày; không hiểu trong từ ghép ----
+add('Ôn thi Tối ưu hoá thứ 6 9h', {
+  title: 'Ôn thi Tối ưu hoá',
+  due_date: TOMORROW,
+  due_time: '09:00',
+  marks: ['thứ 6', '9h'],
+});
+add('Sáng tạo nội dung', { title: 'Sáng tạo nội dung', marks: [] });
+add('Học Tối ưu hoá tối nay 8h', {
+  title: 'Học Tối ưu hoá',
+  due_date: TODAY,
+  due_time: '20:00',
+  marks: ['tối nay 8h'],
+});
+for (const compound of [
+  'tối ưu hoá',
+  'Tối ưu',
+  'tối giản',
+  'Tối giản',
+  'tối đa',
+  'tối thiểu',
+  'sáng tạo',
+  'Sáng tạo',
+  'sáng kiến',
+  'sáng suốt',
+  'sáng chế',
+  'sáng lập',
+  'chiều chuộng',
+  'Chiều chuộng',
+  'chiều cao',
+  'chiều dài',
+  'ánh sáng',
+]) {
+  add(`Việc ${compound}`, { title: `Việc ${compound}`, marks: [] });
+  add(`${compound} 9h`, { title: compound, due_date: TOMORROW, due_time: '09:00', marks: ['9h'] });
+  add(`9h ${compound}`, { title: compound, due_date: TOMORROW, due_time: '09:00', marks: ['9h'] });
+  add(`Việc ${compound} mai`, { title: `Việc ${compound}`, due_date: TOMORROW, marks: ['mai'] });
+  add(`Việc ${compound} thứ 6`, {
+    title: `Việc ${compound}`,
+    due_date: TOMORROW,
+    marks: ['thứ 6'],
+  });
+}
+add('Học toi uu hoa', { title: 'Học toi uu hoa' }); // không dấu
+add('Sang tao noi dung 9h', { title: 'Sang tao noi dung', due_date: TOMORROW, due_time: '09:00' });
+add('Học buổi tối', { title: 'Học buổi tối' });
+add('Đi làm ban đêm', { title: 'Đi làm ban đêm' });
+// Buổi trong cụm ngày
+add('Họp sáng mai', { title: 'Họp', due_date: TOMORROW, due_time: '08:00', marks: ['sáng mai'] });
+add('Họp chiều mai', { title: 'Họp', due_date: TOMORROW, due_time: '14:00' });
+add('Họp tối mai', { title: 'Họp', due_date: TOMORROW, due_time: '20:00' });
+add('Họp trưa mốt', { title: 'Họp', due_date: '2026-11-07', due_time: '12:00' });
+add('Họp đêm CN', { title: 'Họp', due_date: '2026-11-08', due_time: '22:00' });
+add('Họp chiều thứ 6', {
+  title: 'Họp',
+  due_date: TOMORROW,
+  due_time: '14:00',
+  marks: ['chiều thứ 6'],
+});
+add('Họp thứ 6 chiều', {
+  title: 'Họp',
+  due_date: TOMORROW,
+  due_time: '14:00',
+  marks: ['thứ 6 chiều'],
+});
+add('Họp CN tối', { title: 'Họp', due_date: '2026-11-08', due_time: '20:00' });
+add('Họp chiều thứ 5', { title: 'Họp', due_date: TODAY, due_time: '14:00' });
+add('Họp sáng thứ 5', { title: 'Họp', due_date: '2026-11-12', due_time: '08:00' }); // 08:00 hôm nay đã qua
+add('Họp chiều ngày mai', { title: 'Họp', due_date: TOMORROW, due_time: '14:00' });
+add('Họp sáng 20/11', { title: 'Họp', due_date: '2026-11-20', due_time: '08:00' });
+add('Họp sáng mai 9h', {
+  title: 'Họp',
+  due_date: TOMORROW,
+  due_time: '09:00',
+  marks: ['sáng mai 9h'],
+});
+add('Họp 9h tối mai', { title: 'Họp', due_date: TOMORROW, due_time: '21:00' });
+add('Họp 3h chiều thứ 7', { title: 'Họp', due_date: '2026-11-07', due_time: '15:00' });
+add('Họp tối thứ 6 tuần sau 8h', { title: 'Họp', due_date: '2026-11-13', due_time: '20:00' });
+add('Họp 12h sáng mai', { title: 'Họp 12h sáng mai' }); // 12h sáng không hợp lệ
+add('Họp sáng nay', { title: 'Họp', due_date: TODAY, due_time: '08:00', past: true });
+add('Họp tối nay', { title: 'Họp', due_date: TODAY, due_time: '20:00' });
+add('Họp mai tối 9h', { title: 'Họp', due_date: TOMORROW, due_time: '21:00' });
+
+// ---- 19. "mai": tên riêng không phải ngày mai ----
+for (const word of ['chị', 'anh', 'em', 'cô', 'thầy', 'bạn', 'bà', 'ông', 'Chị', 'THẦY']) {
+  add(`Gọi ${word} Mai`, { title: `Gọi ${word} Mai` });
+  add(`Gọi ${word} mai`, { title: `Gọi ${word} mai` });
+  add(`Gọi ${word} Mai 9h`, { title: `Gọi ${word} Mai`, due_time: '09:00', due_date: TOMORROW });
+}
+add('Gọi chị Mai mai 9h', {
+  title: 'Gọi chị Mai',
+  due_date: TOMORROW,
+  due_time: '09:00',
+  marks: ['mai', '9h'],
+});
+add('Gọi chị Mai ngày mai', { title: 'Gọi chị Mai', due_date: TOMORROW, marks: ['ngày mai'] });
+add('Hẹn em ngày mai', { title: 'Hẹn em', due_date: TOMORROW });
+add('Họp với Mai', { title: 'Họp với Mai' }); // "Mai" viết hoa giữa câu = tên riêng
+add('Họp với Mai sáng mai', { title: 'Họp với Mai', due_date: TOMORROW, due_time: '08:00' });
+add('Mai đi học', { title: 'đi học', due_date: TOMORROW }); // đầu câu vẫn là ngày
+add('Mai 9h họp', { title: 'họp', due_date: TOMORROW, due_time: '09:00' });
+add('Họp mai', { title: 'Họp', due_date: TOMORROW });
+add('Họp Ngày Mai', { title: 'Họp', due_date: TOMORROW });
+add('Họp mai 9h', { title: 'Họp', due_date: TOMORROW, due_time: '09:00', marks: ['mai', '9h'] });
+add('Cô Mai dạy mai', { title: 'Cô Mai dạy', due_date: TOMORROW });
+add('Mua hoa mai', { title: 'Mua hoa', due_date: TOMORROW }); // chữ thường vẫn hiểu là ngày; bấm để huỷ
