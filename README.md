@@ -13,7 +13,7 @@ có telemetry. Giao diện hoàn toàn bằng tiếng Việt.
 |------------|-----------|------------|
 | Backend + CSDL | Flask, PostgreSQL 16, EasyOCR | Docker (OrbStack) |
 | Giao diện | React + Tailwind, FullCalendar | Docker (nginx, cổng `127.0.0.1:8080`) |
-| App macOS "Lịch Học Cá Nhân" | Tauri 2 (cửa sổ riêng, icon Dock) | `~/Applications` |
+| App macOS "Lịch Học Cá Nhân" | Tauri 2 (cửa sổ riêng, icon Dock) | `/Applications` |
 | Agent nhắc lịch (`LichHocAgent`) | Python + EventKit | Chạy nền, đẩy vào Lịch/Lời nhắc của Apple |
 
 ## Yêu cầu
@@ -38,7 +38,7 @@ Các lần sau chỉ cần `docker compose up -d` (các dịch vụ cũng tự c
 ### App macOS
 
 ```bash
-desktop/scripts/install.sh               # build, ký ad-hoc, chép vào ~/Applications
+desktop/scripts/install.sh               # build, ký ad-hoc, chép vào /Applications (xoá bản cũ ở ~/Applications)
 desktop/scripts/install.sh --uninstall   # gỡ
 ```
 
