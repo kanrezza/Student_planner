@@ -44,3 +44,7 @@ mac-agent/spikes/dist/
 /samples/*.jpeg
 /samples/*.png
 /samples/*.heic
+
+# Cấu hình Claude Code cục bộ (không đưa lên git)
+CLAUDE.md
+.claude/
