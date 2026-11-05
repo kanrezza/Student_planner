@@ -50,3 +50,8 @@
   sách (FR-037, FR-039, FR-040, FR-042, US5 kịch bản 9); log sao lưu ghi vào file log hiện có của trình
   đồng bộ chạy nền (FR-010a). Đã kiểm lại: giờ 1–5 là buổi chiều, giờ sao lưu mặc định 21:00 và
   !cao/!tb/!thấp đều có trong spec. Tất cả mục vẫn đạt.
+- Lần kiểm tra 5 (sau /speckit-analyze 2026-11-05): constitution 2.3.1 cho phép đọc file sao lưu người dùng
+  chủ động chọn (FR-014); bản đang khôi phục không bị dọn (FR-006); trường tìm kiếm theo cột thật (FR-037);
+  nâng cấp bản cũ lỗi → tự về bản "Trước khi khôi phục" (FR-012); ngày chỉ dấu "/", thêm "tuần tới", "rưỡi",
+  quy tắc "trưa"/"đêm" (FR-027); US1-6 dùng "chấm cảnh báo trên biểu tượng Cài đặt"; SC-001, SC-006 đo được.
+  Tất cả mục vẫn đạt.
