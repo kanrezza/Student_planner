@@ -49,3 +49,39 @@ def db_session(app):
 @pytest.fixture
 def client(app, db_session):
     return app.test_client()
+
+
+@pytest.fixture(scope="module")
+def isolated_app(tmp_path_factory):
+    """App chạy trên database riêng `lichhoc_restore_test`, KHÔNG bọc trong transaction của test.
+
+    `pg_restore` cần khoá độc quyền nên không chạy được khi test đang giữ transaction mở
+    (feature 003, khôi phục). Mỗi module test có một database mới, xoá khi xong.
+    """
+    import sqlalchemy as sa
+    from sqlalchemy.engine import make_url
+
+    name = "lichhoc_restore_test"
+    base = make_url(TEST_DATABASE_URL)
+    admin = sa.create_engine(base.set(database="postgres"), isolation_level="AUTOCOMMIT")
+    with admin.connect() as conn:
+        conn.execute(sa.text(f"DROP DATABASE IF EXISTS {name} WITH (FORCE)"))
+        conn.execute(sa.text(f"CREATE DATABASE {name}"))
+    flag = tmp_path_factory.mktemp("bao-tri") / "restoring"
+    app = create_app(
+        {
+            "SQLALCHEMY_DATABASE_URI": base.set(database=name).render_as_string(hide_password=False),
+            "TESTING": True,
+            "RESTORE_FLAG_PATH": str(flag),
+        }
+    )
+    with app.app_context():
+        upgrade()
+        db.session.remove()
+    yield app
+    with app.app_context():
+        db.session.remove()
+        db.engine.dispose()
+    with admin.connect() as conn:
+        conn.execute(sa.text(f"DROP DATABASE IF EXISTS {name} WITH (FORCE)"))
+    admin.dispose()

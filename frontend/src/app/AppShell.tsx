@@ -4,6 +4,7 @@ import { ConnectionBanner } from './ConnectionBanner';
 import { useDesktopBridge } from './desktopBridge';
 import { IconRail } from './IconRail';
 import { SECTIONS, TASKS_HOME, sectionTarget } from './navigation';
+import { RestoreOverlay } from '../features/settings/RestoreOverlay';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { useShell } from './shell';
 import { useHotkeys } from './useHotkeys';
@@ -49,6 +50,7 @@ export function AppShell() {
         </main>
       </div>
       <ShortcutsDialog />
+      <RestoreOverlay />
     </div>
   );
 }

@@ -20,5 +20,5 @@ until flask db upgrade; do
     sleep 1
 done
 
-# 1 worker × 4 thread: model EasyOCR chỉ nạp một lần; timeout 120 giây cho endpoint nhận diện ảnh.
-exec gunicorn -w 1 --threads 4 --timeout 120 -b 0.0.0.0:8000 "app:create_app()"
+# 1 worker × 4 thread: model EasyOCR chỉ nạp một lần; timeout 600 giây cho nhận diện ảnh và sao lưu/khôi phục dữ liệu.
+exec gunicorn -w 1 --threads 4 --timeout 600 -b 0.0.0.0:8000 "app:create_app()"

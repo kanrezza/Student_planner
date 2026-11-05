@@ -4,8 +4,10 @@ Build (trong mac-agent/):
   cd spikes && ../.venv/bin/python setup_spike.py py2app --dist-dir dist --bdist-base build
   codesign --force --deep -s - dist/LichHocSpike.app
 Chạy (trong spikes/):  open dist/LichHocSpike.app
+Spike khác: SPIKE_SCRIPT=notify_thread_spike.py ../.venv/bin/python setup_spike.py py2app ...
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -16,7 +18,7 @@ from app_plist import PLIST  # noqa: E402  (dùng chung khai báo quyền với 
 
 setup(
     name="LichHocSpike",
-    app=[str(Path(__file__).with_name("eventkit_spike.py"))],
+    app=[str(Path(__file__).with_name(os.environ.get("SPIKE_SCRIPT", "eventkit_spike.py")))],
     options={
         "py2app": {
             "plist": {
@@ -24,7 +26,7 @@ setup(
                 "CFBundleIdentifier": "vn.lichhoc.spike",
                 "CFBundleName": "LichHocSpike",
             },
-            "includes": ["EventKit", "Foundation"],
+            "includes": ["EventKit", "Foundation", "UserNotifications"],
         }
     },
 )

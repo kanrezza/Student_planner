@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { backupNeedsAttention, useBackupStatus } from '../api/backup';
 import { t } from '../i18n/vi';
 import { cx } from '../ui/cx';
 import { IconKeyboard } from '../ui/icons';
@@ -11,6 +12,7 @@ import { useShell } from './shell';
 export function IconRail() {
   const { setShortcutsOpen } = useShell();
   const { pathname } = useLocation();
+  const attention = backupNeedsAttention(useBackupStatus().data);
   return (
     <nav
       aria-label={t('nav.main')}
@@ -26,13 +28,20 @@ export function IconRail() {
                 to={sectionTarget(section)}
                 aria-label={section.label}
                 className={cx(
-                  'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                  'relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
                   isSectionActive(section, pathname)
                     ? 'bg-accent text-accent-contrast'
                     : 'text-muted hover:bg-surface-3 hover:text-text',
                 )}
               >
                 <Icon size={20} />
+                {section.id === 'settings' && attention && (
+                  <span
+                    role="img"
+                    aria-label={t('backup.attention')}
+                    className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-rail bg-warning"
+                  />
+                )}
               </NavLink>
             </Tooltip>
           );
