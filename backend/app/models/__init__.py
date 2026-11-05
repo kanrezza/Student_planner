@@ -8,6 +8,7 @@ Quan hệ ORM chính (khai báo trong từng file model):
 - Task.list, Task.source_session, Task.tags (theo position)
 """
 
+from app.models.backup import BackupConfig, BackupJob, BackupStatus
 from app.models.class_session import ClassSession
 from app.models.exam import Exam
 from app.models.semester import Semester
@@ -20,6 +21,9 @@ from app.models.task_list import TaskList
 
 __all__ = [
     "AgentStatus",
+    "BackupConfig",
+    "BackupJob",
+    "BackupStatus",
     "ClassSession",
     "Exam",
     "ExamTag",

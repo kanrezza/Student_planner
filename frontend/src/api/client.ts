@@ -26,6 +26,9 @@ export class ApiError extends Error {
   }
 }
 
+/** Sự kiện báo backend đang khôi phục dữ liệu (API trả 503 `restoring`) — lớp phủ lắng nghe. */
+export const RESTORING_EVENT = 'lichhoc-restoring';
+
 export type ApiResult<T> = { data: T; warnings: ApiWarning[] };
 
 type ErrorBody = {
@@ -58,6 +61,9 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const error = (payload as ErrorBody | null)?.error ?? {};
+    if (response.status === 503 && error.code === 'restoring') {
+      window.dispatchEvent(new Event(RESTORING_EVENT));
+    }
     throw new ApiError(
       response.status,
       error.code ?? 'unknown_error',

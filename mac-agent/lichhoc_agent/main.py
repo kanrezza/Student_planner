@@ -4,11 +4,16 @@ long-poll `changes` → lấy `feed` → `plan_changes` → ghi vào Lịch/Lờ
 báo trạng thái.
 Backend không phản hồi thì thử lại sau 30 giây, tăng dần tới 5 phút; KHÔNG xoá mục đã ghi.
 
+Từ feature 003 agent còn sao lưu dữ liệu hằng ngày (backup.py) và gửi thông báo macOS (notify.py).
+Luồng chính chạy vòng lặp sự kiện Cocoa (để nhận click thông báo); vòng lặp đồng bộ + sao lưu chạy ở
+luồng nền (research R10).
+
 Chạy: LichHocAgent.app (do launchd khởi động). `--once`: đồng bộ một lần rồi thoát.
 """
 
 import logging
 import sys
+import threading
 import time
 from datetime import date
 from logging.handlers import RotatingFileHandler
@@ -16,8 +21,9 @@ from pathlib import Path
 
 import requests
 
-from lichhoc_agent import __version__
+from lichhoc_agent import __version__, notify
 from lichhoc_agent.backend_client import BackendClient
+from lichhoc_agent.backup import BackupService
 from lichhoc_agent.reconcile import plan_changes
 from lichhoc_agent.state import State
 
@@ -25,7 +31,7 @@ LOG_PATH = Path.home() / "Library/Logs/LichHocAgent/agent.log"
 LONG_POLL_SECONDS = 25
 HEARTBEAT_SECONDS = 60  # backend coi agent "không chạy" nếu quá 2 phút không liên lạc
 FULL_RESYNC_SECONDS = 6 * 3600  # ghi lại toàn bộ định kỳ để sửa mục bị chỉnh tay trong Lịch
-RETRY_START, RETRY_MAX = 30, 300
+RETRY_START, RETRY_MAX = 30, 120  # tối đa 2 phút để sao lưu bù kịp trong 5 phút (spec SC-001)
 
 log = logging.getLogger("lichhoc_agent")
 
@@ -110,7 +116,17 @@ def _setup_logging() -> None:
     log.setLevel(logging.INFO)
 
 
-def run_forever(backend, store, state: State) -> None:
+def run_backup_tick(service: BackupService, changes: dict | None) -> None:
+    """Lỗi sao lưu không được làm dừng đồng bộ Lịch; chỉ lỗi kết nối backend được chuyển lên."""
+    try:
+        service.tick(changes)
+    except requests.RequestException:
+        raise
+    except Exception:  # noqa: BLE001 — agent chạy nền, không được dừng hẳn
+        log.exception("Lỗi khi sao lưu")
+
+
+def run_forever(backend, store, state: State, backup: BackupService | None = None) -> None:
     retry = RETRY_START
     last_full = last_heartbeat = 0.0
     last_day: date | None = None
@@ -135,6 +151,8 @@ def run_forever(backend, store, state: State) -> None:
                     last_error=None,
                 )
                 last_heartbeat = now
+            if backup is not None:
+                run_backup_tick(backup, None if first else changes)
             first, retry = False, RETRY_START
         except requests.RequestException as e:
             log.warning("Chưa kết nối được backend (%s); thử lại sau %ss", e, retry)
@@ -155,16 +173,35 @@ def run_forever(backend, store, state: State) -> None:
             retry = min(retry * 2, RETRY_MAX)
 
 
-def main() -> None:
+def _run_worker(backend, state: State) -> None:
     from lichhoc_agent.calendar_store import EventKitStore
 
+    run_forever(backend, EventKitStore(), state, BackupService(backend, state))
+
+
+def _run_cocoa_loop() -> None:
+    """Vòng lặp sự kiện ở luồng chính: cần để nhận click vào thông báo macOS."""
+    try:
+        from PyObjCTools import AppHelper
+
+        AppHelper.runConsoleEventLoop(installInterrupt=True)
+    except ImportError:  # chạy ngoài môi trường macOS/PyObjC: chỉ cần giữ tiến trình sống
+        while True:
+            time.sleep(3600)
+
+
+def main() -> None:
     _setup_logging()
-    backend, store, state = BackendClient(), EventKitStore(), State.load()
+    backend, state = BackendClient(), State.load()
     log.info("LichHocAgent %s khởi động (state: %s)", __version__, state.path)
     if "--once" in sys.argv:
-        sync_once(backend, store, state, force=True)
+        from lichhoc_agent.calendar_store import EventKitStore
+
+        sync_once(backend, EventKitStore(), state, force=True)
         return
-    run_forever(backend, store, state)
+    notify.install_delegate()
+    threading.Thread(target=_run_worker, args=(backend, state), name="dong-bo", daemon=True).start()
+    _run_cocoa_loop()
 
 
 if __name__ == "__main__":

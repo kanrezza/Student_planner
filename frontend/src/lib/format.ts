@@ -30,3 +30,21 @@ export function blankToNull(value: string): string | null {
   const trimmed = value.trim();
   return trimmed === '' ? null : trimmed;
 }
+
+/** Dung lượng dễ đọc, dấu phẩy thập phân kiểu Việt Nam: 2516582 → "2,4 MB". */
+export function formatSize(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const text = unit === 0 ? String(Math.round(value)) : value.toFixed(1).replace('.', ',');
+  return `${text} ${units[unit]}`;
+}
+
+/** "21:00 Thứ Năm, 05/11/2026" */
+export function formatMoment(iso: string): string {
+  return `${formatTime(iso)} ${formatDayLong(iso)}`;
+}

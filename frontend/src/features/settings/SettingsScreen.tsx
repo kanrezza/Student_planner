@@ -4,6 +4,7 @@ import { t } from '../../i18n/vi';
 import { cx } from '../../ui/cx';
 import { Screen } from '../../ui/layout';
 import { AutoDeadlineSettings } from './AutoDeadlineSettings';
+import { BackupSettings } from './BackupSettings';
 import { ListsSettings } from './ListsSettings';
 import { DigestSettings, ImportantOffsetsSettings, ReminderSettings } from './ReminderSettings';
 import { SemestersSettings } from './SemestersSettings';
@@ -22,6 +23,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { slug: 'nhan', labelKey: 'settings.tags', component: TagsSettings },
   { slug: 'danh-sach', labelKey: 'settings.lists', component: ListsSettings },
   { slug: 'tu-tao-deadline', labelKey: 'settings.autoDeadline', component: AutoDeadlineSettings },
+  { slug: 'sao-luu', labelKey: 'settings.backup', component: BackupSettings },
 ];
 
 /** Mục Cài đặt: cột các mục bên trái, nội dung mục đang chọn bên phải (`/cai-dat/:muc`). */

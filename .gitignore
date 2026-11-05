@@ -48,3 +48,6 @@ mac-agent/spikes/dist/
 # Cấu hình Claude Code cục bộ (không đưa lên git)
 CLAUDE.md
 .claude/
+
+# Bản sao lưu của app (chứa dữ liệu cá nhân)
+*.lhbackup
