@@ -17,6 +17,8 @@ import { Notice, Screen } from '../../ui/layout';
 import { useToast } from '../../ui/Toast';
 import { ExamPreviewTable } from './ExamPreviewTable';
 import { ImportPreviewTable } from './ImportPreviewTable';
+import { takePendingImage } from './pendingImage';
+import { usePasteImage } from './usePasteImage';
 import { canSaveExams, canSaveWeek, errorsByRow } from './previewState';
 
 export const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
@@ -96,6 +98,22 @@ export function ImportScreen() {
     setPreview(null);
     run(image);
   }
+
+  // Ảnh dán từ trang Môn học / Lịch thi (đang chờ trong bộ nhớ) và ⌘V ngay tại màn hình này.
+  const pickRef = useRef(pick);
+  pickRef.current = pick;
+  useEffect(() => {
+    const waiting = takePendingImage();
+    if (waiting) pickRef.current(waiting);
+  }, []);
+  usePasteImage(
+    (image) => {
+      if (recognize.isPending || commit.isPending) return;
+      reset();
+      pick(image);
+    },
+    () => toast.show(t('import.noClipboardImage')),
+  );
 
   function onDrop(e: DragEvent) {
     e.preventDefault();

@@ -944,6 +944,19 @@ research R2.
 **Checkpoint**: US6 và US11 pass; quickstart V7, V8, V18 pass; `pytest -m ocr` ≥ 80% cho cả hai loại
 ảnh (lần chạy 2026-11-05: lịch học 22/26 = 85%, lịch thi 14/17 = 82%; ảnh thật 4/4 và 5/5).
 
+### Bổ sung: dán ảnh từ clipboard (FR-028, FR-028a)
+
+- [X] T164 [US6] [US11] Spec: cập nhật FR-028, thêm FR-028a và kịch bản chấp nhận 1 của US6 (dán ⌘V).
+- [X] T165 [US6] [US11] `frontend/src/features/imports/usePasteImage.ts` (`imageFromClipboard`,
+  `usePasteImage`, `usePasteToImport`) và `pendingImage.ts` (giữ ảnh dán trong bộ nhớ khi chuyển
+  trang, lấy một lần); `ImportScreen` nhận ảnh dán và ảnh đang chờ; `SubjectsScreen`/`ExamsScreen`
+  gọi `usePasteToImport`; ô thả ảnh ghi "Dán ảnh (⌘V), kéo thả hoặc chọn file"; báo "Không có ảnh
+  trong clipboard"; thêm ⌘V vào bảng phím tắt.
+- [X] T166 [US6] [US11] Test `frontend/tests/pasteImage.test.tsx` (đọc clipboard, dán ở màn hình
+  nhập, ở Môn học, ở Lịch thi, trong form, clipboard có chữ, không có ảnh).
+- [ ] T167 [US6] [US11] (Chờ người dùng thử) Kiểm chứng ⌘V với ảnh chụp ⌘⇧⌃4 trong trình duyệt và
+  trong app macOS (Tauri); ghi kết quả vào `validation.md`.
+
 ---
 
 ## Phase 11: User Story 10 - Tự tạo deadline cho môn đặc biệt (Priority: P3)

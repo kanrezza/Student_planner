@@ -199,7 +199,7 @@ và kiểm tra không có buổi học nào bị tạo trùng.
 
 **Acceptance Scenarios**:
 
-1. **Given** người dùng mở chức năng nhập ảnh, **When** kéo thả hoặc chọn một ảnh, **Then** ứng
+1. **Given** người dùng mở chức năng nhập ảnh, **When** dán (⌘V), kéo thả hoặc chọn một ảnh, **Then** ứng
    dụng hiển thị ảnh và bắt đầu nhận diện ngay trên máy, có báo đang xử lý.
 2. **Given** ảnh chụp toàn màn hình thời khoá biểu rõ nét, **When** nhận diện xong, **Then** bảng
    xem trước liệt kê mỗi buổi học một dòng với tên môn, mã lớp, ngày, thứ, giờ bắt đầu, giờ kết
@@ -573,8 +573,19 @@ tạo trùng.
 
 **Nhập lịch học từ ảnh**
 
-- **FR-028**: Người dùng PHẢI nhập được ảnh thời khoá biểu bằng cách kéo thả vào ứng dụng hoặc chọn
-  file ảnh (PNG, JPEG, HEIC; tối đa 20 MB).
+- **FR-028**: Người dùng PHẢI nhập được ảnh thời khoá biểu bằng cách dán từ clipboard (⌘V), kéo thả
+  vào ứng dụng hoặc chọn file ảnh (PNG, JPEG, HEIC; tối đa 20 MB). Ô thả ảnh PHẢI ghi gợi ý
+  "Dán ảnh (⌘V), kéo thả hoặc chọn file".
+- **FR-028a**: Dán ảnh (⌘V, sự kiện `paste`) PHẢI chạy được cả trong trình duyệt lẫn app macOS
+  (Tauri) và hoạt động như sau:
+  - Ở màn hình Nhập từ ảnh: ảnh dán vào được nhận diện ngay như ảnh kéo thả.
+  - Ở trang Môn học và trang Lịch thi (kể cả khi đang mở form thêm môn học, thêm buổi thi bằng tay):
+    nếu clipboard có ảnh thì tự mở màn hình Nhập từ ảnh với ảnh đó. Khi đang gõ trong ô nhập chữ
+    mà clipboard có cả chữ thì vẫn dán chữ như thường.
+  - Loại ảnh (lịch học hay lịch thi) do hệ thống tự nhận biết như khi kéo thả (FR-030, US11).
+  - Clipboard không có ảnh (và không đang gõ trong ô nhập chữ) thì báo nhẹ "Không có ảnh trong
+    clipboard", không chuyển trang.
+  - Ảnh dán vào chỉ nằm trong bộ nhớ, không lưu lại (FR-035).
 - **FR-029**: Việc nhận diện ảnh PHẢI chạy hoàn toàn trên máy; ảnh KHÔNG ĐƯỢC rời khỏi máy
   (theo constitution, Nguyên tắc IV).
 - **FR-030**: Ứng dụng PHẢI nhận diện từ ảnh các buổi học gồm: tên môn, mã lớp, ngày, thứ, giờ bắt
