@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { DateInput } from '../../components/DateInput';
 import { ApiError } from '../../api/client';
 import { useSaveSemester, type SemesterInput } from '../../api/semesters';
 import type { Semester } from '../../api/types';
@@ -61,18 +62,10 @@ export function SemesterForm({
       </FormField>
       <FormRow>
         <FormField label={t('semesters.fieldStart')} name="start_date" error={error}>
-          <input
-            type="date"
-            value={input.start_date}
-            onChange={(e) => set('start_date')(e.target.value)}
-          />
+          <DateInput value={input.start_date} onChange={set('start_date')} />
         </FormField>
         <FormField label={t('semesters.fieldEnd')} name="end_date" error={error}>
-          <input
-            type="date"
-            value={input.end_date}
-            onChange={(e) => set('end_date')(e.target.value)}
-          />
+          <DateInput value={input.end_date} onChange={set('end_date')} />
         </FormField>
       </FormRow>
       <FormActions saving={save.isPending} onCancel={onCancel} />

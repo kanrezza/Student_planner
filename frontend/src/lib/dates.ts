@@ -121,3 +121,23 @@ export function formatDayAbbr(isoDate: string): string {
   const index = weekdayIndex(p);
   return `${index === 6 ? 'CN' : `T${index + 2}`} ${pad(p.day)}/${pad(p.month)}`;
 }
+
+/** "30/11/2026" (cũng nhận "-", "." và ngày/tháng 1 chữ số) → "2026-11-30"; sai/không có thật → null. */
+export function parseVnDate(text: string): string | null {
+  const m = /^\s*(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\s*$/.exec(text);
+  if (!m) return null;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const year = Number(m[3]);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  if (d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) {
+    return null;
+  }
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** "2026-11-30" → "30/11/2026"; rỗng hoặc không đúng dạng → "". */
+export function isoToVnDate(iso: string | null | undefined): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? '');
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+}

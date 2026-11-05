@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DateInput } from '../../components/DateInput';
 import type { ImportRow } from '../../api/imports';
 import { useSemesters } from '../../api/semesters';
 import { useShifts } from '../../api/shifts';
@@ -215,14 +216,13 @@ export function ImportPreviewTable({ rows, onChange, errors, eLearning, onELearn
                     <option value="weekly">{t('import.repeatWeekly')}</option>
                   </select>
                   {row.repeat.mode === 'weekly' && (
-                    <input
-                      type="date"
-                      aria-label={t('import.repeatWeekly')}
+                    <DateInput
+                      label={t('import.repeatWeekly')}
                       value={row.repeat.until ?? ''}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         update(i, {
                           ...row,
-                          repeat: { ...row.repeat, until: e.target.value || null },
+                          repeat: { ...row.repeat, until: v || null },
                         })
                       }
                       className="h-8 w-auto"

@@ -95,7 +95,7 @@ describe('Lịch thi (US11)', () => {
       target: { value: 'Đại số' },
     });
     fireEvent.change(within(dialog).getByLabelText('Ngày thi'), {
-      target: { value: '2026-12-01' },
+      target: { value: '01/12/2026' },
     });
     fireEvent.change(within(dialog).getByLabelText('Giờ bắt đầu'), { target: { value: '07:30' } });
     fireEvent.change(within(dialog).getByLabelText('Giờ kết thúc'), { target: { value: '08:30' } });

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { DateInput } from '../../components/DateInput';
 import { useCreateBulk, type BulkResult } from '../../api/subjects';
 import { ApiError, type ApiWarning } from '../../api/client';
 import type { Semester } from '../../api/types';
@@ -127,10 +128,10 @@ export function BulkSubjectForm({
           </select>
         </FormField>
         <FormField label={t('subjects.fieldStartDate')} name="start_date" error={error}>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <DateInput value={startDate} onChange={setStartDate} />
         </FormField>
         <FormField label={t('subjects.fieldEndDate')} name="end_date" error={error}>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          <DateInput value={endDate} onChange={setEndDate} />
         </FormField>
       </FormRow>
       <p className="-mt-1 mb-3 text-[12px] text-muted">{t('subjects.sharedDates')}</p>

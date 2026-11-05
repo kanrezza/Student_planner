@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { DateInput } from '../../components/DateInput';
 import { useSettings } from '../../api/settings';
 import { minutesLabel, ReminderSelect } from '../../components/ReminderSelect';
 import { ApiError } from '../../api/client';
@@ -135,18 +136,10 @@ export function SubjectForm({
       </FormField>
       <FormRow>
         <FormField label={t('subjects.fieldStartDate')} name="start_date" error={error}>
-          <input
-            type="date"
-            value={form.start_date}
-            onChange={(e) => set('start_date')(e.target.value)}
-          />
+          <DateInput value={form.start_date} onChange={set('start_date')} />
         </FormField>
         <FormField label={t('subjects.fieldEndDate')} name="end_date" error={error}>
-          <input
-            type="date"
-            value={form.end_date}
-            onChange={(e) => set('end_date')(e.target.value)}
-          />
+          <DateInput value={form.end_date} onChange={set('end_date')} />
         </FormField>
       </FormRow>
       <FormRow>
