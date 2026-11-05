@@ -62,7 +62,7 @@ def test_ban_cu_duoc_nang_cap_va_cau_hinh_sao_luu_con_nguyen(client, isolated_ap
     resp = client.post("/api/backup/restore", data=old_dump, content_type="application/zip")
     assert resp.status_code == 200, resp.get_json()
     assert resp.get_json()["schema_upgraded"] is True
-    assert revision(isolated_app) == "0006_backup"
+    assert revision(isolated_app) == backup._head_revision()
     assert titles(client) == ["Việc của bản cũ"]
     assert client.get("/api/backup/config").get_json()["retention_count"] == 9
     assert client.get("/api/backup/status").status_code == 200  # các bảng sao lưu dùng được
@@ -82,7 +82,7 @@ def test_nang_cap_loi_tu_dua_du_lieu_ve_nhu_cu(client, isolated_app, old_dump, m
     assert "đã được đưa về như trước khi khôi phục" in error["message"]
     monkeypatch.undo()
 
-    assert revision(isolated_app) == "0006_backup"
+    assert revision(isolated_app) == backup._head_revision()
     assert titles(client) == ["Việc của bản cũ", "Việc tạo sau"]  # nguyên như trước khi khôi phục
     assert client.get("/api/backup/config").get_json()["retention_count"] == 9
     with isolated_app.app_context():

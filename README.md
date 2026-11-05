@@ -76,6 +76,7 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 | Phím | Việc |
 |------|------|
 | ⌘N | Thêm công việc mới |
+| ⌘F | Tìm kiếm (task, danh sách, nhãn, môn học, buổi học, buổi thi; không cần gõ dấu) |
 | ⌘1 … ⌘5 | Công việc, Lịch, Môn học, Lịch thi, Cài đặt |
 | ⌘, / ⌘/ | Cài đặt / bảng phím tắt |
 | ⌘⌫ | Chuyển task vào Thùng rác |

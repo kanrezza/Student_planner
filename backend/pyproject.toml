@@ -42,5 +42,6 @@ testpaths = ["tests"]
 pythonpath = ["."]
 markers = [
     "ocr: chạy EasyOCR thật trên ảnh mẫu (chậm)",
+    "slow: kiem tra hieu nang voi nhieu du lieu (vai giay)",
 ]
 addopts = "-m 'not ocr'"

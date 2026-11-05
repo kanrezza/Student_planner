@@ -3,6 +3,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# ./scripts/validate.sh search-perf  — quickstart S5: 1.000 task + một học kỳ đầy đủ, mỗi truy vấn < 0,3 giây.
+# (Chạy trên database test riêng, không đụng dữ liệu thật.)
+if [[ "${1:-}" == "search-perf" ]]; then
+    docker compose up -d --wait db >/dev/null
+    exec docker compose run --rm --quiet-pull -v "$PWD/backend:/app" backend \
+        pytest tests/integration/test_search_perf.py -q -m slow
+fi
+
 # ./scripts/validate.sh backup-stale  — quickstart B5: giả lập "đã 4 ngày chưa sao lưu được".
 # Dừng agent, lùi mốc sao lưu thành công gần nhất 4 ngày trong state.json, xoá dấu "đã báo", chạy lại.
 # Hãy tháo ổ sao lưu (hoặc chọn thư mục không tồn tại) TRƯỚC, nếu không agent sẽ sao lưu bù ngay.

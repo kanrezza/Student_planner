@@ -20,6 +20,7 @@ import {
   IconWeek,
 } from '../../ui/icons';
 import { Menu, MenuItem } from '../../ui/Menu';
+import { SearchBox } from '../search/SearchBox';
 import { DeleteListDialog, ListDialog } from './ListDialog';
 import { sameView, taskPath } from './viewRoutes';
 
@@ -50,7 +51,10 @@ export function ListColumn({ current }: { current: TaskView | null }) {
       aria-label={t('listColumn.label')}
       className="flex h-full w-[232px] shrink-0 flex-col border-r border-border bg-surface-2"
     >
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3 pt-[calc(12px+var(--titlebar-inset))]">
+      <div className="pt-[calc(12px+var(--titlebar-inset))]">
+        <SearchBox />
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3 pt-1">
         <div className="flex flex-col gap-px">
           {smart('today', <TodayIcon />, counts?.today)}
           {smart('tomorrow', <IconSunrise size={17} />, counts?.tomorrow)}

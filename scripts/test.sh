@@ -35,7 +35,9 @@ step() {
 
 # Backend chạy trong container, mount code hiện tại (không cần build lại image để test).
 backend() {
-    docker compose run --rm --quiet-pull -v "$ROOT/backend:/app" backend "$@"
+    # Bảng chữ có dấu của frontend được mount để test đối chiếu vn_fold ↔ foldVi đọc được.
+    docker compose run --rm --quiet-pull -v "$ROOT/backend:/app" \
+        -v "$ROOT/frontend/tests/fixtures:/frontend-fixtures:ro" backend "$@"
 }
 
 frontend_install() (
