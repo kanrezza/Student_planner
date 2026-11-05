@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { DateInput } from '../../components/DateInput';
 import { ApiError } from '../../api/client';
 import { useLists } from '../../api/lists';
 import { useSettings } from '../../api/settings';
@@ -364,14 +365,13 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
         <dl className="mt-4 flex flex-col divide-y divide-border border-y border-border">
           <Row label={t('detail.due')}>
             <div className="flex items-center gap-1.5">
-              <input
-                type="date"
-                aria-label={t('detail.dueDate')}
+              <DateInput
+                label={t('detail.dueDate')}
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={setDueDate}
                 onBlur={() => saveDue(dueDate, dueTime)}
-                aria-invalid={Boolean(errors.due_date)}
-                className="w-[8.75rem] px-2"
+                invalid={Boolean(errors.due_date)}
+                className="w-[9.5rem]"
               />
               <input
                 type="time"
@@ -420,14 +420,13 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
             ) : (
               <>
                 <div className="flex items-center gap-1">
-                  <input
-                    type="date"
-                    aria-label={t('detail.workDate')}
+                  <DateInput
+                    label={t('detail.workDate')}
                     value={work.work_date ?? ''}
-                    onChange={(e) => setWork({ ...work, work_date: e.target.value })}
+                    onChange={(v) => setWork({ ...work, work_date: v })}
                     onBlur={() => saveWork(work)}
-                    aria-invalid={Boolean(errors.work_date)}
-                    className="w-[8.75rem] px-2"
+                    invalid={Boolean(errors.work_date)}
+                    className="w-[9.5rem]"
                   />
                   <input
                     type="time"

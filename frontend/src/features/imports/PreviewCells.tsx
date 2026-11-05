@@ -1,4 +1,5 @@
 import type { PreviewField } from '../../api/imports';
+import { DateInput } from '../../components/DateInput';
 import { cx } from '../../ui/cx';
 
 /**
@@ -21,6 +22,19 @@ export function PreviewInput({
   className?: string;
 }) {
   const uncertain = !field.certain;
+  if (type === 'date') {
+    return (
+      <DateInput
+        label={label}
+        value={typeof field.value === 'string' ? field.value : ''}
+        onChange={onChange}
+        onBlur={() => (uncertain && field.value ? onConfirm() : undefined)}
+        title={uncertain ? field.reason : undefined}
+        uncertain={uncertain}
+        className={cx('h-8 w-full', className)}
+      />
+    );
+  }
   return (
     <input
       aria-label={label}

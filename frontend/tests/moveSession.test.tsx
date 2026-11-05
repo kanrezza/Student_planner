@@ -119,7 +119,7 @@ describe('SessionDetail — dời ngày', () => {
 
   it('đổi ô "Dời sang ngày" chỉ gửi date, rồi báo cảnh báo ngoài học kỳ', async () => {
     const { api, onClose } = renderDetail();
-    fireEvent.change(screen.getByLabelText('Dời sang ngày'), { target: { value: '2026-11-25' } });
+    fireEvent.change(screen.getByLabelText('Dời sang ngày'), { target: { value: '25/11/2026' } });
     fireEvent.click(screen.getByText('Lưu'));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const [call] = api.calls('PATCH', '/sessions/9');

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { DateInput } from '../../components/DateInput';
 import type { ApiWarning } from '../../api/client';
 import { useSaveExam } from '../../api/exams';
 import type { Exam } from '../../api/types';
@@ -99,7 +100,7 @@ export function ExamForm({
       </FormRow>
       <FormRow>
         <FormField label={t('exams.fieldDate')} name="date" error={error}>
-          <input type="date" value={form.date} onChange={(e) => set('date')(e.target.value)} />
+          <DateInput value={form.date} onChange={set('date')} />
         </FormField>
         <FormField label={t('exams.fieldStart')} name="start_time" error={error}>
           <input

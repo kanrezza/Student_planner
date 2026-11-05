@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { DateInput } from './DateInput';
 import { useSessionActions, type SessionPatch } from '../api/sessions';
 import type { ClassSession } from '../api/types';
 import { t } from '../i18n/vi';
@@ -115,11 +116,10 @@ export function SessionDetail({
           {t('session.editOnly')}
         </h3>
         <FormField label={t('session.moveTo')} name="date" error={update.error}>
-          <input
-            type="date"
-            aria-label={t('session.moveTo')}
+          <DateInput
+            label={t('session.moveTo')}
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={setDate}
             className="w-[10rem]"
           />
           {date !== session.date && (
