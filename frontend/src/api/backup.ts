@@ -85,6 +85,6 @@ export function useCreateBackupJob() {
 
 /** Cần chú ý: quá 3 ngày chưa sao lưu, hoặc thư mục sao lưu đang có vấn đề (chấm trên biểu tượng Cài đặt). */
 export function backupNeedsAttention(status: BackupStatus | undefined): boolean {
-  if (!status || !status.config.enabled) return false;
-  return status.stale || status.destination.state !== 'ok';
+  if (!status?.config?.enabled) return false; // chưa tải xong hoặc API chưa trả đúng dạng
+  return status.stale || status.destination?.state !== 'ok';
 }

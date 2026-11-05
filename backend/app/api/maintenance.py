@@ -1,6 +1,6 @@
 """Chế độ bảo trì khi đang khôi phục dữ liệu (feature 003, research R8).
 
-Trong lúc `pg_restore` chạy, mọi API khác trả 503 `restoring` (không ai ghi vào dữ liệu đang bị thay).
+Trong lúc `pg_restore` chạy, mọi API khác trả 503 `restoring` (không ai ghi được vào dữ liệu).
 """
 
 from flask import Flask, request

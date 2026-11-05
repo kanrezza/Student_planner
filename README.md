@@ -95,6 +95,21 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 
 > ⚠️ **`docker compose down -v` xoá toàn bộ dữ liệu.** Dùng `docker compose down` (không `-v`) để dừng.
 
+### Sao lưu tự động (Cài đặt → Sao lưu)
+
+- Mỗi ngày lúc **21:00** (đổi được) agent `LichHocAgent` tự sao lưu toàn bộ dữ liệu thành một file
+  `LichHoc-YYYY-MM-DD-HHMM-<loại>.lhbackup` (loại: `tu-dong`, `thu-cong`, `truoc-khoi-phuc`).
+  Máy tắt hoặc ngủ lúc đến giờ thì sao lưu bù ngay khi có thể (chỉ một bản bù).
+- Mặc định ghi vào `iCloud Drive/Lịch Học Cá Nhân/Sao lưu` (macOS tự đưa lên iCloud); đổi sang thư
+  mục khác, ví dụ ổ SSD rời, ngay trong trang Sao lưu. Giữ 14 bản gần nhất (chỉnh được 1–365).
+  Ổ không có thì bỏ qua, cảnh báo nhẹ và thử lại; quá 3 ngày chưa sao lưu được thì có thông báo macOS.
+- **Khôi phục**: bấm "Khôi phục" ở một bản trong danh sách (hoặc "Chọn bản sao lưu khác…" sau khi
+  cài lại máy). App tự sao lưu dữ liệu hiện tại thành bản `truoc-khoi-phuc` trước khi thay.
+- Lần đầu macOS hỏi quyền cho LichHocAgent ghi vào iCloud Drive / ổ rời và gửi thông báo: bấm "Cho phép".
+  Nếu bị từ chối: Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Tệp và thư mục.
+- Log của sao lưu nằm cùng file log của agent: `~/Library/Logs/LichHocAgent/agent.log`.
+- Script `backup.sh`/`restore.sh` ở trên vẫn dùng được để sao lưu thủ công.
+
 ```bash
 ./scripts/backup.sh                              # → backups/lichhoc-YYYYmmdd-HHMM.dump
 ./scripts/restore.sh backups/lichhoc-....dump    # khôi phục (hỏi xác nhận, ghi đè dữ liệu hiện tại)

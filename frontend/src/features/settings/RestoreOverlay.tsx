@@ -14,12 +14,12 @@ export function RestoreOverlay() {
   const status = useBackupStatus();
   const qc = useQueryClient();
   const toast = useToast();
-  const [forced, setForced] = useState(false); // API vừa trả 503 "restoring"
+  const [forcedAt, setForcedAt] = useState<number | null>(null); // lúc API trả 503 "restoring"
   const seenActive = useRef(new Set<number>());
 
   useEffect(() => {
     const onRestoring = () => {
-      setForced(true);
+      setForcedAt(Date.now());
       void qc.invalidateQueries({ queryKey: backupStatusKey });
     };
     window.addEventListener(RESTORING_EVENT, onRestoring);
@@ -53,11 +53,17 @@ export function RestoreOverlay() {
   }, [job, active, qc, toast]);
 
   useEffect(() => {
-    // Hết khôi phục (đã lấy được trạng thái mới mà không còn việc khôi phục đang chạy) → gỡ lớp phủ.
-    if (forced && status.isSuccess && !(active && job?.kind === 'restore')) setForced(false);
-  }, [forced, status.isSuccess, status.dataUpdatedAt, active, job?.kind]);
+    // Hết khôi phục: đã lấy được trạng thái SAU lúc bị chặn mà không còn việc khôi phục đang chạy.
+    if (
+      forcedAt !== null &&
+      status.dataUpdatedAt > forcedAt &&
+      !(active && job?.kind === 'restore')
+    ) {
+      setForcedAt(null);
+    }
+  }, [forcedAt, status.dataUpdatedAt, active, job?.kind]);
 
-  const restoring = (active && job?.kind === 'restore') || forced;
+  const restoring = (active && job?.kind === 'restore') || forcedAt !== null;
   if (!restoring) return null;
   const step = job?.step ? t(`backup.steps.${job.step}`) : t('backup.restoring');
   return (

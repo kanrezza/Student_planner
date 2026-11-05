@@ -8,10 +8,12 @@ app (constitution IV, ngoại lệ 2).
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import os
 import re
 import time as clock_time
+import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
@@ -19,7 +21,7 @@ from pathlib import Path
 
 import requests
 
-from lichhoc_agent import notify
+from lichhoc_agent import icloud, notify
 from lichhoc_agent.state import State
 
 log = logging.getLogger("lichhoc_agent")
@@ -379,6 +381,92 @@ def build_report(state: State, destination: Destination) -> dict:
     }
 
 
+# ---- Khôi phục -------------------------------------------------------------------------------
+
+MSG_PRE_BACKUP_FAILED = "Không tạo được bản sao lưu dữ liệu hiện tại nên chưa khôi phục."
+MSG_CORRUPT = "Bản sao lưu bị hỏng, không thể khôi phục"
+MSG_ICLOUD_DOWNLOAD = "Không tải được bản sao lưu từ iCloud. Hãy kiểm tra mạng rồi thử lại."
+MSG_FILE_MISSING = "Không tìm thấy file sao lưu."
+
+
+def verify_lhbackup(path: Path) -> bool:
+    """File `.lhbackup` đọc được và dump khớp SHA-256 trong manifest (không giải nén ra đĩa)."""
+    try:
+        with zipfile.ZipFile(path) as zf:
+            manifest = json.loads(zf.read("manifest.json"))
+            digest = hashlib.sha256()
+            with zf.open("data.dump") as handle:
+                for block in iter(lambda: handle.read(1 << 20), b""):
+                    digest.update(block)
+        return manifest.get("dump_sha256") == digest.hexdigest()
+    except (zipfile.BadZipFile, KeyError, ValueError, OSError):
+        return False
+
+
+def _backend_message(error: requests.RequestException) -> str:
+    try:
+        return error.response.json()["error"]["message"]
+    except (AttributeError, KeyError, ValueError, TypeError):
+        return _describe_error(error)
+
+
+def run_restore(
+    job: dict,
+    backend,
+    state: State,
+    config: BackupConfig,
+    now: datetime,
+    resync: Callable[[], None] = lambda: None,
+    ensure_downloaded: Callable[[Path], None] = icloud.ensure_downloaded,
+    home: Path | None = None,
+) -> tuple[bool, str]:
+    """Khôi phục (spec FR-012): sao lưu dữ liệu hiện tại → tải từ iCloud nếu cần → kiểm tra file →
+    gửi cho backend → đồng bộ lại Lịch/Lời nhắc. Trả (thành công, thông báo tiếng Việt)."""
+    source = Path(job["source_path"])
+
+    def step(name: str) -> None:
+        backend.update_job(job["id"], state="running", step=name)
+        log.info("Khôi phục: %s", name)
+
+    step("pre_backup")
+    safety = run_backup(
+        "truoc-khoi-phuc", backend, state, config, now, protect=str(source), home=home
+    )
+    if not safety.ok:
+        return False, MSG_PRE_BACKUP_FAILED
+    if icloud.is_cloud_only(source):
+        step("downloading")
+        try:
+            ensure_downloaded(source)
+        except (TimeoutError, OSError) as error:
+            log.error("Không tải được %s từ iCloud: %s", source.name, error)
+            return False, MSG_ICLOUD_DOWNLOAD
+    if not source.is_file():
+        return False, MSG_FILE_MISSING
+    if not verify_lhbackup(source):
+        return False, MSG_CORRUPT
+
+    step("restoring")
+    try:
+        backend.upload_restore(source)
+    except requests.HTTPError as error:
+        return False, _backend_message(error)
+    except requests.RequestException as error:
+        return False, _describe_error(error)
+
+    step("resync")
+    try:
+        resync()
+    except Exception:  # noqa: BLE001 — khôi phục đã xong; đồng bộ lại sẽ tự thử ở vòng sau
+        log.exception("Khôi phục xong nhưng chưa cập nhật được Lịch/Lời nhắc")
+    if safety.destination.path is not None:
+        _prune_folder(safety.destination.path, config.retention_count, None)
+    parsed = parse_backup_name(source.name)
+    if parsed is None:
+        return True, "Đã khôi phục dữ liệu"
+    return True, f"Đã khôi phục dữ liệu về {parsed.created_at:%H:%M %d/%m/%Y}"
+
+
 # ---- Điều phối trong vòng lặp của agent ---------------------------------------------------------
 
 
@@ -395,11 +483,13 @@ class BackupService:
         state: State,
         clock: Callable[[], datetime] = datetime.now,
         send_notice: Callable[[], bool] = notify.send_stale_notice,
+        resync: Callable[[], None] = lambda: None,
     ):
         self.backend = backend
         self.state = state
         self.clock = clock
         self.send_notice = send_notice
+        self.resync = resync
         self.config: BackupConfig | None = None
         self._config_revision: int | None = None
         self._last_report = 0.0
@@ -437,11 +527,13 @@ class BackupService:
             else:
                 self.backend.update_job(job["id"], state="failed", message=result.error)
         else:
-            self.backend.update_job(
-                job["id"], state="failed", message="Loại việc không được hỗ trợ: " + job["kind"]
+            ok, message = run_restore(
+                job, self.backend, self.state, self.config, now, resync=self.resync
             )
+            self._finish(None)
+            self.backend.update_job(job["id"], state="done" if ok else "failed", message=message)
 
-    def _finish(self, result: BackupResult) -> None:
+    def _finish(self, result: BackupResult | None) -> None:
         self.state.save()
         self._dirty = True
 

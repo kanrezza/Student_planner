@@ -176,7 +176,11 @@ def run_forever(backend, store, state: State, backup: BackupService | None = Non
 def _run_worker(backend, state: State) -> None:
     from lichhoc_agent.calendar_store import EventKitStore
 
-    run_forever(backend, EventKitStore(), state, BackupService(backend, state))
+    store = EventKitStore()
+    service = BackupService(
+        backend, state, resync=lambda: sync_once(backend, store, state, force=True)
+    )
+    run_forever(backend, store, state, service)
 
 
 def _run_cocoa_loop() -> None:
