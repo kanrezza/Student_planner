@@ -102,8 +102,8 @@ còn 14 bản mới nhất.
 5. **Given** người dùng đổi giới hạn từ 14 xuống 7, **When** bản sao lưu kế tiếp tạo thành công,
    **Then** chỉ còn 7 bản mới nhất.
 6. **Given** người dùng chọn thư mục trên ổ SSD rời rồi tháo ổ, **When** đến giờ sao lưu, **Then** app
-   bỏ qua lần này, không treo, không hiện hộp thoại chặn; Cài đặt và thanh trạng thái hiện cảnh báo
-   nhẹ (không có thông báo macOS) "Không tìm thấy thư mục sao lưu (ổ đĩa có thể đã được tháo). Sẽ thử lại khi ổ được cắm lại.";
+   bỏ qua lần này, không treo, không hiện hộp thoại chặn; Cài đặt hiện cảnh báo nhẹ và biểu tượng Cài
+   đặt ở thanh biểu tượng có chấm cảnh báo (không có thông báo macOS) "Không tìm thấy thư mục sao lưu (ổ đĩa có thể đã được tháo). Sẽ thử lại khi ổ được cắm lại.";
    khi ổ được cắm lại, app sao lưu bù trong vòng 5 phút.
 7. **Given** người dùng bấm "Sao lưu ngay", **Then** app tạo một bản sao lưu ngay, nút hiện trạng thái
    đang chạy, xong thì trạng thái trong Cài đặt cập nhật; app vẫn dùng bình thường trong lúc sao lưu.
@@ -296,7 +296,9 @@ chi tiết task mở ra.
   thư mục hiện tại; Cài đặt có nút "Chọn bản sao lưu khác…" để khôi phục từ file bất kỳ.
 - iCloud chưa tải xong file sao lưu về máy (chỉ có bản trên mây): khi khôi phục, app chờ tải và báo
   "Đang tải bản sao lưu từ iCloud…"; tải thất bại thì báo lỗi, không khôi phục.
-- Bản sao lưu từ phiên bản app cũ hơn: khôi phục được và dữ liệu được nâng cấp theo phiên bản hiện tại.
+- Bản sao lưu từ phiên bản app cũ hơn: khôi phục được và dữ liệu được nâng cấp theo phiên bản hiện tại;
+  nâng cấp lỗi thì app tự đưa dữ liệu về bản "Trước khi khôi phục" và báo "Không nâng cấp được dữ liệu
+  của bản sao lưu cũ; dữ liệu đã được đưa về như trước khi khôi phục."
   Bản từ phiên bản mới hơn app đang chạy: từ chối với thông báo rõ ràng.
 - Đồng hồ máy bị chỉnh lùi: không tạo bản trùng tên đè lên bản cũ.
 
@@ -374,7 +376,9 @@ chi tiết task mở ra.
   khôi phục không cần mật khẩu.
 - **FR-006**: App PHẢI giữ N bản gần nhất (mặc định 14, chỉnh được từ 1 đến 365) và tự xoá bản cũ hơn,
   chỉ sau khi bản mới đã tạo thành công; app chỉ được xoá file sao lưu do chính nó tạo trong thư mục
-  đích hiện tại.
+  đích hiện tại. Bản đang được chọn để khôi phục KHÔNG BAO GIỜ bị xoá trong lúc khôi phục (kể cả khi
+  bản "Trước khi khôi phục" vừa tạo làm số bản vượt giới hạn); việc dọn bản thừa khi đó chờ đến sau khi
+  khôi phục xong.
 - **FR-007**: Khi thư mục đích không có hoặc không ghi được, app PHẢI bỏ qua lần sao lưu đó mà không
   treo, không hiện hộp thoại chặn và không ảnh hưởng chức năng khác; hiện cảnh báo nhẹ (không chặn)
   trong Cài đặt và một chấm cảnh báo trên biểu tượng Cài đặt ở thanh biểu tượng, rồi thử lại theo
@@ -405,7 +409,8 @@ chi tiết task mở ra.
   thay; (b) tạo bản "Trước khi khôi phục" của dữ liệu hiện tại — nếu không tạo được thì dừng, không
   khôi phục; (c) kiểm tra bản được chọn đọc được và tương thích — nếu không thì dừng, báo lỗi; (d) thay
   toàn bộ dữ liệu một cách trọn vẹn (thành công hoàn toàn hoặc giữ nguyên dữ liệu cũ, không bao giờ
-  nửa vời); (e) làm mới mọi màn hình và thông báo kết quả.
+  nửa vời), kể cả bước nâng cấp dữ liệu của bản cũ: nâng cấp lỗi thì app tự đưa dữ liệu về bản "Trước
+  khi khôi phục" và báo lỗi; (e) làm mới mọi màn hình và thông báo kết quả.
 - **FR-013**: Sau khi khôi phục, nếu đồng bộ Lịch và Lời nhắc đang bật, các mục do app ghi trong Lịch
   và Lời nhắc PHẢI được cập nhật khớp với dữ liệu đã khôi phục trong vòng 1 phút; lịch nhắc trên máy
   cũng được tính lại.
@@ -416,7 +421,9 @@ chi tiết task mở ra.
   Nguyên tắc IV: app được phép ghi file sao lưu đầy đủ dữ liệu vào thư mục người dùng chọn, kể cả
   thư mục trong iCloud Drive của chính người dùng; việc đồng bộ lên iCloud do macOS đảm nhiệm, app
   không tự kết nối ra ngoài máy; sao lưu tắt được bất kỳ lúc nào; dữ liệu gốc vẫn lưu và xử lý trên
-  máy.
+  máy. Ngoài thư mục sao lưu do app quản lý, app chỉ được ĐỌC một file sao lưu khi người dùng chủ động
+  chọn file đó để khôi phục ("Chọn bản sao lưu khác…", ví dụ sau khi cài lại máy); app không tự đọc, sửa
+  hay xoá file nào ngoài thư mục sao lưu của nó (constitution 2.3.1).
 
 **Task lặp lại (US3)**
 
@@ -465,10 +472,14 @@ chi tiết task mở ra.
   6", "ngay mai", "hang tuan"):
   - Ngày: "hôm nay"/"hnay"; "mai"/"ngày mai"; "mốt"/"ngày mốt"/"ngày kia"; "thứ 2"…"thứ 7" (cả "thứ
     hai"…"thứ bảy", "T2"…"T7"); "chủ nhật"/"CN"; "tuần sau" (= Thứ Hai tuần sau); "thứ X tuần sau"/"CN
-    tuần sau" (= thứ X của tuần lịch kế tiếp, tuần bắt đầu Thứ Hai); "DD/MM" và "DD/MM/YYYY" (cả D/M).
-  - Giờ: "9h", "9h30", "9g", "9:30", "21:00", "9 giờ", "9 giờ 30"; kèm buổi "sáng", "trưa", "chiều",
-    "tối", "đêm" (ví dụ "9 giờ tối", "3h chiều", "tối nay"). Buổi đứng một mình là giờ mặc định: sáng
-    08:00, trưa 12:00, chiều 14:00, tối 20:00. "chiều"/"tối"/"đêm" cộng 12 giờ cho giờ 1–11. Giờ không
+    tuần sau" (= thứ X của tuần lịch kế tiếp, tuần bắt đầu Thứ Hai; "tuần tới" cùng nghĩa "tuần sau");
+    "DD/MM" và "DD/MM/YYYY" (cả D/M; chỉ dấu "/" — "3-4" trong "Lab 3-4" KHÔNG phải ngày).
+  - Giờ: "9h", "9h30", "9g", "9g30", "9:30", "21:00", "9 giờ", "9 giờ 30", "9 giờ 30 phút", "9 rưỡi"/"9h
+    rưỡi" (= 9:30); kèm buổi "sáng", "trưa", "chiều", "tối", "đêm" (ví dụ "9 giờ tối", "3h chiều", "tối
+    nay"). Buổi đứng một mình là giờ mặc định: sáng 08:00, trưa 12:00, chiều 14:00, tối 20:00, đêm 22:00.
+    "chiều"/"tối" cộng 12 giờ cho giờ 1–11; "trưa" cộng 12 cho giờ 1–2; "đêm" cộng 12 cho giờ 9–11,
+    "12h đêm" là 00:00 hôm sau, "đêm" với giờ 1–5 giữ nguyên ("2h đêm" là 02:00); "12h sáng" không
+    hợp lệ (giữ là chữ). Giờ không
     kèm buổi: giờ 1–5 (kể cả có phút, ví dụ "3h", "2h30", "5:15") hiểu là buổi chiều 13:00–17:59; giờ 0
     và từ 6 trở lên giữ nguyên theo 24 giờ ("8h" là 08:00, "21:00" là 21:00). Muốn giờ 1–5 buổi sáng
     thì gõ kèm "sáng" ("5h sáng" là 05:00).
@@ -541,9 +552,9 @@ chi tiết task mở ra.
 - **FR-036**: Đầu cột danh sách (mục Công việc) PHẢI có ô tìm kiếm; ⌘F ở mọi nơi trong app PHẢI chuyển
   đến mục Công việc và đặt con trỏ vào ô tìm. ⌘F được thêm vào bảng phím tắt (⌘/).
 - **FR-037**: Tìm kiếm PHẢI tìm trong: task (tiêu đề, ghi chú), danh sách của người dùng (tên), nhãn
-  (tên), môn học (tên, mã môn, giảng viên), buổi học (tên môn, phòng, ghi chú của buổi) và buổi thi (tên
-  môn, phòng, ghi chú). Không tìm trong task ở
-  Thùng rác và không tìm trong lần dự kiến của task lặp.
+  (tên), môn học (tên, mã lớp học phần, giảng viên), buổi học (tên môn, mã lớp học phần của môn, phòng)
+  và buổi thi (tên học phần, mã học phần, phòng). Không tìm trong task ở Thùng rác và không tìm trong
+  lần dự kiến của task lặp. (Buổi học và buổi thi không có trường ghi chú.)
 - **FR-038**: So khớp PHẢI không phân biệt hoa thường và dấu tiếng Việt (kể cả đ/d); nhiều từ thì mục
   phải chứa đủ mọi từ.
 - **FR-039**: Kết quả PHẢI hiện ngay khi gõ (không cần Enter) trong khu vực chính, nhóm theo thứ tự:
@@ -591,8 +602,9 @@ chi tiết task mở ra.
 
 ### Measurable Outcomes
 
-- **SC-001**: Trong 30 ngày dùng bình thường (có những đêm gập máy), 100% các ngày Mac được bật có một
-  bản sao lưu thành công; mỗi bản bù được tạo trong vòng 5 phút sau khi Mac thức/phần lưu trữ chạy lại.
+- **SC-001**: Mỗi bản bù được tạo trong vòng 5 phút sau khi Mac thức / phần lưu trữ chạy lại (kiểm bằng
+  kịch bản gập máy); theo dõi tay trong 30 ngày dùng bình thường, 100% các ngày Mac được bật có một bản
+  sao lưu thành công.
 - **SC-002**: Khôi phục một bản sao lưu trả lại 100% dữ liệu (so sánh số lượng và nội dung task, danh
   sách, nhãn, môn học, buổi học, buổi thi, cài đặt) như lúc sao lưu; với dữ liệu một học kỳ đầy đủ,
   khôi phục xong trong dưới 1 phút.
@@ -602,8 +614,8 @@ chi tiết task mở ra.
   bản hợp lệ; số bản luôn không vượt quá giới hạn đã đặt (không tính file do người dùng tự đặt vào).
 - **SC-005**: 100% câu trong bảng FR-030 và các kịch bản US4 cho đúng tiêu đề và giá trị; phần tô sáng
   và xem trước cập nhật trong dưới 0,1 giây sau mỗi phím.
-- **SC-006**: Thêm task có hạn, nhãn và danh sách bằng một câu mất dưới 10 giây, nhanh hơn ít nhất một
-  nửa so với thêm rồi đặt từng trường trong bảng chi tiết.
+- **SC-006**: Thêm task có hạn, nhãn và danh sách bằng một câu (ví dụ "Họp nhóm mai 14h ~Cá nhân #Gấp")
+  mất dưới 10 giây, chỉ một lần nhấn Enter, không phải mở bảng chi tiết.
 - **SC-007**: Với các kiểu lặp (hằng ngày, mỗi N ngày, hằng tuần nhiều thứ, hằng tháng kể cả ngày 31)
   và các kiểu kết thúc, 100% lần kế tiếp có đúng ngày giờ trong 12 tháng liên tiếp; lần kế tiếp có
   trong Lời nhắc trên iPhone trong vòng 1 phút sau khi hoàn thành (khi đồng bộ bật và có mạng).
@@ -621,7 +633,8 @@ chi tiết task mở ra.
   người dùng; quên mật khẩu không thể làm mất bản sao lưu.
 - Giờ sao lưu mặc định 21:00 (buổi tối, lúc Mac thường đang bật); nếu máy ngủ hoặc tắt thì cơ chế bù đảm bảo vẫn có bản
   sao lưu mỗi ngày dùng máy.
-- Bản "Trước khi khôi phục" và bản "Thủ công" được tính vào số bản giữ lại như bản tự động.
+- Bản "Trước khi khôi phục" và bản "Thủ công" được tính vào số bản giữ lại như bản tự động (trừ ngoại lệ
+  ở FR-006: bản đang khôi phục không bị dọn giữa chừng).
 - Dữ liệu một học kỳ cỡ vài MB; 14 bản không chiếm đáng kể dung lượng iCloud.
 - Ảnh nhập lịch không được lưu (feature 001 FR-035) nên không có trong bản sao lưu. Trạng thái cửa sổ
   (kích thước, vị trí, nhóm thu gọn) không cần sao lưu.

@@ -82,8 +82,11 @@ không làm dữ liệu rời khỏi máy nên được phép.
 - Ứng dụng ĐƯỢC PHÉP ghi file sao lưu chứa toàn bộ dữ liệu vào một thư mục do người dùng chọn
   (ví dụ trên ổ SSD rời), kể cả thư mục nằm trong iCloud Drive của chính người dùng. Việc đưa
   file lên iCloud do macOS đảm nhiệm; ứng dụng không tự kết nối tới iCloud hay dịch vụ nào khác.
-- Sao lưu tự động PHẢI tắt được bất kỳ lúc nào trong cài đặt. Ứng dụng chỉ được tạo, đọc và xoá
-  các file sao lưu do chính nó tạo; không được đọc, sửa hay xoá file khác của người dùng.
+- Sao lưu tự động PHẢI tắt được bất kỳ lúc nào trong cài đặt. Trong thư mục sao lưu do ứng dụng
+  quản lý, ứng dụng chỉ được tạo, đọc và xoá các file sao lưu do chính nó tạo.
+- Ngoài thư mục đó, ứng dụng chỉ được ĐỌC một file sao lưu khi chính người dùng chủ động chọn file
+  đó để khôi phục (ví dụ sau khi cài lại máy). Ứng dụng KHÔNG tự đọc, sửa hay xoá bất kỳ file nào
+  nằm ngoài thư mục sao lưu của nó.
 - Dữ liệu gốc vẫn PHẢI lưu và xử lý hoàn toàn trên máy; bản sao lưu chỉ dùng để khôi phục.
 - Thư mục đích không có hoặc không ghi được KHÔNG ĐƯỢC làm hỏng hay chặn ứng dụng.
 
@@ -141,4 +144,4 @@ dễ dàng và không gây nhầm lẫn.
 - Mọi spec, plan và review PHẢI kiểm tra tuân thủ constitution; độ phức tạp vượt mức
   PHẢI có lý do chính đáng.
 
-**Version**: 2.3.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-05
+**Version**: 2.3.1 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-05
