@@ -18,12 +18,14 @@ import { EmptyState } from '../../ui/EmptyState';
 import { IconBook, IconPlus } from '../../ui/icons';
 import { Card, ItemList, ItemRow, Notice, Screen } from '../../ui/layout';
 import { useToast } from '../../ui/Toast';
+import { usePasteToImport } from '../imports/usePasteImage';
 
 /**
  * Mục Môn học (feature 002 US8 kịch bản 3): môn theo học kỳ, thêm một môn, nhập nhiều môn, sửa,
  * xoá có xác nhận, và lối vào "Nhập từ ảnh" (feature 001 US6).
  */
 export function SubjectsScreen() {
+  usePasteToImport();
   const semesters = useSemesters();
   const [semesterId, setSemesterId] = useState<number | null>(null);
   const [dialog, setDialog] = useState<'add' | 'bulk' | Subject | null>(null);

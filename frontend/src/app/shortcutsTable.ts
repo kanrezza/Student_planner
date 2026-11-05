@@ -15,6 +15,7 @@ export function shortcutGroups(): ShortcutGroup[] {
         { keys: '⌘3', label: t('shortcuts.goSubjects') },
         { keys: '⌘4', label: t('shortcuts.goExams') },
         { keys: '⌘5  ·  ⌘,', label: t('shortcuts.goSettings') },
+        { keys: '⌘V', label: t('shortcuts.pasteImage') },
         { keys: '⌘/', label: t('shortcuts.showShortcuts') },
         { keys: 'Esc', label: t('shortcuts.escape') },
       ],

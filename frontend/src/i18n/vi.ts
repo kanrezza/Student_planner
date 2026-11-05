@@ -137,6 +137,7 @@ export const vi = {
     goSubjects: 'Mở Môn học',
     goExams: 'Mở Lịch thi',
     goSettings: 'Mở Cài đặt',
+    pasteImage: 'Dán ảnh lịch học/lịch thi (ở Môn học, Lịch thi)',
     showShortcuts: 'Bảng phím tắt',
     escape: 'Đóng hộp thoại hoặc bảng chi tiết, bỏ chọn ô nhập',
     selectPrev: 'Chọn công việc trước',
@@ -432,10 +433,11 @@ export const vi = {
   import: {
     title: 'Nhập từ ảnh',
     subtitle:
-      'Kéo thả ảnh chụp thời khoá biểu hoặc “Lịch thi cá nhân”. Ảnh chỉ được xử lý trên máy, không được lưu.',
+      'Dán (⌘V), kéo thả hoặc chọn ảnh chụp thời khoá biểu hoặc “Lịch thi cá nhân”. Ảnh chỉ được xử lý trên máy, không được lưu.',
     open: 'Nhập từ ảnh',
-    drop: 'Kéo thả ảnh vào đây hoặc',
-    choose: 'Chọn ảnh',
+    drop: 'Dán ảnh (⌘V), kéo thả hoặc',
+    choose: 'chọn file',
+    noClipboardImage: 'Không có ảnh trong clipboard',
     formats: 'PNG, JPEG hoặc HEIC, tối đa 20 MB',
     tooBig: 'Ảnh vượt quá 20 MB, hãy chọn ảnh nhỏ hơn.',
     notImage: 'Chỉ nhận ảnh PNG, JPEG hoặc HEIC.',
