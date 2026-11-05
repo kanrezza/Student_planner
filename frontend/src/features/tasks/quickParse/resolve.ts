@@ -112,6 +112,7 @@ export function resolve(tokens: QuickToken[], ctx: QuickParseContext): Resolved 
 
   let dateValue: TokenValue | null = null;
   let time: string | null = null;
+  let daypartTime: string | null = null; // giờ mặc định của buổi, chỉ dùng khi không có giờ cụ thể
   let dayShift = 0;
   let alsoToday = false;
   let spec: RecurrenceSpec | null = null;
@@ -130,11 +131,16 @@ export function resolve(tokens: QuickToken[], ctx: QuickParseContext): Resolved 
           ({ time, dayShift } = done);
           alsoToday = value.alsoToday;
         }
+        if (value.date) dateValue = value.date;
         break;
       }
       case 'daypart':
-        time = DEFAULT_DAYPART_TIME[value.daypart];
+        daypartTime = DEFAULT_DAYPART_TIME[value.daypart];
         alsoToday = value.today;
+        break;
+      case 'dateDaypart':
+        dateValue = value.date;
+        daypartTime = DEFAULT_DAYPART_TIME[value.daypart];
         break;
       case 'tag':
         if (value.tagId !== null) {
@@ -158,6 +164,8 @@ export function resolve(tokens: QuickToken[], ctx: QuickParseContext): Resolved 
         break;
     }
   }
+
+  time ??= daypartTime;
 
   let dueDate: string | undefined;
   if (dateValue) {
