@@ -171,11 +171,16 @@ def _check_work_window(task) -> None:
 
 def create_task(data: dict) -> Task:
     tag_ids = data.pop("tag_ids", [])
+    tag_names = data.pop("tag_names", [])
     _check_list(data["list_id"])
     task = Task(**data)
     _check_work_window(task)
     db.session.add(task)
     db.session.flush()
+    if tag_names:
+        from app.services.tags import ensure_tags  # import muộn: tags ↔ tasks có vòng phụ thuộc
+
+        tag_ids = [*tag_ids, *ensure_tags(tag_names)]
     replace_tag_links(TaskTag, "task_id", task.id, tag_ids)
     bump_revision(db.session)
     db.session.commit()

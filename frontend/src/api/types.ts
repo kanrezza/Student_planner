@@ -38,6 +38,8 @@ export type Task = {
 
 export type TaskInput = {
   tag_ids?: number[];
+  /** Tên nhãn từ ô thêm nhanh: backend gắn nhãn có sẵn hoặc tạo mới (feature 003). */
+  tag_names?: string[];
   title: string;
   notes: string | null;
   due_date: string | null;

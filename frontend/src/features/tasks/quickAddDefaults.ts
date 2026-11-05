@@ -5,6 +5,7 @@
 import type { TaskView } from '../../api/tasks';
 import type { TaskInput } from '../../api/types';
 import { addDays } from '../../lib/dates';
+import type { QuickFields } from './quickParse';
 
 export type QuickAddDefaults = Pick<TaskInput, 'due_date' | 'list_id' | 'tag_ids'>;
 
@@ -26,15 +27,28 @@ export function quickAddDefaults(
   return { due_date: due ?? null, list_id: studyListId, tag_ids: [] };
 }
 
-/** Payload đầy đủ cho POST /tasks: ưu tiên Trung bình, không Quan trọng, nhắc theo mặc định. */
-export function quickAddInput(title: string, defaults: QuickAddDefaults): TaskInput {
-  return {
+/**
+ * Payload đầy đủ cho POST /tasks: ưu tiên Trung bình, không Quan trọng, nhắc theo mặc định.
+ * Giá trị hiểu được từ câu (`parsed`) được ưu tiên hơn mặc định của danh sách đang xem; nhãn hiểu được
+ * cộng thêm vào nhãn mặc định (feature 003 FR-033).
+ */
+export function quickAddInput(
+  title: string,
+  defaults: QuickAddDefaults,
+  parsed?: QuickFields,
+): TaskInput {
+  const input: TaskInput = {
     title: title.trim(),
     notes: null,
-    due_time: null,
-    priority: 2,
-    is_important: false,
+    due_time: parsed?.due_time ?? null,
+    priority: parsed?.priority ?? 2,
+    is_important: parsed?.is_important ?? false,
     reminder_minutes: null,
     ...defaults,
+    due_date: parsed?.due_date ?? defaults.due_date,
+    list_id: parsed?.list_id ?? defaults.list_id,
+    tag_ids: [...new Set([...(defaults.tag_ids ?? []), ...(parsed?.tag_ids ?? [])])],
   };
+  if (parsed?.tag_names.length) input.tag_names = parsed.tag_names;
+  return input;
 }

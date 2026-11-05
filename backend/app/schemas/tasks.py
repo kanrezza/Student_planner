@@ -23,6 +23,8 @@ class TaskIn(ApiModel):
     priority: Priority = 2
     list_id: int
     tag_ids: list[int] = []
+    # Tên nhãn từ ô thêm nhanh: gắn nhãn có sẵn (so khớp không dấu) hoặc tạo nhãn mới (feature 003).
+    tag_names: list[Annotated[VietnameseText, Field(min_length=1, max_length=50)]] = []
     # None = theo mặc định; -1 = tắt nhắc; ≥ 0 = số phút trước hạn (chỉ với task có giờ).
     reminder_minutes: int | None = Field(default=None, ge=-1)
     is_important: bool = False
