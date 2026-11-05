@@ -139,6 +139,14 @@ export const IconStarFilled = icon(
 
 export const IconPlus = icon('Plus', <path d="M10 4v12M4 10h12" />);
 
+export const IconSearch = icon(
+  'Search',
+  <>
+    <circle cx="8.8" cy="8.8" r="5" />
+    <path d="m12.6 12.6 3.9 3.9" />
+  </>,
+);
+
 export const IconChevronLeft = icon('ChevronLeft', <path d="m12 4.5-5.5 5.5 5.5 5.5" />);
 
 export const IconChevronRight = icon('ChevronRight', <path d="m8 4.5 5.5 5.5L8 15.5" />);

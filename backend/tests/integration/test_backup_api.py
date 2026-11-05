@@ -9,6 +9,8 @@ import zipfile
 
 import pytest
 
+from app.services import backup
+
 NAME_PATTERN = re.compile(
     r"^LichHoc-\d{4}-\d{2}-\d{2}-\d{4}-(tu-dong|thu-cong|truoc-khoi-phuc)\.lhbackup$"
 )
@@ -30,7 +32,7 @@ def test_dump_la_zip_co_manifest_va_data_dump(dump_response):
         dump = zf.read("data.dump")
     assert manifest["format"] == 1
     assert manifest["kind"] == "tu-dong"
-    assert manifest["schema_revision"] == "0006_backup"
+    assert manifest["schema_revision"] == backup._head_revision()
     assert manifest["app_version"]
     assert manifest["created_at"].endswith("+07:00")
     assert manifest["dump_size"] == len(dump)

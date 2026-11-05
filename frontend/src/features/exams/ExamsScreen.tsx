@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import type { ApiWarning } from '../../api/client';
 import { useDeleteExam, useExams } from '../../api/exams';
@@ -26,6 +27,20 @@ export function ExamsScreen() {
   const [dialog, setDialog] = useState<'add' | Exam | null>(null);
   const [deleting, setDeleting] = useState<Exam | null>(null);
   const remove = useDeleteExam();
+
+  // Từ kết quả tìm kiếm: `?thi=<id>` mở buổi thi đó (kể cả buổi đã qua) — feature 003 FR-042.
+  const [params, setParams] = useSearchParams();
+  const wantedExam = Number(params.get('thi')) || null;
+  useEffect(() => {
+    if (!wantedExam || !exams.data) return;
+    const found = exams.data.find((e) => e.id === wantedExam);
+    if (found) {
+      setDialog(found);
+      setParams({}, { replace: true });
+    } else if (!showPast) {
+      setShowPast(true);
+    }
+  }, [wantedExam, exams.data, showPast, setParams]);
   const toast = useToast();
 
   function finished(warnings?: ApiWarning[]) {
