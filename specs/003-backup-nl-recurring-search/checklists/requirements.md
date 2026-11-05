@@ -42,3 +42,11 @@
   (FR-027, thêm câu mẫu vào bảng FR-030 và US4 kịch bản 14); giờ sao lưu mặc định 21:00 (US1, US2,
   FR-001, Assumptions); thêm "!cao", "!tb", "!thấp" đặt mức ưu tiên (FR-026, FR-027, FR-028, FR-030,
   US4 kịch bản 15, Key Entities). Tất cả mục vẫn đạt.
+- Lần kiểm tra 3 (sau /speckit-clarify 2026-11-05, 4 câu hỏi): giờ trong câu ghép với ngày mặc định của
+  danh sách đang xem (FR-028, FR-033); "Lần này và các lần sau" đổi ngày thì dời quy tắc lặp (FR-020a);
+  thông báo macOS một lần khi quá 3 ngày chưa sao lưu (FR-008, US1 kịch bản 10); không mã hoá bản sao
+  lưu (FR-005). Tất cả mục vẫn đạt.
+- Lần kiểm tra 4 (2026-11-05): tìm kiếm thêm tên nhãn và tên danh sách, bấm vào thì lọc theo nhãn/danh
+  sách (FR-037, FR-039, FR-040, FR-042, US5 kịch bản 9); log sao lưu ghi vào file log hiện có của trình
+  đồng bộ chạy nền (FR-010a). Đã kiểm lại: giờ 1–5 là buổi chiều, giờ sao lưu mặc định 21:00 và
+  !cao/!tb/!thấp đều có trong spec. Tất cả mục vẫn đạt.
