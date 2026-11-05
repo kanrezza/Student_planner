@@ -49,13 +49,14 @@ và cũng dễ phát triển, bảo trì hơn.
 - KHÔNG cần server từ xa hay dịch vụ cloud; mọi chức năng PHẢI hoạt động đầy đủ khi không có
   kết nối internet.
 - KHÔNG kết nối ra ngoài máy. Kết nối nội bộ trong máy (localhost, ví dụ giữa giao diện,
-  backend và cơ sở dữ liệu chạy trên cùng máy Mac) được phép. Ngoại lệ duy nhất là đồng bộ
-  lịch qua iCloud của chính người dùng, nêu dưới đây.
+  backend và cơ sở dữ liệu chạy trên cùng máy Mac) được phép. Chỉ có hai ngoại lệ, nêu dưới
+  đây: đồng bộ lịch qua iCloud của chính người dùng, và sao lưu vào thư mục người dùng chọn
+  (kể cả iCloud Drive của chính người dùng).
 - Không gửi dữ liệu hay ảnh ra ngoài máy (không analytics, không telemetry, không gọi API
   hay dịch vụ AI từ xa). Mọi xử lý, kể cả nhận diện ảnh, PHẢI chạy hoàn toàn trên máy.
 - Không cần hỗ trợ Windows, Linux, mobile hay trình duyệt khác ngoài phạm vi chạy trên Mac.
 
-**Ngoại lệ duy nhất — đồng bộ lịch qua iCloud của chính người dùng**:
+**Ngoại lệ 1 — đồng bộ lịch qua iCloud của chính người dùng**:
 
 - Ứng dụng ĐƯỢC PHÉP ghi bản sao lời nhắc (buổi học, task) vào ứng dụng Lịch và Lời nhắc có sẵn
   trên Mac, để hệ thống của Apple tự đồng bộ qua iCloud của chính người dùng sang iPhone.
@@ -75,6 +76,20 @@ bảo mật, đồng bộ và hạ tầng, giữ ứng dụng nhỏ gọn, riên
 luôn mang theo Mac, nên lời nhắc trên iPhone là cần thiết; đi qua ứng dụng có sẵn của Apple
 giữ cho ứng dụng không kết nối ra ngoài máy và không cần server riêng. Kết nối localhost
 không làm dữ liệu rời khỏi máy nên được phép.
+
+**Ngoại lệ 2 — sao lưu vào thư mục người dùng chọn, kể cả iCloud Drive của chính người dùng**:
+
+- Ứng dụng ĐƯỢC PHÉP ghi file sao lưu chứa toàn bộ dữ liệu vào một thư mục do người dùng chọn
+  (ví dụ trên ổ SSD rời), kể cả thư mục nằm trong iCloud Drive của chính người dùng. Việc đưa
+  file lên iCloud do macOS đảm nhiệm; ứng dụng không tự kết nối tới iCloud hay dịch vụ nào khác.
+- Sao lưu tự động PHẢI tắt được bất kỳ lúc nào trong cài đặt. Ứng dụng chỉ được tạo, đọc và xoá
+  các file sao lưu do chính nó tạo; không được đọc, sửa hay xoá file khác của người dùng.
+- Dữ liệu gốc vẫn PHẢI lưu và xử lý hoàn toàn trên máy; bản sao lưu chỉ dùng để khôi phục.
+- Thư mục đích không có hoặc không ghi được KHÔNG ĐƯỢC làm hỏng hay chặn ứng dụng.
+
+**Lý do (ngoại lệ 2)**: Mất dữ liệu cục bộ là mất vĩnh viễn (Nguyên tắc V). Bản sao lưu nằm
+ngoài ổ trong của Mac — trên iCloud Drive hay ổ rời của chính người dùng — bảo vệ dữ liệu khi
+máy hỏng mà vẫn không cần server riêng và ứng dụng vẫn không tự kết nối ra ngoài máy.
 
 ### V. Dữ Liệu Cục Bộ Bền Vững
 
@@ -126,4 +141,4 @@ dễ dàng và không gây nhầm lẫn.
 - Mọi spec, plan và review PHẢI kiểm tra tuân thủ constitution; độ phức tạp vượt mức
   PHẢI có lý do chính đáng.
 
-**Version**: 2.2.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
+**Version**: 2.3.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-05
