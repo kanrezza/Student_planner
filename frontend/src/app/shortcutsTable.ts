@@ -21,6 +21,18 @@ export function shortcutGroups(): ShortcutGroup[] {
       ],
     },
     {
+      title: t('shortcuts.groupQuickAdd'),
+      rows: [
+        { keys: 'mai 9h', label: t('shortcuts.qaDate') },
+        { keys: '9 giờ tối', label: t('shortcuts.qaTime') },
+        { keys: '#Gấp', label: t('shortcuts.qaTag') },
+        { keys: '~Cá nhân', label: t('shortcuts.qaList') },
+        { keys: '*', label: t('shortcuts.qaImportant') },
+        { keys: '!cao  !tb  !thấp', label: t('shortcuts.qaPriority') },
+        { keys: 'Bấm', label: t('shortcuts.qaDismiss') },
+      ],
+    },
+    {
       title: t('shortcuts.groupTasks'),
       rows: [
         { keys: '↑', label: t('shortcuts.selectPrev') },

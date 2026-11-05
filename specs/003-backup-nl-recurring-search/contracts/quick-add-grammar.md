@@ -40,7 +40,7 @@ type QuickParseContext = {
 | tag | `#<chữ không khoảng trắng>` hoặc tên chọn từ gợi ý | nhãn có sẵn (khớp không dấu) hoặc nhãn mới |
 | list | `~<chữ>` hoặc tên chọn từ gợi ý | chỉ danh sách có sẵn |
 | important | `*` đứng riêng, `quan trọng` | `is_important = true` |
-| priority | `!cao`, `!tb`, `!thấp` | 3, 2, 1 |
+| priority | `!cao`, `!tb`, `!thấp` | 1, 2, 3 (theo nhãn của app: 1 = Cao, 2 = Trung bình, 3 = Thấp) |
 | recurrence | `hằng ngày`, `hàng ngày`, `mỗi ngày` | daily |
 | recurrence | `mỗi N ngày` (N 2–365) | every_n_days |
 | recurrence | `hằng tuần`, `hàng tuần`, `mỗi tuần` | weekly, thứ của hạn (hoặc hôm nay) |
