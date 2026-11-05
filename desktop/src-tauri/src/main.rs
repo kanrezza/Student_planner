@@ -3,6 +3,8 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod backup_cmds;
+mod deep_link;
 mod health;
 mod menu;
 
@@ -15,6 +17,7 @@ use std::time::Duration;
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WindowEvent};
+use tauri_plugin_deep_link::DeepLinkExt;
 
 use health::{check_health, HealthResult, BACKEND_ADDR};
 
@@ -109,6 +112,21 @@ fn load_web_ui(app: &AppHandle) {
     }
 }
 
+/// Liên kết `lichhoc://cai-dat/sao-luu`: hiện cửa sổ và chuyển tới trang đó nếu giao diện đã nạp.
+fn open_deep_link(app: &AppHandle, link: &str) {
+    let Some(target) = deep_link::target_url(link, BACKEND_ADDR) else {
+        return;
+    };
+    show_main_window(app);
+    if let (Some(window), Ok(url)) = (app.get_webview_window("main"), target.parse()) {
+        // Giao diện chưa nạp (đang ở trang chờ) thì thôi: app sẽ mở ở màn hình Hôm nay.
+        let loaded = window.url().is_ok_and(|current| current.host_str() == Some("127.0.0.1"));
+        if loaded {
+            let _ = window.navigate(url);
+        }
+    }
+}
+
 fn show_main_window(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
@@ -126,11 +144,19 @@ fn main() {
             show_main_window(app);
         }))
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_deep_link::init())
         .manage(Shared {
             wake: Mutex::new(wake_tx),
             orbstack_missing: AtomicBool::new(false),
         })
-        .invoke_handler(tauri::generate_handler![open_orbstack, retry_now])
+        .invoke_handler(tauri::generate_handler![
+            open_orbstack,
+            retry_now,
+            backup_cmds::pick_backup_folder,
+            backup_cmds::pick_backup_file,
+            backup_cmds::reveal_in_finder
+        ])
         .menu(|app| menu::build(app))
         .on_menu_event(|app, event| menu::handle_event(app, event.id().as_ref()))
         // Đóng cửa sổ (nút đỏ, ⌘W) chỉ ẩn đi; ⌘Q mới thoát.
@@ -141,6 +167,12 @@ fn main() {
             }
         })
         .setup(move |app| {
+            let handle = app.handle().clone();
+            app.deep_link().on_open_url(move |event| {
+                for url in event.urls() {
+                    open_deep_link(&handle, url.as_str());
+                }
+            });
             spawn_health_loop(app.handle().clone(), wake_rx);
             Ok(())
         })

@@ -41,7 +41,8 @@ build() {
         "$PYTHON" -m venv "$AGENT_DIR/.venv"
     fi
     "$AGENT_DIR/.venv/bin/pip" install --quiet --disable-pip-version-check \
-        "pyobjc-framework-EventKit>=10.3" "requests>=2.32" "py2app>=0.28.8"
+        "pyobjc-framework-EventKit>=10.3" "pyobjc-framework-UserNotifications>=10.3" \
+        "requests>=2.32" "py2app>=0.28.8"
 
     local work
     work="$(mktemp -d)"
@@ -72,6 +73,8 @@ install() {
     launchctl bootstrap "$DOMAIN" "$PLIST_DEST"
     echo "Đã cài và chạy LichHocAgent. Log: ~/Library/Logs/LichHocAgent/agent.log"
     echo "Nếu macOS hỏi quyền Lịch và Lời nhắc, hãy bấm \"Cho phép\"."
+    echo "Sao lưu tự động: lần đầu ghi vào iCloud Drive / ổ rời, macOS có thể hỏi quyền truy cập thư mục"
+    echo "và quyền gửi thông báo cho LichHocAgent — hãy bấm \"Cho phép\"."
 }
 
 case "${1:-}" in

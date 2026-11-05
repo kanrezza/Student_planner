@@ -64,6 +64,18 @@ class BackendClient:
         )
         resp.raise_for_status()
 
+    def upload_restore(self, path: Path) -> dict:
+        """Gửi file `.lhbackup` lên để khôi phục (nhận thân là chính file, theo từng khối)."""
+        with path.open("rb") as handle:
+            resp = self.http.post(
+                f"{self.base_url}/backup/restore",
+                data=handle,
+                headers={"Content-Type": "application/zip"},
+                timeout=DUMP_TIMEOUT_SECONDS,
+            )
+        resp.raise_for_status()
+        return resp.json()
+
     def download_backup(self, kind: str, dest: Path) -> tuple[str, str]:
         """Tải bản sao lưu mới tạo vào `dest` (theo khối 1 MB); trả (tên backend đặt, SHA-256)."""
         with self.http.get(

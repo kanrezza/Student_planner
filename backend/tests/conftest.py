@@ -70,7 +70,9 @@ def isolated_app(tmp_path_factory):
     flag = tmp_path_factory.mktemp("bao-tri") / "restoring"
     app = create_app(
         {
-            "SQLALCHEMY_DATABASE_URI": base.set(database=name).render_as_string(hide_password=False),
+            "SQLALCHEMY_DATABASE_URI": base.set(database=name).render_as_string(
+                hide_password=False
+            ),
             "TESTING": True,
             "RESTORE_FLAG_PATH": str(flag),
         }
