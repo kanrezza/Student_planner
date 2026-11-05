@@ -111,6 +111,26 @@ def _ns_date(iso: str):
     return NSDate.dateWithTimeIntervalSince1970_(datetime.fromisoformat(iso).timestamp())
 
 
+def all_day_range(date_iso: str) -> tuple[str, str]:
+    """Khoảng thời gian của sự kiện cả ngày: từ 00:00 đến 23:59:59 của ngày đó.
+
+    EventKit từ chối sự kiện có endDate không sau startDate ("The start date must be before the
+    end date"), kể cả khi sự kiện đặt là cả ngày.
+    """
+    start = datetime.fromisoformat(date_iso).astimezone()
+    start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+    return start.isoformat(), (start + timedelta(days=1, seconds=-1)).isoformat()
+
+
+def event_range(start_iso: str, end_iso: str | None) -> tuple[str, str]:
+    """Bảo đảm endDate luôn sau startDate; thiếu hoặc không hợp lệ thì lấy start + 1 giờ."""
+    start = datetime.fromisoformat(start_iso)
+    end = datetime.fromisoformat(end_iso) if end_iso else None
+    if end is None or end <= start:
+        end = start + timedelta(hours=1)
+    return start_iso, end.isoformat()
+
+
 class EventKitStore:
     """Ghi vào Lịch/Lời nhắc qua PyObjC (research R4).
 
@@ -242,8 +262,9 @@ class EventKitStore:
 
         event.setTitle_(item["title"])
         event.setLocation_(item.get("location"))
-        event.setStartDate_(_ns_date(item["start_at"]))
-        event.setEndDate_(_ns_date(item["end_at"]))
+        start_iso, end_iso = event_range(item["start_at"], item.get("end_at"))
+        event.setStartDate_(_ns_date(start_iso))
+        event.setEndDate_(_ns_date(end_iso))
         event.setURL_(NSURL.URLWithString_(url_from_key(item["sync_key"])))
         event.setAlarms_(None)
         for minutes in item.get("alarms_minutes_before", []):
@@ -272,13 +293,13 @@ class EventKitStore:
         """Bản tóm tắt: sự kiện cả ngày, báo đúng giờ tổng hợp (research R15)."""
         from Foundation import NSURL
 
-        day = datetime.fromisoformat(item["date"]).astimezone()
+        start_iso, end_iso = all_day_range(item["date"])
         event.setAllDay_(True)
         event.setTitle_(item["title"])
         event.setNotes_(item.get("notes"))
         event.setLocation_(None)
-        event.setStartDate_(_ns_date(day.isoformat()))
-        event.setEndDate_(_ns_date(day.isoformat()))
+        event.setStartDate_(_ns_date(start_iso))
+        event.setEndDate_(_ns_date(end_iso))
         event.setURL_(NSURL.URLWithString_(url_from_key(item["sync_key"])))
         event.setAlarms_(None)
         event.addAlarm_(self.ek.EKAlarm.alarmWithAbsoluteDate_(_ns_date(item["alarm_at"])))
