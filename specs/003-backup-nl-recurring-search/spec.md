@@ -47,6 +47,27 @@ iCloud Drive của chính người dùng (xem FR-014).
 
 Ví dụ trong spec lấy hôm nay là **Thứ Năm, 05/11/2026**.
 
+## Clarifications
+
+### Session 2026-11-05
+
+- Q: Đang xem danh sách có ngày mặc định (ví dụ "Ngày mai") mà câu chỉ có giờ, không có ngày, thì hạn
+  là gì? → A: Ghép giờ trong câu với ngày mặc định của danh sách đang xem (Ngày mai → ngày mai; Hôm nay /
+  7 ngày tới → hôm nay, kể cả khi giờ đã qua); danh sách không có ngày mặc định thì theo FR-028 (hôm nay
+  nếu giờ chưa qua, nếu không thì ngày mai).
+- Q: Sửa "Lần này và các lần sau" mà đổi ngày hạn của task lặp thì quy tắc lặp có dời theo không? → A:
+  Có — quy tắc dời theo ngày mới (hằng ngày / mỗi N ngày đếm lại từ ngày mới; hằng tuần thay thứ cũ
+  bằng thứ mới; hằng tháng đổi ngày D thành ngày mới); đổi giờ thì mọi lần sau đổi giờ theo.
+- Q: Ngoài cảnh báo nhẹ trong app, có gửi thông báo macOS khi sao lưu lỗi hoặc lâu không sao lưu
+  không? → A: Gửi một thông báo macOS khi đã quá 3 ngày không có bản sao lưu thành công; không nhắc lại
+  cho đến khi có bản thành công. Lỗi lẻ từng lần chỉ cảnh báo nhẹ trong app.
+- Q: File sao lưu có cần mã hoá bằng mật khẩu không? → A: Không mã hoá; dựa vào bảo vệ của iCloud và ổ
+  đĩa của chính người dùng, khôi phục không cần mật khẩu.
+- Q: Tìm kiếm có tìm cả tên nhãn và tên danh sách không? → A: Có; bấm vào kết quả nhãn/danh sách thì mở
+  danh sách task lọc theo nhãn/danh sách đó.
+- Q: Log của sao lưu ghi ở đâu? → A: Ghi vào file log hiện có của trình đồng bộ chạy nền (agent), như
+  các hoạt động nền khác.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Sao lưu tự động hằng ngày (Priority: P1)
@@ -82,7 +103,7 @@ còn 14 bản mới nhất.
    **Then** chỉ còn 7 bản mới nhất.
 6. **Given** người dùng chọn thư mục trên ổ SSD rời rồi tháo ổ, **When** đến giờ sao lưu, **Then** app
    bỏ qua lần này, không treo, không hiện hộp thoại chặn; Cài đặt và thanh trạng thái hiện cảnh báo
-   nhẹ "Không tìm thấy thư mục sao lưu (ổ đĩa có thể đã được tháo). Sẽ thử lại khi ổ được cắm lại.";
+   nhẹ (không có thông báo macOS) "Không tìm thấy thư mục sao lưu (ổ đĩa có thể đã được tháo). Sẽ thử lại khi ổ được cắm lại.";
    khi ổ được cắm lại, app sao lưu bù trong vòng 5 phút.
 7. **Given** người dùng bấm "Sao lưu ngay", **Then** app tạo một bản sao lưu ngay, nút hiện trạng thái
    đang chạy, xong thì trạng thái trong Cài đặt cập nhật; app vẫn dùng bình thường trong lúc sao lưu.
@@ -91,6 +112,9 @@ còn 14 bản mới nhất.
 9. **Given** sao lưu thất bại (ví dụ ổ đầy), **Then** Cài đặt hiện "Lần gần nhất thất bại" kèm lý do
    tiếng Việt và cách khắc phục, các bản sao lưu cũ không bị xoá, và lần sao lưu thành công gần nhất
    vẫn được hiện riêng.
+10. **Given** đã quá 3 ngày không có bản sao lưu thành công (ví dụ SSD rời tháo suốt 4 ngày), **Then** app
+    gửi đúng một thông báo macOS "Đã 3 ngày chưa sao lưu được dữ liệu…"; bấm vào thì mở Cài đặt → Sao
+    lưu; không có thông báo thứ hai cho đến khi sao lưu lại thành công.
 
 ---
 
@@ -185,7 +209,7 @@ mà không có nó (đặt hạn trong bảng chi tiết như hiện nay).
 **Independent Test**: Gõ từng câu trong bảng ví dụ ở FR-030, kiểm tra phần tô sáng, phần xem trước và
 task tạo ra; bấm vào phần tô sáng để huỷ và kiểm tra tiêu đề giữ chữ đó.
 
-**Acceptance Scenarios** (hôm nay Thứ Năm 05/11/2026, 10:00):
+**Acceptance Scenarios** (hôm nay Thứ Năm 05/11/2026, 10:00; trừ khi ghi khác, đang xem danh sách Tất cả):
 
 1. **Given** gõ "Nộp bài QTDA thứ 6 9h #Gấp", **Then** tô sáng "thứ 6", "9h", "#Gấp"; xem trước "Hạn:
    09:00 Thứ Sáu, 06/11 · Nhãn: Gấp"; Enter tạo task "Nộp bài QTDA".
@@ -211,7 +235,8 @@ task tạo ra; bấm vào phần tô sáng để huỷ và kiểm tra tiêu đ�
 12. **Given** gõ "Viết báo cáo *", **Then** dấu * được tô sáng, xem trước có "★ Quan trọng"; task tạo ra
     là Quan trọng với tiêu đề "Viết báo cáo".
 13. **Given** đang xem danh sách Ngày mai và gõ "Nộp bài thứ 6", **Then** hạn trong câu (Thứ Sáu)
-    được dùng thay cho mặc định của danh sách đang xem.
+    được dùng thay cho mặc định của danh sách đang xem. Gõ "Họp nhóm 9h" (chỉ có giờ) thì hạn 09:00
+    ngày mai (giờ ghép với ngày của danh sách đang xem).
 14. **Given** gõ "Học nhóm 3h", **Then** hạn 15:00 hôm nay (giờ 1–5 không kèm buổi là buổi chiều); gõ
     "Chạy bộ 5h sáng" thì hạn 05:00 ngày mai (05:00 hôm nay đã qua).
 15. **Given** gõ "Làm bài tập !cao", **Then** "!cao" được tô sáng, xem trước có "Ưu tiên: Cao"; task tạo
@@ -223,7 +248,8 @@ task tạo ra; bấm vào phần tô sáng để huỷ và kiểm tra tiêu đ�
 
 Người dùng nhấn ⌘F (hoặc bấm ô tìm kiếm ở đầu cột danh sách) và gõ "nop bai". Ngay khi gõ, kết quả
 hiện nhóm theo loại: Công việc, Môn học, Buổi học, Buổi thi; chữ khớp được tô sáng ("**Nộp bài**
-QTDA"). Bấm vào một kết quả để mở chi tiết của nó.
+QTDA"). Kết quả gồm cả danh sách và nhãn có tên khớp. Bấm vào một kết quả để mở chi tiết của nó (với
+danh sách và nhãn: mở danh sách task lọc theo danh sách / nhãn đó).
 
 **Why this priority**: Hữu ích khi dữ liệu nhiều, nhưng duyệt danh sách và lịch hiện vẫn đủ dùng.
 
@@ -246,6 +272,9 @@ chi tiết task mở ra.
 6. **Given** không có kết quả, **Then** hiện "Không tìm thấy kết quả cho “…”".
 7. **Given** đang tìm, **When** nhấn Esc, **Then** xoá ô tìm và trở lại màn hình trước đó.
 8. **Given** task ở Thùng rác khớp từ khoá, **Then** không có trong kết quả.
+9. **Given** có nhãn "Gấp" và danh sách "📚 Học tập", **When** gõ "gap" hoặc "hoc tap", **Then** nhóm Nhãn
+   có "Gấp" / nhóm Danh sách có "Học tập" (kèm số task chưa xong); bấm vào thì mục Công việc mở nhãn /
+   danh sách đó với task được lọc theo nhãn / danh sách.
 
 ---
 
@@ -341,7 +370,8 @@ chi tiết task mở ra.
   trên ổ SSD rời) và trở lại thư mục mặc định bằng nút "Dùng thư mục mặc định".
 - **FR-005**: Mỗi bản sao lưu là một file riêng, tên chứa ngày giờ tạo (ví dụ
   `LichHoc-2026-11-05-2100.backup`) và loại bản; một bản chỉ được coi là hợp lệ khi đã ghi xong và
-  kiểm tra đọc lại được — bản dở dang không bao giờ xuất hiện như bản hợp lệ.
+  kiểm tra đọc lại được — bản dở dang không bao giờ xuất hiện như bản hợp lệ. Bản sao lưu không mã hoá và
+  khôi phục không cần mật khẩu.
 - **FR-006**: App PHẢI giữ N bản gần nhất (mặc định 14, chỉnh được từ 1 đến 365) và tự xoá bản cũ hơn,
   chỉ sau khi bản mới đã tạo thành công; app chỉ được xoá file sao lưu do chính nó tạo trong thư mục
   đích hiện tại.
@@ -349,8 +379,12 @@ chi tiết task mở ra.
   treo, không hiện hộp thoại chặn và không ảnh hưởng chức năng khác; hiện cảnh báo nhẹ (không chặn)
   trong Cài đặt và một chấm cảnh báo trên biểu tượng Cài đặt ở thanh biểu tượng, rồi thử lại theo
   FR-003.
-- **FR-008**: App PHẢI cảnh báo nhẹ (chấm cảnh báo + dòng trong Cài đặt) khi đã quá 3 ngày không có
-  bản sao lưu thành công trong lúc sao lưu tự động đang bật.
+- **FR-008**: Khi sao lưu tự động đang bật mà đã quá 3 ngày không có bản sao lưu thành công, app PHẢI
+  (a) cảnh báo nhẹ (chấm cảnh báo + dòng trong Cài đặt) và (b) gửi đúng một thông báo macOS bằng tiếng
+  Việt, kể cả khi cửa sổ app đang đóng, ví dụ "Đã 3 ngày chưa sao lưu được dữ liệu. Mở Cài đặt → Sao
+  lưu để kiểm tra."; bấm vào thông báo mở Cài đặt → Sao lưu. Không gửi lại cho đến khi có một bản sao
+  lưu thành công (sau đó bộ đếm bắt đầu lại). Mỗi lần thất bại lẻ chỉ cảnh báo nhẹ trong app, không gửi
+  thông báo macOS.
 - **FR-009**: Cài đặt PHẢI có mục "Sao lưu" gồm: công tắc bật/tắt sao lưu tự động (mặc định bật), giờ
   sao lưu, thư mục đích (đường dẫn dễ đọc + nút "Chọn thư mục…" + "Mở trong Finder"), số bản giữ lại,
   trạng thái lần gần nhất (thời gian, dung lượng, Thành công/Thất bại kèm lý do tiếng Việt và cách
@@ -361,6 +395,9 @@ chi tiết task mở ra.
 
 **Khôi phục (US2)**
 
+- **FR-010a**: Mỗi lần sao lưu, khôi phục và xoá bản cũ (bắt đầu, kết thúc, kết quả, dung lượng, lý do
+  lỗi, thư mục đích) PHẢI được ghi vào file log hiện có của trình đồng bộ chạy nền (cùng file với các
+  hoạt động nền khác, vị trí đã ghi trong README); log không chứa nội dung dữ liệu của người dùng.
 - **FR-011**: Danh sách bản sao lưu PHẢI hiện các bản hợp lệ trong thư mục đích hiện tại, mới nhất ở
   trên, mỗi bản có ngày giờ (định dạng Việt Nam), dung lượng, loại (Tự động / Thủ công / Trước khi
   khôi phục) và nút "Khôi phục". Có thêm "Chọn bản sao lưu khác…" để khôi phục từ một file bất kỳ.
@@ -401,6 +438,11 @@ chi tiết task mở ra.
   lần hiện tại (xoá thì lần hiện tại vào Thùng rác, lần kế tiếp xuất hiện). "Lần này và các lần sau":
   thay đổi áp dụng cho lần hiện tại và mọi lần sau (xoá thì task vào Thùng rác và chuỗi dừng). Sửa
   riêng trường "Lặp lại" luôn áp dụng cho cả chuỗi và không hỏi.
+- **FR-020a**: Đổi ngày hạn với "Lần này và các lần sau" (trong bảng chi tiết hoặc kéo thả) PHẢI dời
+  quy tắc lặp theo ngày mới: hằng ngày / mỗi N ngày đếm lại từ ngày mới; hằng tuần thay thứ của lần
+  hiện tại bằng thứ mới (T2+T5, dời lần Thứ Hai sang Thứ Ba → T3+T5; nếu thứ mới đã có trong quy tắc
+  thì chỉ bỏ thứ cũ); hằng tháng đổi ngày D thành ngày của hạn mới. Đổi giờ hạn thì mọi lần sau dùng
+  giờ mới. Kiểu kết thúc và số lần đã tạo giữ nguyên.
 - **FR-021**: Danh sách thông minh, nhóm task, số đếm và tìm kiếm chỉ tính **lần hiện tại** của task
   lặp. Dòng task lặp có biểu tượng lặp; rê chuột hiện mô tả quy tắc bằng tiếng Việt (ví dụ "Lặp hằng
   tuần vào Thứ Hai, Thứ Năm · đến 30/11/2026").
@@ -442,8 +484,11 @@ chi tiết task mở ra.
     hạn); "ngày D hằng tháng".
 - **FR-028**: Quy tắc suy ra hạn:
   - "thứ X" = ngày thứ X gần nhất từ hôm nay trở đi; nếu là hôm nay mà giờ đã qua thì là tuần sau.
-  - Chỉ có ngày, không giờ → hạn cả ngày (không giờ). Chỉ có giờ, không ngày → hôm nay nếu giờ chưa
-    qua, nếu đã qua thì ngày mai.
+  - Chỉ có ngày, không giờ → hạn cả ngày (không giờ). Chỉ có giờ, không ngày → nếu danh sách đang xem
+    có ngày mặc định (feature 002 FR-017: Hôm nay, Ngày mai, 7 ngày tới) thì ghép giờ với ngày đó, kể cả
+    khi giờ đã qua (ở Ngày mai: "Họp nhóm 9h" → 09:00 ngày mai; ở Hôm nay lúc 10:00: "Mua sữa 8h" →
+    08:00 hôm nay, hiện "đã qua"); nếu không (Tất cả, danh sách của người dùng, nhãn) thì hôm nay nếu
+    giờ chưa qua, nếu đã qua thì ngày mai.
   - "DD/MM" không năm → năm nay, hoặc năm sau nếu ngày đó đã qua.
   - Cụm lặp không có ngày → lần đầu là ngày khớp quy tắc gần nhất từ hôm nay (theo cùng quy tắc giờ).
   - Mỗi loại chỉ hiểu cụm đầu tiên (một ngày, một giờ, một danh sách, một mức ưu tiên, một quy tắc lặp); cụm cùng loại
@@ -453,7 +498,7 @@ chi tiết task mở ra.
 - **FR-030**: Ngay khi gõ (không quá 0,1 giây sau mỗi phím), các cụm được hiểu PHẢI được tô sáng trong ô
   và dưới ô hiện dòng xem trước gồm những gì sẽ được đặt: "Hạn: 09:00 Thứ Sáu, 06/11", "Lặp: hằng tuần
   vào Thứ Hai", "Danh sách: 📚 Học tập", "Nhãn: Gấp" (hoặc "Nhãn mới: …"), "★ Quan trọng", "Ưu tiên: Cao", và tiêu đề
-  sẽ tạo. Bảng ví dụ bắt buộc phải đúng (hôm nay Thứ Năm 05/11/2026, 10:00):
+  sẽ tạo. Bảng ví dụ bắt buộc phải đúng (hôm nay Thứ Năm 05/11/2026, 10:00, đang xem danh sách Tất cả):
 
   | Gõ | Tiêu đề | Kết quả |
   |----|---------|---------|
@@ -482,7 +527,8 @@ chi tiết task mở ra.
   trắng thừa, bỏ dấu câu thừa ở đầu/cuối), cùng các giá trị đã hiểu; tiêu đề rỗng thì không tạo và xem
   trước báo "Thiếu tên công việc".
 - **FR-033**: Giá trị hiểu được từ câu PHẢI được ưu tiên hơn giá trị mặc định theo danh sách đang xem
-  (feature 002 FR-017); trường nào câu không nói thì dùng mặc định như cũ. Nhãn hiểu được cộng thêm vào
+  (feature 002 FR-017); trường nào câu không nói thì dùng mặc định như cũ (câu chỉ có giờ thì giờ ghép
+  với ngày mặc định của danh sách, xem FR-028). Nhãn hiểu được cộng thêm vào
   nhãn mặc định của danh sách nhãn đang xem.
 - **FR-034**: Gõ "#" hoặc "~" PHẢI mở gợi ý tự hoàn thành (nhãn / danh sách hiện có, kèm màu hoặc
   emoji), lọc theo chữ gõ tiếp không phân biệt dấu và hoa thường; chọn bằng ↑/↓ + Enter/Tab hoặc bấm
@@ -494,22 +540,25 @@ chi tiết task mở ra.
 
 - **FR-036**: Đầu cột danh sách (mục Công việc) PHẢI có ô tìm kiếm; ⌘F ở mọi nơi trong app PHẢI chuyển
   đến mục Công việc và đặt con trỏ vào ô tìm. ⌘F được thêm vào bảng phím tắt (⌘/).
-- **FR-037**: Tìm kiếm PHẢI tìm trong: task (tiêu đề, ghi chú), môn học (tên, mã môn, giảng viên), buổi
-  học (tên môn, phòng, ghi chú của buổi) và buổi thi (tên môn, phòng, ghi chú). Không tìm trong task ở
+- **FR-037**: Tìm kiếm PHẢI tìm trong: task (tiêu đề, ghi chú), danh sách của người dùng (tên), nhãn
+  (tên), môn học (tên, mã môn, giảng viên), buổi học (tên môn, phòng, ghi chú của buổi) và buổi thi (tên
+  môn, phòng, ghi chú). Không tìm trong task ở
   Thùng rác và không tìm trong lần dự kiến của task lặp.
 - **FR-038**: So khớp PHẢI không phân biệt hoa thường và dấu tiếng Việt (kể cả đ/d); nhiều từ thì mục
   phải chứa đủ mọi từ.
 - **FR-039**: Kết quả PHẢI hiện ngay khi gõ (không cần Enter) trong khu vực chính, nhóm theo thứ tự:
-  Công việc, Môn học, Buổi học, Buổi thi; mỗi nhóm có tên và số kết quả, nhóm trống không hiện, mỗi nhóm
+  Công việc, Danh sách, Nhãn, Môn học, Buổi học, Buổi thi; mỗi nhóm có tên và số kết quả, nhóm trống không hiện, mỗi nhóm
   tối đa 20 mục kèm "Xem thêm (n)". Mỗi mục hiện thông tin nhận diện (task: tiêu đề, danh sách, hạn;
-  buổi học/thi: môn, ngày giờ, phòng) và đoạn trích quanh chỗ khớp nếu khớp ở ghi chú; chữ khớp được tô
+  danh sách: emoji, tên, số task chưa xong; nhãn: chấm màu, tên, số task chưa xong; buổi học/thi: môn,
+  ngày giờ, phòng) và đoạn trích quanh chỗ khớp nếu khớp ở ghi chú; chữ khớp được tô
   sáng.
 - **FR-040**: Thứ tự trong nhóm: Công việc theo hạn gần nhất (task không hạn ở cuối); Buổi học và Buổi
-  thi sắp tới trước (gần nhất trước), rồi đến buổi đã qua (gần nhất trước); Môn học theo tên.
+  thi sắp tới trước (gần nhất trước), rồi đến buổi đã qua (gần nhất trước); Danh sách, Nhãn và Môn học theo tên.
 - **FR-041**: Có tuỳ chọn "Gồm cả đã hoàn thành" (mặc định tắt); khi bật, task đã hoàn thành xuất hiện
   với dạng mờ có dấu đã xong.
 - **FR-042**: Bấm vào kết quả (hoặc chọn bằng ↑/↓ và Enter) PHẢI mở chi tiết: task → bảng chi tiết task;
-  môn học → trang Môn học tại môn đó; buổi học → chi tiết buổi học; buổi thi → chi tiết buổi thi. Ô tìm
+  danh sách → mục Công việc mở danh sách đó (task lọc theo danh sách); nhãn → mục Công việc mở nhãn đó
+  (task lọc theo nhãn); môn học → trang Môn học tại môn đó; buổi học → chi tiết buổi học; buổi thi → chi tiết buổi thi. Ô tìm
   giữ từ khoá để quay lại kết quả.
 - **FR-043**: Esc trong ô tìm PHẢI xoá từ khoá và trở về màn hình trước khi tìm; không có kết quả thì
   hiện "Không tìm thấy kết quả cho “…”".
@@ -536,7 +585,7 @@ chi tiết task mở ra.
 - **Lần dự kiến** (suy ra, không lưu): ngày giờ các lần sau của chuỗi, dùng cho lịch và bản tóm tắt.
 - **Kết quả hiểu câu** (tạm thời, không lưu): các cụm được hiểu kèm vị trí trong câu, giá trị (ngày
   giờ, nhãn, danh sách, Quan trọng, mức ưu tiên, quy tắc lặp), cụm đã bị huỷ hiểu, tiêu đề còn lại.
-- **Kết quả tìm kiếm** (suy ra, không lưu): loại, mục, trường khớp, vị trí khớp.
+- **Kết quả tìm kiếm** (suy ra, không lưu): loại (task, danh sách, nhãn, môn học, buổi học, buổi thi), mục, trường khớp, vị trí khớp.
 
 ## Success Criteria *(mandatory)*
 
@@ -568,8 +617,8 @@ chi tiết task mở ra.
 
 - Người dùng đã đăng nhập iCloud và bật iCloud Drive trên Mac; nếu không, người dùng chọn thư mục khác.
   Đồng bộ file sao lưu lên iCloud do macOS đảm nhiệm; app chỉ ghi file vào thư mục.
-- File sao lưu không mã hoá vì nằm trong iCloud Drive hoặc ổ đĩa của chính người dùng; mã hoá nằm
-  ngoài phạm vi.
+- File sao lưu không mã hoá (đã chốt ở Clarifications) vì nằm trong iCloud Drive hoặc ổ đĩa của chính
+  người dùng; quên mật khẩu không thể làm mất bản sao lưu.
 - Giờ sao lưu mặc định 21:00 (buổi tối, lúc Mac thường đang bật); nếu máy ngủ hoặc tắt thì cơ chế bù đảm bảo vẫn có bản
   sao lưu mỗi ngày dùng máy.
 - Bản "Trước khi khôi phục" và bản "Thủ công" được tính vào số bản giữ lại như bản tự động.
