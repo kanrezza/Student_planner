@@ -39,7 +39,7 @@ export function quickAddInput(
 ): TaskInput {
   const input: TaskInput = {
     title: title.trim(),
-    notes: null,
+    notes: parsed?.notes ?? null,
     due_time: parsed?.due_time ?? null,
     priority: parsed?.priority ?? 2,
     is_important: parsed?.is_important ?? false,

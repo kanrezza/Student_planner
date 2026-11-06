@@ -11,7 +11,7 @@ export type * from './types';
 
 export function parseQuickAdd(text: string, ctx: QuickParseContext): QuickParse {
   const tokens = tokenize(text, ctx);
-  const { fields, dueInPast } = resolve(tokens, ctx);
+  const { fields, dueInPast, rangeError } = resolve(tokens, ctx);
   const title = buildTitle(text, tokens);
-  return { title, tokens, fields, dueInPast, titleMissing: title === '' };
+  return { title, tokens, fields, dueInPast, titleMissing: title === '', rangeError };
 }

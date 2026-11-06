@@ -239,6 +239,15 @@ Lời nhắc/iPhone; bật cụm lặp trong thêm nhanh.
 
 ---
 
+## Phase 7a: Bổ sung US4 — Khoảng ngày "từ A đến B" (FR-028a)
+
+- [x] T099 [US4] Cập nhật `spec.md` (US4-11…13, FR-028a) và `contracts/quick-add-grammar.md` (mục "Khoảng ngày")
+- [x] T100 [P] [US4] Ca kiểm thử trong `frontend/src/features/tasks/quickParse/quickParse.cases.ts`: "học quizz quản trị 21h hằng ngày từ 6/11 đến 11/11", "học quizz quản trị từ 6/11 đến 11/11", "Làm đồ án đến hết 20/11", các dạng "A - B", "A đến B", không dấu, B trước A, A đã qua không năm, có giờ, tắt lặp; thêm `notes`, `rangeError` vào kết quả so sánh
+- [x] T101 [US4] Token `range` trong `quickParse/` (`types.ts`, `tokenize.ts`, `resolve.ts`, `index.ts`): nhận diện, một khối tô sáng, bỏ khỏi tiêu đề, `recurrence.end`, `notes`, `rangeError`
+- [x] T102 [US4] Giao diện: chip xem trước "Lặp: … · đến DD/MM/YYYY", "Ghi chú: Bắt đầu: …", cảnh báo "Ngày kết thúc trước ngày bắt đầu"; gửi `notes` khi tạo (`quickAddDefaults.ts`); test `tests/quickAdd.test.tsx`
+
+---
+
 ## Phase 8: Polish & Cross-Cutting Concerns
 
 - [x] T094 [P] Cập nhật `README.md`: thêm nhanh bằng câu (bảng cú pháp ngắn), tìm kiếm ⌘F, task lặp; bảng phím tắt thêm ⌘F; cập nhật `specs/002-redesign-macos-app/contracts/ui-shortcuts.md` hoặc trỏ sang `specs/003-backup-nl-recurring-search/contracts/ui.md`

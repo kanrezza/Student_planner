@@ -1,6 +1,6 @@
 import type { TaskList } from '../../api/types';
 import { t } from '../../i18n/vi';
-import { formatDayLong, formatDayShort } from '../../lib/dates';
+import { formatDate, formatDayLong, formatDayShort } from '../../lib/dates';
 import { describeRecurrence } from './quickParse/describe';
 import type { QuickParse } from './quickParse';
 
@@ -42,8 +42,16 @@ export function QuickAddPreview({
   if (recurrence && fields.recurrence) {
     chips.push({
       key: 'repeat',
-      text: t('quickAdd.repeat', { rule: describeRecurrence(fields.recurrence) }),
+      text:
+        t('quickAdd.repeat', { rule: describeRecurrence(fields.recurrence) }) +
+        (fields.recurrence.end.kind === 'on_date'
+          ? ` · ${t('quickAdd.repeatUntil', { date: formatDate(fields.recurrence.end.date) })}`
+          : ''),
     });
+  }
+  if (fields.notes) chips.push({ key: 'notes', text: t('quickAdd.note', { note: fields.notes }) });
+  if (parse.rangeError) {
+    chips.push({ key: 'rangeError', text: t('quickAdd.rangeError'), tone: 'danger' });
   }
   if (list) {
     chips.push({

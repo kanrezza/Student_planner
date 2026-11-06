@@ -1,5 +1,5 @@
 /** Từ các cụm được hiểu → giá trị cụ thể của task (contracts/quick-add-grammar.md, FR-028). */
-import { addDays, formatTime, isoWeekday, toIsoDate } from '../../../lib/dates';
+import { addDays, formatDate, formatTime, isoWeekday, toIsoDate } from '../../../lib/dates';
 import { DEFAULT_DAYPART_TIME, finalizeHour, pad2 } from './clock';
 import { foldVi } from '../../../lib/foldVi';
 import type {
@@ -13,7 +13,7 @@ import type {
 
 type ClockValue = Extract<TokenValue, { type: 'clock' }>;
 
-type Resolved = { fields: QuickFields; dueInPast: boolean };
+type Resolved = { fields: QuickFields; dueInPast: boolean; rangeError: boolean };
 
 function lastDayOfMonth(year: number, month: number): number {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
@@ -68,32 +68,61 @@ function dateOf(
   }
 }
 
-/** Ngày đầu tiên khớp quy tắc, từ hôm nay trở đi (không sinh ngày đã qua). */
+/**
+ * Ngày đầu tiên khớp quy tắc, từ `base` trở đi (không sinh ngày đã qua). Giờ đã qua chỉ có nghĩa khi
+ * `base` là hôm nay.
+ */
 function firstDateOfRecurrence(
   spec: RecurrenceSpec,
+  base: string,
   today: string,
   nowTime: string,
   time: string | null,
 ): string {
-  const passedToday = time !== null && time <= nowTime;
+  const passedToday = base === today && time !== null && time <= nowTime;
   if (spec.freq === 'weekly') {
-    const days = spec.weekdays?.length ? spec.weekdays : [isoWeekday(today)];
+    const days = spec.weekdays?.length ? spec.weekdays : [isoWeekday(base)];
     for (let offset = passedToday ? 1 : 0; offset <= 7; offset += 1) {
-      if (days.includes(isoWeekday(addDays(today, offset)))) return addDays(today, offset);
+      if (days.includes(isoWeekday(addDays(base, offset)))) return addDays(base, offset);
     }
   }
   if (spec.freq === 'monthly') {
-    const [year, month, day] = today.split('-').map(Number);
+    const [year, month, day] = base.split('-').map(Number);
     const wanted = spec.month_day ?? day;
     const thisMonth = monthDate(year, month, wanted);
-    if (thisMonth > today || (thisMonth === today && !passedToday)) return thisMonth;
+    if (thisMonth > base || (thisMonth === base && !passedToday)) return thisMonth;
     return month === 12 ? monthDate(year + 1, 1, wanted) : monthDate(year, month + 1, wanted);
   }
-  return passedToday ? addDays(today, 1) : today; // hằng ngày / mỗi N ngày
+  return passedToday ? addDays(base, 1) : base; // hằng ngày / mỗi N ngày
 }
 
-function finishRecurrence(spec: RecurrenceSpec, dueDate: string | undefined): RecurrenceRule {
-  const rule: RecurrenceRule = { ...spec, end: { kind: 'never' } };
+/** Ngày bắt đầu của khoảng: "6/11" không năm tính cùng năm với ngày kết thúc (FR-028a). */
+function rangeStart(
+  from: TokenValue,
+  to: string,
+  today: string,
+  nowTime: string,
+  time: string | null,
+): string | null {
+  if (from.type === 'calendar' && from.year === null) {
+    const year = Number(to.slice(0, 4));
+    if (from.day <= lastDayOfMonth(year, from.month)) {
+      const sameYear = isoDate(year, from.month, from.day);
+      if (sameYear <= to && sameYear < today) return sameYear; // đã qua nhưng không sau B
+    }
+  }
+  return dateOf(from, today, nowTime, time);
+}
+
+function finishRecurrence(
+  spec: RecurrenceSpec,
+  dueDate: string | undefined,
+  endDate: string | null,
+): RecurrenceRule {
+  const rule: RecurrenceRule = {
+    ...spec,
+    end: endDate ? { kind: 'on_date', date: endDate } : { kind: 'never' },
+  };
   if (spec.freq === 'weekly' && !spec.weekdays?.length) {
     rule.weekdays = [dueDate ? isoWeekday(dueDate) : 0].filter(Boolean);
   }
@@ -116,6 +145,7 @@ export function resolve(tokens: QuickToken[], ctx: QuickParseContext): Resolved 
   let dayShift = 0;
   let alsoToday = false;
   let spec: RecurrenceSpec | null = null;
+  let range: Extract<TokenValue, { type: 'range' }> | null = null;
 
   for (const { value } of live) {
     switch (value.type) {
@@ -162,18 +192,47 @@ export function resolve(tokens: QuickToken[], ctx: QuickParseContext): Resolved 
       case 'recurrence':
         spec = value.spec;
         break;
+      case 'range':
+        range = value;
+        break;
     }
   }
 
   time ??= daypartTime;
 
+  // Khoảng ngày "từ A đến B" (FR-028a).
   let dueDate: string | undefined;
-  if (dateValue) {
+  let endDate: string | null = null;
+  let rangeError = false;
+  let rangeDone = false;
+  if (range) {
+    const to = dateOf(range.to, today, nowTime, time);
+    const from = range.from && to ? rangeStart(range.from, to, today, nowTime, time) : null;
+    if (!to || (range.from && (!from || from > to))) {
+      rangeError = true;
+    } else if (spec) {
+      const base = from && from > today ? from : today;
+      const first = firstDateOfRecurrence(spec, base, today, nowTime, time);
+      if (first > to) rangeError = true;
+      else {
+        dueDate = first;
+        endDate = to;
+        rangeDone = true;
+      }
+    } else {
+      dueDate = to;
+      if (from) fields.notes = `Bắt đầu: ${formatDate(from)}`;
+      rangeDone = true;
+    }
+  }
+  if (rangeDone) {
+    // đã có hạn từ khoảng ngày
+  } else if (dateValue) {
     dueDate = dateOf(dateValue, today, nowTime, time) ?? undefined;
   } else if (alsoToday) {
     dueDate = today;
   } else if (spec) {
-    dueDate = firstDateOfRecurrence(spec, today, nowTime, time);
+    dueDate = firstDateOfRecurrence(spec, today, today, nowTime, time);
   } else if (time !== null) {
     dueDate = ctx.viewDefaultDate ?? (time > nowTime ? today : addDays(today, 1));
   }
@@ -181,10 +240,10 @@ export function resolve(tokens: QuickToken[], ctx: QuickParseContext): Resolved 
 
   if (dueDate) fields.due_date = dueDate;
   if (dueDate && time !== null) fields.due_time = time;
-  if (spec) fields.recurrence = finishRecurrence(spec, dueDate);
+  if (spec) fields.recurrence = finishRecurrence(spec, dueDate, endDate);
 
   const dueInPast = dueDate
     ? dueDate < today || (dueDate === today && time !== null && time < nowTime)
     : false;
-  return { fields, dueInPast };
+  return { fields, dueInPast, rangeError };
 }
