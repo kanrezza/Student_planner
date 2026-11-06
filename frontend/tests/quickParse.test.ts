@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { quickAddInput } from '../src/features/tasks/quickAddDefaults';
 import { parseQuickAdd } from '../src/features/tasks/quickParse';
 import { cases, context, type Case } from '../src/features/tasks/quickParse/quickParse.cases';
 
@@ -94,5 +95,66 @@ describe('hiểu câu thêm nhanh (US4)', () => {
     const start = performance.now();
     for (let i = 0; i < 50; i += 1) parseQuickAdd(text, ctx);
     expect((performance.now() - start) / 50).toBeLessThan(2);
+  });
+});
+
+describe('câu thêm nhanh không có giờ chỉ tạo hạn theo ngày', () => {
+  const phrases = [
+    'hằng ngày',
+    'mỗi ngày',
+    'mỗi 3 ngày',
+    'hằng tuần',
+    'thứ 2 hàng tuần',
+    'thứ 2, 4, 6 hàng tuần',
+    'chủ nhật hàng tuần',
+    'hằng tháng',
+    'ngày 5 hằng tháng',
+    'hằng ngày từ 6/11 đến 11/11',
+  ];
+  it.each(phrases)('«học quizz %s» không có giờ', (phrase) => {
+    // Lúc nhập 14:29 — giờ hiện tại không được lọt vào hạn chót.
+    const now = new Date('2026-11-06T14:29:00+07:00');
+    const parsed = parseQuickAdd(`học quizz ${phrase}`, {
+      now,
+      viewDefaultDate: null,
+      tags: [],
+      lists: [],
+      dismissed: new Set(),
+      recurrence: true,
+    });
+    expect(parsed.fields.due_time).toBeUndefined();
+    expect(parsed.fields.due_date).toBeTruthy();
+    const input = quickAddInput(
+      parsed.title,
+      { due_date: null, list_id: 1, tag_ids: [] },
+      parsed.fields,
+    );
+    expect(input.due_time).toBeNull();
+    expect(JSON.stringify(input)).not.toContain('14:29');
+  });
+
+  it.each([
+    'Mua sữa',
+    'Nộp đồ án 20/11',
+    'Họp mai',
+    'Ôn thi từ 6/11 đến 11/11',
+    'Làm đồ án đến hết 20/11',
+  ])('«%s» không có giờ', (text) => {
+    const parsed = parseQuickAdd(text, {
+      now: new Date('2026-11-06T14:29:00+07:00'),
+      viewDefaultDate: '2026-11-06',
+      tags: [],
+      lists: [],
+      dismissed: new Set(),
+      recurrence: true,
+    });
+    expect(parsed.fields.due_time).toBeUndefined();
+    expect(
+      quickAddInput(
+        parsed.title,
+        { due_date: '2026-11-06', list_id: 1, tag_ids: [] },
+        parsed.fields,
+      ).due_time,
+    ).toBeNull();
   });
 });

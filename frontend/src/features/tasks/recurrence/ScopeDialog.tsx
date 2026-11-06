@@ -1,12 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 import type { Scope } from '../../../api/tasks';
 import { t } from '../../../i18n/vi';
 import { Button } from '../../../ui/Button';
@@ -58,30 +50,33 @@ export function ScopeDialog({
 }
 
 export function ScopeProvider({ children }: { children: ReactNode }) {
-  const [kind, setKind] = useState<ScopeKind | null>(null);
-  const resolver = useRef<((scope: Scope | null) => void) | null>(null);
+  // Hàng đợi: nhiều lệnh lưu cùng bị 409 thì hỏi lần lượt, không huỷ lệnh trước.
+  const [queue, setQueue] = useState<{ kind: ScopeKind; resolve: (scope: Scope | null) => void }[]>(
+    [],
+  );
 
-  const ask = useCallback<Ask>((next) => {
-    resolver.current?.(null);
-    setKind(next);
-    return new Promise<Scope | null>((resolve) => {
-      resolver.current = resolve;
+  const ask = useCallback<Ask>(
+    (kind) =>
+      new Promise<Scope | null>((resolve) => {
+        setQueue((current) => [...current, { kind, resolve }]);
+      }),
+    [],
+  );
+
+  const finish = useCallback((scope: Scope | null) => {
+    setQueue(([first, ...rest]) => {
+      first?.resolve(scope);
+      return rest;
     });
   }, []);
 
-  const finish = useCallback((scope: Scope | null) => {
-    resolver.current?.(scope);
-    resolver.current = null;
-    setKind(null);
-  }, []);
-
-  const value = useMemo(() => ask, [ask]);
+  const first = queue[0];
   return (
-    <ScopeContext.Provider value={value}>
+    <ScopeContext.Provider value={ask}>
       {children}
       <ScopeDialog
-        kind={kind ?? 'edit'}
-        open={kind !== null}
+        kind={first?.kind ?? 'edit'}
+        open={first !== undefined}
         onChoose={finish}
         onCancel={() => finish(null)}
       />

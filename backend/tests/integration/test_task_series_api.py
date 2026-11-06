@@ -260,3 +260,115 @@ def test_xoa_ca_danh_sach_dung_chuoi(client, db_session, today):
     )
     assert client.delete(f"/api/lists/{lst['id']}?delete_tasks=true").status_code == 204
     assert task["id"] not in [t["id"] for t in open_tasks(client)]
+
+
+# ---- Task lặp chỉ có ngày và sửa giờ hạn (lỗi báo sau đợt 4) --------------------------------
+
+RULES = [
+    {"freq": "daily"},
+    {"freq": "every_n_days", "interval_days": 3},
+    weekly(1, 4),
+    {"freq": "monthly", "month_day": 15},
+]
+
+
+@pytest.mark.parametrize("rule", RULES, ids=lambda r: r["freq"])
+def test_task_lap_khong_gio_van_chi_co_ngay(client, db_session, today, rule):
+    """Câu không có giờ → task chỉ có ngày (không giờ), nhắc theo "Giờ nhắc công việc chỉ có ngày"."""
+    due = (today + timedelta(days=1)).isoformat()
+    task = make(client, db_session, rule, due_date=due)
+    assert task["due_time"] is None and task["due_at"].endswith("T23:59:00+07:00")
+    assert task["reminder_times"] == [f"{due}T08:00:00+07:00"]  # mặc định 08:00
+    nxt = client.post(f"/api/tasks/{task['id']}/complete").get_json()["next_task"]
+    assert nxt["due_time"] is None
+    assert nxt["reminder_times"] == [f"{nxt['due_date']}T08:00:00+07:00"]
+    feed = client.get("/api/sync/feed").get_json()["reminders"]
+    assert [r["due_has_time"] for r in feed] == [False]
+
+
+def test_feed_khong_gui_moc_nhac_da_qua(client, db_session, today):
+    """Task chỉ có ngày hôm nay, tạo sau giờ nhắc: không gửi mốc nhắc đã qua sang Lời nhắc."""
+    from app.services.reminders import get_settings
+
+    settings = get_settings()
+    settings.date_only_task_reminder_time = (
+        timeutil.now().time().replace(hour=0, minute=0, second=0, microsecond=0)
+    )
+    db_session.flush()
+    make(client, db_session, {"freq": "daily"}, due_date=today.isoformat())
+    [item] = client.get("/api/sync/feed").get_json()["reminders"]
+    assert item["due_has_time"] is False and item["alarms_at"] == []
+
+
+def patch(client, task_id, **body):
+    resp = client.patch(f"/api/tasks/{task_id}", json=body)
+    assert resp.status_code == 200, resp.get_json()
+    return resp.get_json()
+
+
+@pytest.mark.parametrize("scope", ["this", "following"])
+def test_dat_gio_cho_task_lap_chi_co_ngay(client, db_session, today, scope):
+    due = (today + timedelta(days=1)).isoformat()
+    task = make(client, db_session, {"freq": "daily"}, due_date=due)
+    body = patch(client, task["id"], due_date=due, due_time="20:15", scope=scope)
+    assert body["due_time"] == "20:15"
+    assert body["reminder_times"] == [f"{due}T19:15:00+07:00"]  # 60 phút trước hạn
+    nxt = client.post(f"/api/tasks/{task['id']}/complete").get_json()["next_task"]
+    # "Chỉ lần này": lần sau vẫn chỉ có ngày; "Lần này và các lần sau": lần sau dùng giờ mới.
+    assert nxt["due_time"] == ("20:15" if scope == "following" else None)
+    feed = client.get("/api/sync/feed").get_json()["reminders"]
+    assert [r["sync_key"] for r in feed] == [f"task:{nxt['id']}"]
+
+
+def test_doi_gio_thieu_scope_la_409_roi_gui_lai(client, db_session, today):
+    due = (today + timedelta(days=1)).isoformat()
+    task = make(client, db_session, {"freq": "daily"}, due_date=due)
+    resp = client.patch(f"/api/tasks/{task['id']}", json={"due_date": due, "due_time": "20:15"})
+    assert resp.status_code == 409 and resp.get_json()["error"]["code"] == "scope_required"
+    assert get(client, task["id"])["due_time"] is None
+
+
+@pytest.mark.parametrize("scope", ["this", "following"])
+def test_xoa_gio_task_lap(client, db_session, today, scope):
+    due = (today + timedelta(days=1)).isoformat()
+    task = make(client, db_session, {"freq": "daily"}, due_date=due, due_time="20:15")
+    body = patch(client, task["id"], due_date=due, due_time=None, scope=scope)
+    assert body["due_time"] is None and body["due_date"] == due
+    assert body["reminder_times"] == [f"{due}T08:00:00+07:00"]
+    nxt = client.post(f"/api/tasks/{task['id']}/complete").get_json()["next_task"]
+    assert nxt["due_time"] == (None if scope == "following" else "20:15")
+
+
+@pytest.mark.parametrize("scope", ["this", "following"])
+def test_doi_ngay_task_lap(client, db_session, today, scope):
+    due = today + timedelta(days=1)
+    new = due + timedelta(days=2)
+    task = make(client, db_session, {"freq": "daily"}, due_date=due.isoformat(), due_time="09:00")
+    body = patch(client, task["id"], due_date=new.isoformat(), scope=scope)
+    assert body["due_date"] == new.isoformat() and body["due_time"] == "09:00"
+    nxt = client.post(f"/api/tasks/{task['id']}/complete").get_json()["next_task"]
+    assert nxt["due_date"] == (new + timedelta(days=1)).isoformat()
+
+
+def test_doi_quy_tac_va_ngay_ket_thuc_giu_gio(client, db_session, today):
+    due = (today + timedelta(days=1)).isoformat()
+    task = make(client, db_session, {"freq": "daily"}, due_date=due, due_time="20:15")
+    end = (today + timedelta(days=10)).isoformat()
+    body = patch(
+        client,
+        task["id"],
+        recurrence={
+            "freq": "every_n_days",
+            "interval_days": 4,
+            "end": {"kind": "on_date", "date": end},
+        },
+    )
+    assert body["due_time"] == "20:15" and body["due_date"] == due
+    assert body["recurrence"]["end"] == {"kind": "on_date", "date": end}
+    body = patch(
+        client, task["id"], recurrence={"freq": "daily", "end": {"kind": "after_count", "count": 3}}
+    )
+    assert body["recurrence"] == {"freq": "daily", "end": {"kind": "after_count", "count": 3}}
+    assert body["due_time"] == "20:15"
+    body = patch(client, task["id"], recurrence={"freq": "daily", "end": {"kind": "never"}})
+    assert body["recurrence"]["end"] == {"kind": "never"}

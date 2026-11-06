@@ -267,24 +267,21 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
       for (const field of fields) delete next[field];
       return next;
     });
-    update.mutate(
-      { id: task.id, input, scope },
-      {
-        onError: (err) => {
-          if (isScopeRequired(err)) {
-            // Sửa lần hiện tại của task lặp: hỏi "Chỉ lần này" hay "Lần này và các lần sau" (FR-020).
-            void askScope('edit').then((chosen) => {
-              if (chosen) save(input, fields, chosen);
-              else resetFields();
-            });
-          } else if (err instanceof ApiError && Object.keys(err.fields).length) {
-            setErrors((current) => ({ ...current, ...err.fields }));
-          } else {
-            toast.show(t('detail.saveFailed', { message: err.message }), { tone: 'danger' });
-          }
-        },
-      },
-    );
+    // `mutateAsync` (không phải `mutate`): lệnh lưu cũ vẫn báo lỗi/hỏi phạm vi được dù ô khác vừa
+    // gửi lệnh lưu mới (callback của `mutate` chỉ chạy cho lần gọi sau cùng).
+    update.mutateAsync({ id: task.id, input, scope }).catch((err: Error) => {
+      if (isScopeRequired(err)) {
+        // Sửa lần hiện tại của task lặp: hỏi "Chỉ lần này" hay "Lần này và các lần sau" (FR-020).
+        void askScope('edit').then((chosen) => {
+          if (chosen) save(input, fields, chosen);
+          else resetFields();
+        });
+      } else if (err instanceof ApiError && Object.keys(err.fields).length) {
+        setErrors((current) => ({ ...current, ...err.fields }));
+      } else {
+        toast.show(t('detail.saveFailed', { message: err.message }), { tone: 'danger' });
+      }
+    });
   }
 
   function saveTitle() {
@@ -407,10 +404,23 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
                 value={dueTime}
                 disabled={!dueDate}
                 onChange={(e) => setDueTime(e.target.value)}
-                onBlur={() => saveDue(dueDate, dueTime)}
+                // Đọc giá trị thật của ô (WebKit có thể báo `blur` trước khi state kịp cập nhật).
+                onBlur={(e) => saveDue(dueDate, e.currentTarget.value)}
+                onKeyDown={blurOnEnter}
                 aria-invalid={Boolean(errors.due_time)}
                 className="w-[5.6rem] px-2"
               />
+              {dueDate && dueTime && (
+                <IconButton
+                  label={t('detail.clearDueTime')}
+                  icon={<IconClose size={14} />}
+                  size="sm"
+                  onClick={() => {
+                    setDueTime('');
+                    saveDue(dueDate, '');
+                  }}
+                />
+              )}
               {dueDate && (
                 <IconButton
                   label={t('detail.clearDue')}
