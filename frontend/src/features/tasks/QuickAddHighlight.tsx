@@ -28,7 +28,7 @@ export function QuickAddHighlight({
         title={t('quickAdd.dismissHint')}
         onMouseDown={(e) => e.preventDefault()} // giữ nguyên tiêu điểm của ô nhập
         onClick={() => onDismiss(token)}
-        className="pointer-events-auto cursor-pointer rounded-[4px] bg-accent-soft text-transparent"
+        className="pointer-events-auto cursor-pointer rounded-[4px] bg-accent/20 text-transparent"
       >
         {text.slice(token.start, token.end)}
       </mark>,

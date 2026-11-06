@@ -22,8 +22,9 @@ const NL = '(?<![a-z0-9:/.])';
 
 // "thu 2".."thu 7", "thu hai".."thu bay", "t2".."t7", "chu nhat", "cn".
 const WD = '(?:thu\\s*(?:hai|ba|tu|bon|nam|sau|bay|[2-7])|t[2-7]|chu\\s*nhat|cn)';
-const WD_LIST = `${WD}(?:\\s*,\\s*${WD}|\\s+va\\s+${WD})*`;
-const WD_SINGLE = new RegExp(`${L}${WD}${R}`, 'g');
+// Các thứ sau thứ đầu có thể chỉ viết số: "thứ 2, 4, 6", "thứ 3 và 5".
+const WD_NEXT = `(?:${WD}|[2-7](?!\\d))`;
+const WD_LIST = `${WD}(?:\\s*,\\s*${WD_NEXT}|\\s+va\\s+${WD_NEXT})*`;
 
 const WORD_TO_WEEKDAY: Record<string, number> = {
   hai: 1,
@@ -46,8 +47,13 @@ export function weekdayOf(folded: string): number {
 }
 
 function weekdaysIn(folded: string): number[] {
-  const found = [...folded.matchAll(WD_SINGLE)].map((match) => weekdayOf(match[0]));
-  return [...new Set(found)];
+  const list = folded.replace(/^(?:hang|moi)\s+/, '').replace(/\s+(?:hang|moi)\s+tuan$/, '');
+  const found = list
+    .split(/\s*,\s*|\s+va\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => (/^[2-7]$/.test(part) ? Number(part) - 1 : weekdayOf(part)));
+  return [...new Set(found)].filter((day) => day >= 1 && day <= 7);
 }
 
 /** "thứ tự" (trình tự) không phải "thứ tư" (Thứ Tư); chỉ phân biệt được khi còn dấu. */

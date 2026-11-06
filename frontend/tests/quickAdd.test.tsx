@@ -223,6 +223,95 @@ describe('QuickAdd hiểu câu tiếng Việt (feature 003 US4)', () => {
     expect(body.recurrence).toBeUndefined();
   });
 
+  describe('bộ gõ Telex (lỗi N7)', () => {
+    const SENTENCE = 'Học quizz QTDA chủ nhật hàng tuần 21h';
+    const layerText = () => document.querySelector('[aria-hidden] > div')?.textContent;
+
+    it('tô sáng luôn hiện đúng chữ đã gõ (cả NFC lẫn NFD) và không che chữ của ô nhập', async () => {
+      const { input } = await ready();
+      for (const form of ['NFC', 'NFD'] as const) {
+        const text = SENTENCE.normalize(form);
+        type(input, text);
+        expect(layerText()).toBe(text);
+        expect(marks()).toEqual(['chủ nhật hàng tuần', '21h'].map((m) => m.normalize(form)));
+        // Nền cụm tô sáng phải trong suốt một phần, nếu không sẽ che mất chữ thật bên dưới.
+        const mark = document.querySelector('mark')!;
+        expect(mark.className).toContain('bg-accent/20');
+        expect(mark.className).not.toContain('bg-accent-soft');
+      }
+    });
+
+    it('đang soạn chữ thì không tô sáng, sau compositionend mới tô sáng lại', async () => {
+      const { input } = await ready();
+      type(input, 'Học quizz QTDA chủ nhật hàng tuần 21h');
+      expect(marks().length).toBe(2);
+      fireEvent.compositionStart(input);
+      type(input, 'Học quizz QTDA chủ nhật hàng tuần 21h t');
+      type(input, 'Học quizz QTDA chủ nhật hàng tuần 21h tô');
+      expect(marks()).toEqual([]);
+      expect(layerText()).toBe('Học quizz QTDA chủ nhật hàng tuần 21h tô');
+      fireEvent.compositionEnd(input);
+      expect(marks()).toEqual(['chủ nhật hàng tuần', '21h']);
+      expect(layerText()).toBe(input.value);
+    });
+
+    it('xem trước: hạn lần đầu là Chủ nhật 08/11, không phải hôm nay', async () => {
+      const { input } = await ready();
+      type(input, SENTENCE);
+      const preview = screen.getByRole('status').textContent;
+      expect(preview).toContain('21:00 Chủ Nhật, 08/11');
+      expect(preview).not.toContain('06/11');
+    });
+
+    it('Enter lúc đang soạn (isComposing / keyCode 229) bị bỏ qua, không tạo task', async () => {
+      const { input, posts } = await ready();
+      type(input, 'Họp nhóm');
+      fireEvent.compositionStart(input);
+      fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+      fireEvent.keyDown(input, { key: 'Enter', keyCode: 229 });
+      fireEvent.compositionEnd(input);
+      await new Promise((r) => setTimeout(r, 20));
+      expect(posts()).toHaveLength(0);
+      expect(input.value).toBe('Họp nhóm');
+    });
+
+    it('Enter keyCode 229 ngay sau compositionend cũng bị bỏ qua; Enter thật tạo đúng một task', async () => {
+      const { input, posts } = await ready();
+      type(input, SENTENCE);
+      fireEvent.keyDown(input, { key: 'Enter', keyCode: 229 });
+      expect(posts()).toHaveLength(0);
+      fireEvent.keyDown(input, { key: 'Enter' });
+      fireEvent.keyDown(input, { key: 'Enter' }); // Enter lặp
+      await waitFor(() => expect(posts()).toHaveLength(1));
+      await new Promise((r) => setTimeout(r, 20));
+      expect(posts()).toHaveLength(1);
+      expect(JSON.parse(String(posts()[0][1]?.body))).toMatchObject({
+        title: 'Học quizz QTDA',
+        due_date: '2026-11-08',
+        due_time: '21:00',
+        recurrence: { freq: 'weekly', weekdays: [7] },
+      });
+    });
+
+    it('sau khi tạo xong không hiện lỗi "Thiếu tên công việc", kể cả khi compositionend đến muộn', async () => {
+      const { input } = await ready();
+      type(input, SENTENCE);
+      fireEvent.keyDown(input, { key: 'Enter' });
+      await waitFor(() => expect(input.value).toBe(''));
+      fireEvent.compositionEnd(input);
+      expect(screen.queryByRole('status')?.textContent ?? '').toBe('');
+      expect(document.body.textContent).not.toContain('Thiếu tên công việc');
+    });
+
+    it('lỗi "Thiếu tên công việc" biến mất khi gõ lại chữ có tên', async () => {
+      const { input } = await ready();
+      type(input, 'mai 9h');
+      expect(screen.getByRole('status').textContent).toContain('Thiếu tên công việc');
+      type(input, 'Họp mai 9h');
+      expect(screen.getByRole('status').textContent).not.toContain('Thiếu tên công việc');
+    });
+  });
+
   it('Quan trọng và ưu tiên được gửi; nhãn mới gửi bằng tag_names', async () => {
     const { input, posts } = await ready();
     type(input, 'Viết báo cáo * !cao #ThóiQuenMới');
