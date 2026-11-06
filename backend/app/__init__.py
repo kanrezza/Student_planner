@@ -27,12 +27,26 @@ def create_app(config_overrides: dict | None = None) -> Flask:
     migrate.init_app(app, db, directory=MIGRATIONS_DIR)
 
     register_blueprints(app)
+    from app.api import maintenance
+
+    maintenance.register(app)
     from app import cli
 
     cli.register(app)
     register_error_handlers(app)
     purge_trash_on_startup(app)
+    clear_stale_restore_flag(app)
     return app
+
+
+def clear_stale_restore_flag(app: Flask) -> None:
+    """Backend vừa khởi động thì không thể đang khôi phục: gỡ cờ bảo trì còn sót sau sự cố."""
+    if app.config.get("TESTING"):
+        return
+    from app.services import backup
+
+    with app.app_context():
+        backup.clear_stale_maintenance_flag()
 
 
 def purge_trash_on_startup(app: Flask) -> None:
@@ -58,11 +72,13 @@ def purge_trash_on_startup(app: Flask) -> None:
 def register_blueprints(app: Flask) -> None:
     """Mọi API nằm dưới /api. Blueprint của từng user story được thêm vào danh sách này."""
     from app.api import (
+        backup,
         calendar,
         exams,
         health,
         imports,
         lists,
+        search,
         semesters,
         sessions,
         settings,
@@ -75,5 +91,5 @@ def register_blueprints(app: Flask) -> None:
     )
 
     modules = (health, settings, tasks, lists, semesters, subjects, today, sessions, calendar)
-    for module in (*modules, exams, imports, shifts, tags, sync):
+    for module in (*modules, exams, imports, shifts, tags, sync, backup, search):
         app.register_blueprint(module.bp, url_prefix="/api")

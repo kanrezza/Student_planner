@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import type { ApiWarning } from '../../api/client';
 import { useSemesters } from '../../api/semesters';
@@ -38,6 +39,20 @@ export function SubjectsScreen() {
   const current =
     all.find((s) => s.id === semesterId) ?? all.find((s) => s.is_current) ?? all[all.length - 1];
   const subjects = useSubjects(current?.id ?? null);
+
+  // Từ kết quả tìm kiếm: `?hk=<học kỳ>&mon=<môn>` chọn học kỳ và mở môn đó (feature 003 FR-042).
+  const [params, setParams] = useSearchParams();
+  const wantedSemester = Number(params.get('hk')) || null;
+  const wantedSubject = Number(params.get('mon')) || null;
+  useEffect(() => {
+    if (wantedSemester) setSemesterId(wantedSemester);
+  }, [wantedSemester]);
+  useEffect(() => {
+    const found = wantedSubject ? subjects.data?.find((s) => s.id === wantedSubject) : undefined;
+    if (!found) return;
+    setDialog(found);
+    setParams({}, { replace: true });
+  }, [wantedSubject, subjects.data, setParams]);
 
   if (semesters.isLoading) {
     return (

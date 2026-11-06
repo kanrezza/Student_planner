@@ -153,6 +153,7 @@ class EventKitStore:
         deadline = time.time() + timeout
         while not flag.get("done") and time.time() < deadline:
             NSRunLoop.currentRunLoop().runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(0.2))
+            time.sleep(0.05)  # luồng nền không có nguồn run loop → runUntilDate trả về ngay
 
     def _request(self, entity: str) -> bool:
         flag: dict = {}

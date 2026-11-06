@@ -140,3 +140,72 @@ def test_vietnamese_title_round_trip(client, list_id):
     title = "Ôn tập “Triết học Mác - Lênin”: chương 3 — phép biện chứng"
     task_id = create(client, title=title, list_id=list_id).get_json()["id"]
     assert client.get(f"/api/tasks/{task_id}").get_json()["title"] == title
+
+
+# ---- Feature 003: tag_names (nhãn từ ô thêm nhanh, research R14) --------------------------------
+
+
+def _tags(client) -> list[dict]:
+    return client.get("/api/tags").get_json()
+
+
+def test_tag_names_gan_nhan_co_san_khong_phan_biet_dau(client):
+    gap = client.post("/api/tags", json={"name": "Gấp"}).get_json()
+    before = len(_tags(client))
+    resp = client.post(
+        "/api/tasks",
+        json={"title": "Việc", "list_id": _list_id(client), "tag_names": ["gap", "GẤP"]},
+    )
+    assert resp.status_code == 201, resp.get_json()
+    assert [t["id"] for t in resp.get_json()["tags"]] == [gap["id"]]
+    assert len(_tags(client)) == before  # không tạo nhãn mới
+
+
+def test_tag_names_tao_nhan_moi_cung_giao_dich(client):
+    resp = client.post(
+        "/api/tasks",
+        json={"title": "Đọc sách", "list_id": _list_id(client), "tag_names": ["ThóiQuenMới"]},
+    )
+    assert resp.status_code == 201
+    tags = resp.get_json()["tags"]
+    assert [t["name"] for t in tags] == ["ThóiQuenMới"]
+    assert tags[0]["color"]  # màu mặc định kế tiếp
+    assert "ThóiQuenMới" in [t["name"] for t in _tags(client)]
+
+
+def test_tag_names_ket_hop_tag_ids_giu_thu_tu_va_bo_trung(client):
+    a = client.post("/api/tags", json={"name": "A"}).get_json()
+    resp = client.post(
+        "/api/tasks",
+        json={
+            "title": "Việc",
+            "list_id": _list_id(client),
+            "tag_ids": [a["id"]],
+            "tag_names": ["a", "B", "b"],
+        },
+    )
+    assert [t["name"] for t in resp.get_json()["tags"]] == ["A", "B"]
+
+
+def test_tag_names_loi_validate_khong_de_lai_nhan_thua(client):
+    before = len(_tags(client))
+    resp = client.post(
+        "/api/tasks",
+        json={"title": "Việc", "list_id": 999999, "tag_names": ["NhanThua"]},
+    )
+    assert resp.status_code == 400
+    assert len(_tags(client)) == before
+
+
+def test_tag_names_ten_rong_hoac_qua_dai_bi_tu_choi(client):
+    for name in ["", "x" * 51]:
+        resp = client.post(
+            "/api/tasks", json={"title": "Việc", "list_id": _list_id(client), "tag_names": [name]}
+        )
+        assert resp.status_code == 400
+
+
+def _list_id(client) -> int:
+    return next(
+        item["id"] for item in client.get("/api/lists").get_json() if item["is_default_study"]
+    )

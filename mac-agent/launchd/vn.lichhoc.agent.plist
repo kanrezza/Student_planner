@@ -2,7 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   LaunchAgent cho LichHocAgent: tự chạy khi đăng nhập, tự khởi động lại nếu bị lỗi (research R6).
-  __HOME__ được scripts/install.sh thay bằng thư mục home thật khi cài.
+  __APP__ (trong ~/Library/Application Support/LichHocAgent) và __HOME__ được scripts/install.sh thay
+  bằng đường dẫn thật khi cài; không trỏ vào thư mục dự án.
 -->
 <plist version="1.0">
 <dict>
@@ -10,7 +11,7 @@
     <string>vn.lichhoc.agent</string>
     <key>ProgramArguments</key>
     <array>
-        <string>__HOME__/Applications/LichHocAgent.app/Contents/MacOS/LichHocAgent</string>
+        <string>__APP__/Contents/MacOS/LichHocAgent</string>
     </array>
     <key>RunAtLoad</key>
     <true/>

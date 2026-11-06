@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.api.errors import ApiError, not_found
 from app.extensions import db
-from app.lib.text import ci_key
+from app.lib.text import ci_key, fold_key
 from app.models import Subject, SubjectTag, Tag
 from app.services import auto_deadlines
 from app.services.colors import is_palette_color, next_color
@@ -46,6 +46,26 @@ def create_tag(name: str, color: str | None) -> Tag:
     db.session.add(tag)
     db.session.commit()
     return tag
+
+
+def ensure_tags(names: list[str]) -> list[int]:
+    """Id nhãn theo tên (không phân biệt dấu/hoa thường); chưa có thì tạo nhãn mới màu kế tiếp.
+
+    Không commit: chạy trong cùng giao dịch với task đang tạo (feature 003 R14).
+    """
+    tags = list_tags()
+    ids: list[int] = []
+    for name in names:
+        key = fold_key(name)
+        tag = next((t for t in tags if fold_key(t.name) == key), None)
+        if tag is None:
+            tag = Tag(name=name, color=next_color([t.color for t in tags]))
+            db.session.add(tag)
+            db.session.flush()
+            tags.append(tag)
+        if tag.id not in ids:
+            ids.append(tag.id)
+    return ids
 
 
 def update_tag(tag_id: int, changes: dict) -> Tag:

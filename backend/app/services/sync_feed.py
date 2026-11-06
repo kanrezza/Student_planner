@@ -100,7 +100,9 @@ def build_feed(now: datetime) -> dict:
                     "due_at": iso(due_at(task)),
                     "due_has_time": task.due_time is not None,
                     "important": task.is_important,
-                    "alarms_at": [iso(t) for t in task_alarm_times(task, settings)],
+                    # Mốc nhắc đã qua không còn tác dụng; gửi sang Lời nhắc chỉ khiến nó hiện giờ
+                    # lúc đồng bộ thay vì giờ nhắc đã đặt (ví dụ task chỉ có ngày tạo sau 08:00).
+                    "alarms_at": [iso(t) for t in task_alarm_times(task, settings) if t >= now],
                 }
             )
         )

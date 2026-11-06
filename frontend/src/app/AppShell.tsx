@@ -4,6 +4,7 @@ import { ConnectionBanner } from './ConnectionBanner';
 import { useDesktopBridge } from './desktopBridge';
 import { IconRail } from './IconRail';
 import { SECTIONS, TASKS_HOME, sectionTarget } from './navigation';
+import { RestoreOverlay } from '../features/settings/RestoreOverlay';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { useShell } from './shell';
 import { useHotkeys } from './useHotkeys';
@@ -12,7 +13,7 @@ import { useHotkeys } from './useHotkeys';
 export function AppShell() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { setShortcutsOpen, focusQuickAdd } = useShell();
+  const { setShortcutsOpen, focusQuickAdd, focusSearch } = useShell();
 
   const showShortcuts = useCallback(() => setShortcutsOpen(true), [setShortcutsOpen]);
   const go = useCallback((path: string) => navigate(path), [navigate]);
@@ -28,7 +29,15 @@ export function AppShell() {
     window.setTimeout(() => focusQuickAdd(), 0);
   }
 
+  /** ⌘F: về Công việc rồi đặt con trỏ vào ô tìm kiếm ở cột danh sách (feature 003 FR-036). */
+  function startSearch() {
+    if (pathname.startsWith('/cong-viec') && focusSearch()) return;
+    if (!pathname.startsWith('/cong-viec')) navigate(TASKS_HOME);
+    window.setTimeout(() => focusSearch(), 0); // ô tìm kiếm đăng ký sau khi màn hình mới render
+  }
+
   useHotkeys([
+    { key: 'f', meta: true, handler: startSearch },
     { key: 'n', meta: true, handler: newTask },
     { key: ',', meta: true, handler: () => navigate('/cai-dat') },
     { key: '/', meta: true, handler: showShortcuts },
@@ -49,6 +58,7 @@ export function AppShell() {
         </main>
       </div>
       <ShortcutsDialog />
+      <RestoreOverlay />
     </div>
   );
 }

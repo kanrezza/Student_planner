@@ -17,7 +17,7 @@ setup(
         "py2app": {
             "plist": PLIST,
             "packages": ["lichhoc_agent"],
-            "includes": ["EventKit", "Foundation"],
+            "includes": ["EventKit", "Foundation", "UserNotifications", "AppKit"],
         }
     },
     setup_requires=["py2app"],

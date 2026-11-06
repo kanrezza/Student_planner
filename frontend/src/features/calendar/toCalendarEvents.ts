@@ -1,8 +1,14 @@
 import type { EventInput } from '@fullcalendar/core';
-import type { CalendarData, CalendarExam, ClassSession, Task } from '../../api/types';
+import type {
+  CalendarData,
+  CalendarExam,
+  ClassSession,
+  ProjectedTask,
+  Task,
+} from '../../api/types';
 import { colorHex, colorSoft, colorStrong, type ColorScheme } from '../../lib/colors';
 
-export type CalendarItemKind = 'session' | 'task' | 'exam';
+export type CalendarItemKind = 'session' | 'task' | 'exam' | 'projected';
 
 /** Dữ liệu `CalendarBlock` cần để vẽ khối (FR-023). */
 export type CalendarEventProps = {
@@ -33,6 +39,7 @@ export function toCalendarEvents(data: CalendarData, scheme: ColorScheme = 'ligh
     ...data.sessions.map((s) => sessionEvent(s, scheme)),
     ...data.tasks.flatMap((t) => taskEvent(t, scheme) ?? []),
     ...(data.exams ?? []).map(examEvent),
+    ...(data.projected_tasks ?? []).map((p) => projectedEvent(p, scheme)),
   ];
 }
 
@@ -136,6 +143,26 @@ function taskEvent(task: Task, scheme: ColorScheme): EventInput | null {
     };
   }
   return null;
+}
+
+/**
+ * Lần dự kiến của task lặp (FR-022): khối mờ, viền nét đứt (CSS `is-projected`), không kéo được;
+ * bấm mở lần hiện tại nên `id` là id của lần hiện tại.
+ */
+function projectedEvent(p: ProjectedTask, scheme: ColorScheme): EventInput {
+  const common = {
+    id: `projected-${p.series_id}-${p.date}`,
+    title: p.title,
+    ...softColors(p.color, scheme),
+    startEditable: false,
+    durationEditable: false,
+    classNames: ['is-projected'],
+  };
+  const props = { ...baseProps('projected', p.current_task_id), deadline: p.time !== null };
+  if (!p.time) return { ...common, start: p.date, allDay: true, extendedProps: props };
+  const start = `${p.date}T${p.time}:00+07:00`;
+  const end = new Date(new Date(start).getTime() + DEADLINE_MINUTES * 60_000).toISOString();
+  return { ...common, start, end, allDay: false, extendedProps: props };
 }
 
 /** Buổi thi nổi bật hẳn: nền màu đậm, chữ trắng, viền rõ (FR-023); không kéo được. */

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-05
 
-**Status**: Draft
+**Status**: Done (các kịch bản cần thao tác tay trên máy còn lại ghi ở validation.md)
 
 **Input**: User description: "Bổ sung 4 tính năng cho Lịch Học Cá Nhân (app macOS hiện có, feature 001
 và 002 đã xong): (1) Sao lưu tự động (ưu tiên cao nhất): mỗi ngày tự sao lưu toàn bộ dữ liệu vào một
@@ -228,6 +228,14 @@ task tạo ra; bấm vào phần tô sáng để huỷ và kiểm tra tiêu đ�
 9. **Given** gõ "Gọi chị Mai", **Then** "Mai" được tô sáng là "ngày mai"; bấm vào phần tô sáng thì phần
    đó hết tô sáng, xem trước không còn hạn, và Enter tạo task "Gọi chị Mai" không hạn (hoặc hạn theo
    danh sách đang xem như FR-017 của feature 002).
+11. **Given** gõ "học quizz quản trị 21h hằng ngày từ 6/11 đến 11/11", **Then** cả cụm "từ 6/11 đến
+    11/11" được tô sáng như một khối và bỏ khỏi tiêu đề "học quizz quản trị"; task lặp hằng ngày, lần đầu
+    21:00 Thứ Sáu 06/11 và quy tắc lặp kết thúc vào 11/11/2026.
+12. **Given** gõ "học quizz quản trị từ 6/11 đến 11/11" (không có cụm lặp), **Then** tạo một task hạn chót
+    cả ngày 11/11/2026 và ghi chú "Bắt đầu: 06/11/2026". **Given** gõ "Làm đồ án đến hết 20/11", **Then**
+    hạn chót cả ngày 20/11/2026, không có ghi chú.
+13. **Given** gõ "Nộp bài từ 11/11 đến 6/11" (ngày kết thúc trước ngày bắt đầu), **Then** xem trước hiện
+    cảnh báo nhẹ "Ngày kết thúc trước ngày bắt đầu" và khoảng ngày không được áp dụng; vẫn tạo được task.
 10. **Given** gõ "~", **Then** hiện danh sách gợi ý các danh sách hiện có, lọc dần theo chữ gõ tiếp
     (không phân biệt dấu); chọn bằng ↑/↓ và Enter/Tab. Tương tự "#" gợi ý nhãn hiện có.
 11. **Given** gõ "Đọc sách #ThóiQuenMới" với nhãn chưa có, **Then** xem trước hiện "Nhãn mới:
@@ -504,6 +512,17 @@ chi tiết task mở ra.
   - Cụm lặp không có ngày → lần đầu là ngày khớp quy tắc gần nhất từ hôm nay (theo cùng quy tắc giờ).
   - Mỗi loại chỉ hiểu cụm đầu tiên (một ngày, một giờ, một danh sách, một mức ưu tiên, một quy tắc lặp); cụm cùng loại
     xuất hiện sau giữ nguyên là chữ.
+- **FR-028a**: Khoảng ngày "từ A đến B" (cũng "từ A - B", "A đến B", "A - B", và "đến hết B" chỉ có
+  ngày kết thúc; A, B là hai cụm ngày bất kỳ của FR-027) là một cụm duy nhất: tô sáng như một khối, bỏ
+  khỏi tiêu đề, chiếm ô "ngày" (cụm ngày khác trong câu giữ nguyên là chữ). Ý nghĩa:
+  - Câu có cụm lặp: lần đầu là ngày khớp quy tắc gần nhất từ A trở đi (từ hôm nay nếu không có A; theo
+    cùng quy tắc giờ của FR-028) và quy tắc lặp kết thúc vào B ("Vào ngày B").
+  - Câu không có cụm lặp: tạo MỘT task có hạn chót là B (kèm giờ nếu câu có giờ) và ghi chú
+    "Bắt đầu: DD/MM/YYYY" (ngày A); "đến hết B" không có ghi chú.
+  - A không năm mà đã qua so với hôm nay nhưng không sau B thì tính cùng năm với B (ví dụ "từ 1/11 đến
+    11/11" lúc 05/11 là 01/11 và 11/11 năm nay).
+  - B trước A (hoặc quy tắc lặp không có lần nào trong khoảng): báo lỗi nhẹ trên xem trước, khoảng ngày
+    không được áp dụng, vẫn tạo được task; bấm vào khối tô sáng để giữ nguyên làm chữ.
 - **FR-029**: Cụm chỉ được hiểu khi đứng thành từ riêng (ngăn cách bằng khoảng trắng, đầu/cuối câu
   hoặc dấu câu); không hiểu phần nằm bên trong một từ khác.
 - **FR-030**: Ngay khi gõ (không quá 0,1 giây sau mỗi phím), các cụm được hiểu PHẢI được tô sáng trong ô

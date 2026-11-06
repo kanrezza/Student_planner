@@ -274,6 +274,14 @@
   text-decoration: line-through;
 }
 
+/* Lần dự kiến của task lặp (FR-022): hơi mờ, viền nét đứt, biểu tượng ↻, không kéo được.
+   Độ mờ 0.9 là mức thấp nhất giữ chữ ≥ 4.5:1 với cả 12 màu ở hai chế độ (tests/contrast.test.ts). */
+.lh-calendar .fc-event.is-projected {
+  opacity: 0.9;
+  border-style: dashed;
+  cursor: pointer;
+}
+
 /* Khối hạn chót (30 phút): vạch trái nét đứt. */
 .lh-calendar .fc-event.is-deadline {
   border-left-style: dashed;

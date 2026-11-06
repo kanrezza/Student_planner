@@ -1,10 +1,11 @@
 [project]
 name = "lichhoc-agent"
-version = "0.2.1"
+version = "0.3.0"
 description = "Lịch Học Cá Nhân – tiến trình nền macOS đồng bộ buổi học/task vào Lịch và Lời nhắc (EventKit)"
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "pyobjc-framework-EventKit>=10.3",
+    "pyobjc-framework-UserNotifications>=10.3",
     "requests>=2.32",
 ]
 

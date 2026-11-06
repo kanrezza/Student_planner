@@ -11,6 +11,17 @@ from pathlib import Path
 DEFAULT_PATH = Path.home() / "Library/Application Support/LichHocAgent/state.json"
 
 
+BACKUP_KEYS = (
+    "backup_last_attempt_at",
+    "backup_last_attempt_ok",
+    "backup_last_attempt_error",
+    "backup_last_attempt_size",
+    "backup_last_success_at",
+    "backup_last_success_size",
+    "stale_notified_for",
+)
+
+
 @dataclass
 class State:
     path: Path = DEFAULT_PATH
@@ -19,6 +30,14 @@ class State:
     fingerprints: dict[str, str] = field(default_factory=dict)
     item_keys: dict[str, str] = field(default_factory=dict)  # calendarItemIdentifier → sync_key
     last_revision: int = 0
+    # Sao lưu (feature 003): thời điểm là chuỗi ISO giờ địa phương, không múi giờ.
+    backup_last_attempt_at: str | None = None
+    backup_last_attempt_ok: bool | None = None
+    backup_last_attempt_error: str | None = None
+    backup_last_attempt_size: int | None = None
+    backup_last_success_at: str | None = None
+    backup_last_success_size: int | None = None
+    stale_notified_for: str | None = None  # mốc đã gửi thông báo "quá 3 ngày chưa sao lưu"
 
     @classmethod
     def load(cls, path: Path = DEFAULT_PATH) -> "State":
@@ -33,6 +52,7 @@ class State:
             fingerprints=data.get("fingerprints", {}),
             item_keys=data.get("item_keys", {}),
             last_revision=data.get("last_revision", 0),
+            **{key: data.get(key) for key in BACKUP_KEYS},
         )
 
     def save(self) -> None:
@@ -44,6 +64,7 @@ class State:
             "fingerprints": self.fingerprints,
             "item_keys": self.item_keys,
             "last_revision": self.last_revision,
+            **{key: getattr(self, key) for key in BACKUP_KEYS},
         }
         tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         os.replace(tmp, self.path)

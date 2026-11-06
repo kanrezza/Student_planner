@@ -13,7 +13,7 @@ from app.lib import timeutil
 from app.lib.timeutil import iso
 from app.models import AgentStatus
 from app.schemas.common import ApiModel
-from app.services import digest, reminders, sync_feed
+from app.services import backup_jobs, digest, reminders, sync_feed
 from app.services.tasks import purge_expired_trash_throttled
 
 bp = Blueprint("sync", __name__)
@@ -41,7 +41,12 @@ def changes():
     after = int_arg("after") or 0
     wait = int_arg("wait") or 0
     revision = sync_feed.wait_for_change(after, wait)
-    return {"revision": revision, "sync_enabled": reminders.get_settings().calendar_sync_enabled}
+    return {
+        "revision": revision,
+        "sync_enabled": reminders.get_settings().calendar_sync_enabled,
+        "backup_jobs_pending": backup_jobs.pending_count(),
+        "backup_config_revision": backup_jobs.config_revision(backup_jobs.get_config()),
+    }
 
 
 @bp.get("/sync/feed")

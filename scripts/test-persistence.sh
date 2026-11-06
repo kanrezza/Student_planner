@@ -35,4 +35,7 @@ docker compose kill backend db >/dev/null 2>&1
 start_app
 check verify "$SNAPSHOT"
 
+echo "4. Tạo bản sao lưu, đọc lại khớp dữ liệu; nginx nhận file khôi phục lớn (không khôi phục lên dữ liệu thật)"
+check backup-check
+
 echo "✅ Dữ liệu còn nguyên sau khởi động lại và sau khi tắt đột ngột"

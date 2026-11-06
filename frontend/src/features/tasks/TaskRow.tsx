@@ -6,7 +6,9 @@ import { toIsoDate } from '../../lib/dates';
 import { Checkbox } from '../../ui/Checkbox';
 import { cx } from '../../ui/cx';
 import { IconClock, IconRepeat, IconStarFilled } from '../../ui/icons';
+import { Highlighted } from '../search/Highlighted';
 import { isOverdue } from './groupTasks';
+import { describeRule } from './recurrence/describeRule';
 import { dueLabel, workLabel } from './taskFormat';
 
 /**
@@ -22,8 +24,10 @@ export const TaskRow = forwardRef<
     onToggle: (task: Task, completed: boolean) => void;
     onOpen: (task: Task) => void;
     onSelect?: (task: Task) => void;
+    /** Từ khoá tìm kiếm: phần khớp trong tiêu đề được tô sáng. */
+    highlight?: string;
   }
->(function TaskRow({ task, now, selected = false, onToggle, onOpen, onSelect }, ref) {
+>(function TaskRow({ task, now, selected = false, onToggle, onOpen, onSelect, highlight }, ref) {
   const today = toIsoDate(now);
   const overdue = isOverdue(task, now);
   const due = dueLabel(task, today);
@@ -61,10 +65,19 @@ export const TaskRow = forwardRef<
           task.completed && 'text-muted line-through decoration-muted/60',
         )}
       >
-        {task.title}
+        {highlight ? <Highlighted text={task.title} query={highlight} /> : task.title}
       </span>
       {task.is_auto && (
         <span aria-label={t('tasks.auto')} title={t('tasks.auto')} className="text-muted">
+          <IconRepeat size={14} />
+        </span>
+      )}
+      {task.recurrence && (
+        <span
+          aria-label={t('recurrence.icon')}
+          title={describeRule(task.recurrence)}
+          className="text-muted"
+        >
           <IconRepeat size={14} />
         </span>
       )}

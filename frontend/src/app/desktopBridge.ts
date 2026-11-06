@@ -29,3 +29,21 @@ export function useDesktopBridge(bridge: DesktopBridge): void {
 export function isDesktopApp(): boolean {
   return typeof navigator !== 'undefined' && navigator.userAgent.includes('LichHocDesktop');
 }
+
+type TauriInternals = { invoke(command: string, args?: Record<string, unknown>): Promise<unknown> };
+
+function tauriInvoke<T>(command: string, args?: Record<string, unknown>): Promise<T | null> {
+  const internals = (window as unknown as { __TAURI_INTERNALS__?: TauriInternals })
+    .__TAURI_INTERNALS__;
+  if (!isDesktopApp() || !internals) return Promise.resolve(null);
+  return internals.invoke(command, args) as Promise<T | null>;
+}
+
+/** Hộp chọn thư mục của macOS; null nếu huỷ hoặc không chạy trong app macOS. */
+export const pickBackupFolder = () => tauriInvoke<string>('pick_backup_folder');
+
+/** Hộp chọn file `.lhbackup` của macOS; null nếu huỷ hoặc không chạy trong app macOS. */
+export const pickBackupFile = () => tauriInvoke<string>('pick_backup_file');
+
+/** Hiện thư mục hoặc file sao lưu trong Finder. */
+export const revealInFinder = (path: string) => tauriInvoke<void>('reveal_in_finder', { path });
