@@ -655,6 +655,7 @@ export const vi = {
   common: {
     comingSoon: 'Phần này đang được xây dựng.',
     pickDate: 'Chọn ngày từ lịch',
+    timeFormat: 'Nhập giờ dạng HH:MM (ví dụ 23:30 hoặc 23h30)',
     dateFormat: 'Nhập ngày dạng DD/MM/YYYY (ví dụ 30/11/2026)',
     loading: 'Đang tải…',
     save: 'Lưu',

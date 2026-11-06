@@ -248,6 +248,33 @@ describe('Sửa task lặp hỏi phạm vi (FR-020)', () => {
       expect(bodies[1]).toEqual({ due_date: '2026-11-05', due_time: '20:15', scope });
     });
 
+    it.each(['23:30', '23h30', '2330'])(
+      'gõ "%s" rồi Enter → lưu 23:30 (hỏi phạm vi)',
+      async (typed) => {
+        const bodies = renderPanel(SERIES_TASK, [409, 200]);
+        const input = (await screen.findByLabelText('Giờ hạn')) as HTMLInputElement;
+        input.focus();
+        fireEvent.change(input, { target: { value: typed } });
+        fireEvent.keyDown(input, { key: 'Enter' });
+        fireEvent.click(await screen.findByRole('button', { name: 'Lần này và các lần sau' }));
+        await waitFor(() => expect(bodies).toHaveLength(2));
+        expect(bodies[1]).toEqual({
+          due_date: '2026-11-05',
+          due_time: '23:30',
+          scope: 'following',
+        });
+      },
+    );
+
+    it('giờ sai (25:99) không gửi lên server', async () => {
+      const bodies = renderPanel(SERIES_TASK, [200]);
+      const input = (await screen.findByLabelText('Giờ hạn')) as HTMLInputElement;
+      fireEvent.change(input, { target: { value: '25:99' } });
+      fireEvent.blur(input);
+      await new Promise((r) => setTimeout(r, 30));
+      expect(bodies).toHaveLength(0);
+    });
+
     it('Huỷ ở hộp phạm vi thì giờ trả về như cũ và không gửi lại', async () => {
       const bodies = renderPanel(SERIES_TASK, [409]);
       await setTime('20:15');

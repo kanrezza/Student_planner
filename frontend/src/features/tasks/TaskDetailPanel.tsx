@@ -16,6 +16,7 @@ import { ImportantToggle } from '../../components/ImportantToggle';
 import { minutesLabel, ReminderSelect } from '../../components/ReminderSelect';
 import { SessionLink } from '../../components/SessionLink';
 import { TagPicker } from '../../components/TagPicker';
+import { TimeInput } from '../../components/TimeInput';
 import { t } from '../../i18n/vi';
 import { formatDayLong, formatDayShort, formatTime } from '../../lib/dates';
 import { PRIORITIES, blankToNull, priorityLabel } from '../../lib/format';
@@ -398,17 +399,14 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
                 invalid={Boolean(errors.due_date)}
                 className="w-[9.5rem]"
               />
-              <input
-                type="time"
-                aria-label={t('detail.dueTime')}
+              <TimeInput
+                label={t('detail.dueTime')}
                 value={dueTime}
                 disabled={!dueDate}
-                onChange={(e) => setDueTime(e.target.value)}
-                // Đọc giá trị thật của ô (WebKit có thể báo `blur` trước khi state kịp cập nhật).
-                onBlur={(e) => saveDue(dueDate, e.currentTarget.value)}
-                onKeyDown={blurOnEnter}
-                aria-invalid={Boolean(errors.due_time)}
-                className="w-[5.6rem] px-2"
+                onChange={setDueTime}
+                onBlur={(time) => saveDue(dueDate, time)}
+                invalid={Boolean(errors.due_time)}
+                className="w-[5.6rem]"
               />
               {dueDate && dueTime && (
                 <IconButton
@@ -466,24 +464,22 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
                     invalid={Boolean(errors.work_date)}
                     className="w-[9.5rem]"
                   />
-                  <input
-                    type="time"
-                    aria-label={t('detail.workStart')}
+                  <TimeInput
+                    label={t('detail.workStart')}
                     value={work.work_start ?? ''}
-                    onChange={(e) => setWork({ ...work, work_start: e.target.value })}
-                    onBlur={() => saveWork(work)}
-                    aria-invalid={Boolean(errors.work_start)}
-                    className="w-[5.6rem] px-2"
+                    onChange={(v) => setWork({ ...work, work_start: v })}
+                    onBlur={(v) => saveWork({ ...work, work_start: v })}
+                    invalid={Boolean(errors.work_start)}
+                    className="w-[5.6rem]"
                   />
                   <span className="text-muted">–</span>
-                  <input
-                    type="time"
-                    aria-label={t('detail.workEnd')}
+                  <TimeInput
+                    label={t('detail.workEnd')}
                     value={work.work_end ?? ''}
-                    onChange={(e) => setWork({ ...work, work_end: e.target.value })}
-                    onBlur={() => saveWork(work)}
-                    aria-invalid={Boolean(errors.work_end)}
-                    className="w-[5.6rem] px-2"
+                    onChange={(v) => setWork({ ...work, work_end: v })}
+                    onBlur={(v) => saveWork({ ...work, work_end: v })}
+                    invalid={Boolean(errors.work_end)}
+                    className="w-[5.6rem]"
                   />
                 </div>
                 <FieldError message={errors.work_date || errors.work_start || errors.work_end} />
