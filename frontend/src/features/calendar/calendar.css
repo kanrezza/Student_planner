@@ -274,6 +274,13 @@
   text-decoration: line-through;
 }
 
+/* Lần dự kiến của task lặp (FR-022): mờ 50%, viền nét đứt, không kéo được. */
+.lh-calendar .fc-event.is-projected {
+  opacity: 0.5;
+  border-style: dashed;
+  cursor: pointer;
+}
+
 /* Khối hạn chót (30 phút): vạch trái nét đứt. */
 .lh-calendar .fc-event.is-deadline {
   border-left-style: dashed;

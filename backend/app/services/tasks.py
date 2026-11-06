@@ -9,12 +9,14 @@ from app.extensions import db
 from app.lib import timeutil
 from app.lib.timeutil import combine
 from app.models import ClassSession, Task, TaskList, TaskTag
+from app.services import task_series
 from app.services.revision import bump_revision
 from app.services.tag_links import replace_tag_links
 
 END_OF_DAY = time(23, 59)
 DUE_TIME_NEEDS_DATE = "Cần chọn ngày hạn chót trước khi đặt giờ"
 REQUIRED = "Trường này là bắt buộc"
+REPEAT_NEEDS_DUE = "Công việc lặp lại phải có hạn"
 WORK_WINDOW_INCOMPLETE = "Cần chọn đủ ngày, giờ bắt đầu và giờ kết thúc"
 WORK_END_BEFORE_START = "Giờ kết thúc phải sau giờ bắt đầu"
 SMART_VIEWS = ("today", "tomorrow", "next7", "all", "completed", "trash")
@@ -172,6 +174,7 @@ def _check_work_window(task) -> None:
 def create_task(data: dict) -> Task:
     tag_ids = data.pop("tag_ids", [])
     tag_names = data.pop("tag_names", [])
+    recurrence = data.pop("recurrence", None)
     _check_list(data["list_id"])
     task = Task(**data)
     _check_work_window(task)
@@ -182,14 +185,38 @@ def create_task(data: dict) -> Task:
 
         tag_ids = [*tag_ids, *ensure_tags(tag_names)]
     replace_tag_links(TaskTag, "task_id", task.id, tag_ids)
+    if recurrence is not None:
+        db.session.expire(task, ["tag_links"])
+        task_series.attach_rule(task, recurrence, timeutil.today())
     bump_revision(db.session)
     db.session.commit()
     return task
 
 
-def update_task(task_id: int, changes: dict) -> Task:
-    """`changes` chỉ chứa trường được gửi; giá trị None nghĩa là xoá (với trường cho phép)."""
+SCOPE_REQUIRED = "Cần chọn áp dụng cho “Chỉ lần này” hay “Lần này và các lần sau”"
+
+
+def scope_required() -> ApiError:
+    return ApiError(409, "scope_required", SCOPE_REQUIRED)
+
+
+def update_task(task_id: int, changes: dict, scope: str | None = None) -> Task:
+    """`changes` chỉ chứa trường được gửi; giá trị None nghĩa là xoá (với trường cho phép).
+
+    Task là lần hiện tại của chuỗi lặp: sửa trường khác `recurrence` phải có `scope` (FR-020);
+    riêng `recurrence` áp dụng cho cả chuỗi và không cần `scope`.
+    """
     task = get_task(task_id)
+    has_recurrence = "recurrence" in changes
+    recurrence = changes.pop("recurrence", None)
+    live = task_series.is_live(task)
+    if live and changes and scope is None:
+        raise scope_required()
+    if live and "due_date" in changes and changes["due_date"] is None:
+        raise ApiError(
+            400, "validation_error", "Dữ liệu chưa hợp lệ", {"due_date": REPEAT_NEEDS_DUE}
+        )
+    old_due = task.due_date
     for field in ("title", "priority", "list_id"):
         if field in changes and changes[field] is None:
             raise ApiError(400, "validation_error", "Dữ liệu chưa hợp lệ", {field: REQUIRED})
@@ -209,17 +236,50 @@ def update_task(task_id: int, changes: dict) -> Task:
         db.session.expire(task, ["tag_links"])
     if task.is_auto and (changes or tag_ids is not None):
         task.user_modified = True  # task tự tạo đã bị người dùng sửa → không tự cập nhật nữa
+    if live and (changes or tag_ids is not None):
+        full = {**changes, **({"tag_ids": tag_ids} if tag_ids is not None else {})}
+        task_series.apply_scoped_edit(task, full, scope, old_due)
+    if has_recurrence:
+        if recurrence is None:
+            if task.series_id is not None:
+                task_series.change_rule(task, None)
+        elif task.series_id is not None:
+            task_series.change_rule(task, recurrence)
+        else:
+            task_series.attach_rule(task, recurrence, timeutil.today())
     bump_revision(db.session)
     db.session.commit()
     return task
+
+
+def complete_task(task_id: int) -> tuple[Task, Task | None]:
+    """Hoàn thành; task lặp sinh lần kế tiếp (FR-017). Hoàn thành lần nữa thì không làm gì thêm."""
+    task = get_task(task_id)
+    next_task = None
+    if task.completed_at is None:
+        now = timeutil.now()
+        task.completed_at = now
+        db.session.flush()
+        next_task = task_series.on_complete(task, now)
+        bump_revision(db.session)
+        db.session.commit()
+    return task, next_task
+
+
+def uncomplete_task(task_id: int) -> tuple[Task, int | None]:
+    """Bỏ hoàn thành; gỡ lần kế tiếp chưa sửa của task lặp (FR-019)."""
+    task = get_task(task_id)
+    removed = None
+    if task.completed_at is not None:
+        removed = task_series.on_uncomplete(task)
+        task.completed_at = None
+        bump_revision(db.session)
+        db.session.commit()
+    return task, removed
 
 
 def set_completed(task_id: int, completed: bool) -> Task:
-    task = get_task(task_id)
-    task.completed_at = timeutil.now() if completed else None
-    bump_revision(db.session)
-    db.session.commit()
-    return task
+    return (complete_task if completed else uncomplete_task)(task_id)[0]
 
 
 # ---- Thùng rác (feature 002 FR-030, FR-031; data-model "Vòng đời Thùng rác") -------------------
@@ -240,14 +300,22 @@ def move_to_trash(task: Task, now: datetime, from_list_name: str | None = None) 
     if from_list_name is not None and task.trashed_from_list_name is None:
         task.trashed_from_list_name = from_list_name
     _set_auto_suppressed(task, True)
+    # Không qua hộp chọn phạm vi (ví dụ xoá cả danh sách): chuỗi dừng, như "Lần này và các lần sau".
+    task_series.on_trash(task, "following", now)
 
 
-def trash_task(task_id: int) -> Task:
+def trash_task(task_id: int, scope: str | None = None) -> tuple[Task, Task | None]:
+    """Chuyển vào Thùng rác; task lặp cần `scope` (FR-020). `this` trả thêm lần kế tiếp mới."""
     task = get_task(task_id)
-    move_to_trash(task, timeutil.now())
+    if task_series.is_live(task) and scope is None:
+        raise scope_required()
+    now = timeutil.now()
+    task.deleted_at = now
+    _set_auto_suppressed(task, True)
+    next_task = task_series.on_trash(task, scope or "following", now)
     bump_revision(db.session)
     db.session.commit()
-    return task
+    return task, next_task
 
 
 def _trashed(task_id: int) -> Task:
@@ -273,6 +341,7 @@ def restore_task(task_id: int) -> tuple[Task, list[dict]]:
         )
     task.deleted_at = None
     task.trashed_from_list_name = None
+    task_series.on_restore(task)
     session = _set_auto_suppressed(task, False)
     if session is not None:
         auto_deadlines.reconcile(session_ids=[session.id])
@@ -286,11 +355,14 @@ def delete_permanently(task_id: int) -> None:
     if task.deleted_at is None:
         raise ApiError(409, "conflict", "Chỉ xoá vĩnh viễn được công việc đang ở Thùng rác")
     db.session.delete(task)
+    db.session.flush()
+    task_series.prune_orphan_series()
     db.session.commit()
 
 
 def empty_trash() -> int:
     deleted = db.session.execute(delete(Task).where(Task.deleted_at.is_not(None))).rowcount
+    task_series.prune_orphan_series()
     db.session.commit()
     return deleted
 
@@ -302,6 +374,7 @@ def purge_expired_trash(now: datetime) -> int:
         delete(Task).where(Task.deleted_at.is_not(None), Task.deleted_at < cutoff)
     ).rowcount
     if deleted:
+        task_series.prune_orphan_series()
         db.session.commit()
     return deleted
 

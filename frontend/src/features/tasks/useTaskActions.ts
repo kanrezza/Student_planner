@@ -1,15 +1,23 @@
 /** Thao tác thường dùng trên một task, kèm thông báo và Hoàn tác (FR-029, FR-030). */
 import { useCallback } from 'react';
-import { useCompleteTask, useRestoreTask, useTrashTask } from '../../api/tasks';
+import {
+  isScopeRequired,
+  useCompleteTask,
+  useRestoreTask,
+  useTrashTask,
+  type Scope,
+} from '../../api/tasks';
 import type { Task } from '../../api/types';
 import { t } from '../../i18n/vi';
 import { useToast } from '../../ui/Toast';
+import { useAskScope } from './recurrence/ScopeDialog';
 
 export function useTaskActions() {
   const complete = useCompleteTask();
   const trashTask = useTrashTask();
   const restoreTask = useRestoreTask();
   const toast = useToast();
+  const askScope = useAskScope();
 
   const toggleComplete = useCallback(
     (task: Task, completed: boolean = !task.completed) => {
@@ -37,18 +45,26 @@ export function useTaskActions() {
 
   /** Chuyển vào Thùng rác ngay, không hỏi; thông báo có nút Hoàn tác trong 5 giây. */
   const trash = useCallback(
-    (task: Task, onDone?: () => void) => {
-      trashTask.mutate(task.id, {
-        onSuccess: () => {
-          onDone?.();
-          toast.show(t('trash.moved', { title: task.title }), {
-            action: { label: t('trash.undo'), onClick: () => restore(task, false) },
-          });
+    (task: Task, onDone?: () => void, scope?: Scope) => {
+      trashTask.mutate(
+        { id: task.id, scope },
+        {
+          onSuccess: () => {
+            onDone?.();
+            toast.show(t('trash.moved', { title: task.title }), {
+              action: { label: t('trash.undo'), onClick: () => restore(task, false) },
+            });
+          },
+          onError: (err) => {
+            if (isScopeRequired(err)) {
+              // Task lặp: hỏi "Chỉ lần này" hay "Lần này và các lần sau" rồi xoá lại (FR-020).
+              void askScope('delete').then((chosen) => chosen && trash(task, onDone, chosen));
+            } else toast.show(err.message, { tone: 'danger' });
+          },
         },
-        onError: (err) => toast.show(err.message, { tone: 'danger' }),
-      });
+      );
     },
-    [trashTask, toast, restore],
+    [trashTask, toast, restore, askScope],
   );
 
   return { toggleComplete, trash, restore };

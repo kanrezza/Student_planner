@@ -4,6 +4,30 @@ export type Tag = { id: number; name: string; color: string; system_key: string 
 
 export type Priority = 1 | 2 | 3;
 
+/** Quy tắc lặp của task (feature 003 data-model §4). */
+export type RecurrenceEnd =
+  { kind: 'never' } | { kind: 'on_date'; date: string } | { kind: 'after_count'; count: number };
+
+export type RecurrenceRule = {
+  freq: 'daily' | 'every_n_days' | 'weekly' | 'monthly';
+  interval_days?: number;
+  /** 1 = Thứ Hai … 7 = Chủ Nhật. */
+  weekdays?: number[];
+  month_day?: number;
+  end: RecurrenceEnd;
+};
+
+/** Lần dự kiến của task lặp, chỉ để hiển thị trên lịch (FR-022). */
+export type ProjectedTask = {
+  kind: 'projected_task';
+  series_id: number;
+  current_task_id: number;
+  date: string;
+  time: string | null;
+  title: string;
+  color: string;
+};
+
 export type Task = {
   id: number;
   title: string;
@@ -34,6 +58,17 @@ export type Task = {
   deleted_at: string | null;
   days_left_in_trash: number | null;
   trashed_from_list_name: string | null;
+  /** Task lặp (feature 003 US3): `recurrence` là quy tắc của cả chuỗi. */
+  series_id: number | null;
+  recurrence: RecurrenceRule | null;
+  occurrence_no: number | null;
+  series_finished: boolean;
+};
+
+/** `complete` trả thêm lần kế tiếp; `uncomplete` trả thêm id lần kế tiếp đã gỡ. */
+export type TaskTransition = Task & {
+  next_task?: Task | null;
+  removed_next_task_id?: number | null;
 };
 
 export type TaskInput = {
@@ -51,6 +86,8 @@ export type TaskInput = {
   work_date?: string | null;
   work_start?: string | null;
   work_end?: string | null;
+  /** null = bỏ lặp; bỏ qua = giữ nguyên. */
+  recurrence?: RecurrenceRule | null;
 };
 
 export type TaskList = {
@@ -209,4 +246,9 @@ export type ExamInput = {
 
 export type CalendarExam = Exam;
 
-export type CalendarData = { sessions: ClassSession[]; tasks: Task[]; exams?: CalendarExam[] };
+export type CalendarData = {
+  sessions: ClassSession[];
+  tasks: Task[];
+  exams?: CalendarExam[];
+  projected_tasks?: ProjectedTask[];
+};

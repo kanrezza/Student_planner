@@ -8,6 +8,7 @@ import { cx } from '../../ui/cx';
 import { IconClock, IconRepeat, IconStarFilled } from '../../ui/icons';
 import { Highlighted } from '../search/Highlighted';
 import { isOverdue } from './groupTasks';
+import { describeRule } from './recurrence/describeRule';
 import { dueLabel, workLabel } from './taskFormat';
 
 /**
@@ -68,6 +69,15 @@ export const TaskRow = forwardRef<
       </span>
       {task.is_auto && (
         <span aria-label={t('tasks.auto')} title={t('tasks.auto')} className="text-muted">
+          <IconRepeat size={14} />
+        </span>
+      )}
+      {task.recurrence && (
+        <span
+          aria-label={t('recurrence.icon')}
+          title={describeRule(task.recurrence)}
+          className="text-muted"
+        >
           <IconRepeat size={14} />
         </span>
       )}

@@ -64,17 +64,27 @@ def create_task():
 @bp.patch("/tasks/<int:task_id>")
 def update_task(task_id: int):
     patch = TaskPatch.model_validate(request.get_json(silent=True) or {})
-    return _out_with_warnings(service.update_task(task_id, patch.model_dump(exclude_unset=True)))
+    changes = patch.model_dump(exclude_unset=True)
+    scope = changes.pop("scope", None)
+    return _out_with_warnings(service.update_task(task_id, changes, scope))
 
 
 @bp.post("/tasks/<int:task_id>/complete")
 def complete(task_id: int):
-    return _out(service.set_completed(task_id, True))
+    """Task lặp: trả thêm `next_task` (lần kế tiếp, hoặc null khi chuỗi kết thúc)."""
+    task, next_task = service.complete_task(task_id)
+    now = timeutil.now()
+    return {
+        **serialize_task(task, now),
+        "next_task": serialize_task(next_task, now) if next_task else None,
+    }
 
 
 @bp.post("/tasks/<int:task_id>/uncomplete")
 def uncomplete(task_id: int):
-    return _out(service.set_completed(task_id, False))
+    """Task lặp: trả thêm `removed_next_task_id` (lần kế tiếp đã gỡ, hoặc null)."""
+    task, removed = service.uncomplete_task(task_id)
+    return {**serialize_task(task, timeutil.now()), "removed_next_task_id": removed}
 
 
 @bp.delete("/tasks/<int:task_id>")
@@ -83,7 +93,20 @@ def delete_task(task_id: int):
     if bool_arg("permanent", False):
         service.delete_permanently(task_id)
         return "", 204
-    return _out(service.trash_task(task_id))
+    scope = request.args.get("scope")
+    if scope is not None and scope not in ("this", "following"):
+        raise ApiError(
+            400,
+            "validation_error",
+            "Tham số không hợp lệ",
+            {"scope": "Giá trị phải là this hoặc following"},
+        )
+    task, next_task = service.trash_task(task_id, scope)
+    now = timeutil.now()
+    return {
+        **serialize_task(task, now),
+        "next_task": serialize_task(next_task, now) if next_task else None,
+    }
 
 
 @bp.post("/tasks/<int:task_id>/restore")

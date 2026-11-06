@@ -1,18 +1,42 @@
 """Schema request/response cho task và danh sách (contracts/rest-api.md, data-model.md)."""
 
+import datetime as _dt
 import math
 from datetime import date, datetime
 from typing import Annotated, Literal
 
 from pydantic import AfterValidator, Field, ValidationInfo, field_validator
+from sqlalchemy import exists, select
 
+from app.extensions import db
 from app.lib.timeutil import iso
+from app.models import Task
 from app.schemas.common import HHMM, ApiModel, OptionalText, VietnameseText
 from app.services import tasks as task_rules
 from app.services.colors import display_color
 from app.services.tag_links import serialize_tags
+from app.services.task_series import rule_dict
 
 Priority = Literal[1, 2, 3]  # 1 = Cao, 2 = Trung bình, 3 = Thấp
+
+
+class RecurrenceEnd(ApiModel):
+    kind: Literal["never", "on_date", "after_count"] = "never"
+    date: _dt.date | None = None
+    count: int | None = None
+
+
+class RecurrenceIn(ApiModel):
+    """Quy tắc lặp (data-model §4). Kiểm tra ràng buộc theo kiểu ở `task_recurrence.validate`."""
+
+    freq: Literal["daily", "every_n_days", "weekly", "monthly"]
+    interval_days: int | None = None
+    weekdays: list[int] | None = None
+    month_day: int | None = None
+    end: RecurrenceEnd = RecurrenceEnd()
+
+
+Scope = Literal["this", "following"]
 
 
 class TaskIn(ApiModel):
@@ -33,6 +57,7 @@ class TaskIn(ApiModel):
     work_date: date | None = None
     work_start: HHMM | None = None
     work_end: HHMM | None = None
+    recurrence: RecurrenceIn | None = None
 
     @field_validator("due_time")
     @classmethod
@@ -57,6 +82,9 @@ class TaskPatch(ApiModel):
     work_date: date | None = None
     work_start: HHMM | None = None
     work_end: HHMM | None = None
+    # Task lặp (feature 003 US3): `recurrence` = null bỏ lặp; `scope` bắt buộc khi sửa lần hiện tại.
+    recurrence: RecurrenceIn | None = None
+    scope: Scope | None = None
 
 
 # ---- Emoji của danh sách (feature 002 FR-015) ------------------------------------------------
@@ -154,6 +182,36 @@ def _hhmm(value) -> str | None:
     return value.strftime("%H:%M") if value else None
 
 
+def _series_fields(task) -> dict:
+    series = task.series if task.series_id is not None else None
+    if series is None:
+        return {
+            "series_id": None,
+            "recurrence": None,
+            "occurrence_no": None,
+            "series_finished": False,
+        }
+    finished = (
+        task.completed_at is not None
+        and series.stopped_at is None
+        and not db.session.scalar(
+            select(
+                exists().where(
+                    Task.series_id == series.id,
+                    Task.deleted_at.is_(None),
+                    Task.completed_at.is_(None),
+                )
+            )
+        )
+    )
+    return {
+        "series_id": series.id,
+        "recurrence": rule_dict(series),
+        "occurrence_no": task.occurrence_no,
+        "series_finished": finished,
+    }
+
+
 def serialize_task(task, now) -> dict:
     due = task_rules.due_at(task)
     tags = task.tags
@@ -183,6 +241,7 @@ def serialize_task(task, now) -> dict:
         "deleted_at": iso(task.deleted_at) if task.deleted_at else None,
         "days_left_in_trash": days_left_in_trash(task.deleted_at, now),
         "trashed_from_list_name": task.trashed_from_list_name,
+        **_series_fields(task),
         **_reminder_fields(task),
     }
 

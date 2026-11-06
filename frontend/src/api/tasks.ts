@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiFetch, type ApiWarning } from './client';
+import { ApiError, apiFetch, type ApiWarning } from './client';
 import { invalidateTaskViews, keys } from './keys';
-import type { Task, TaskCounts, TaskInput } from './types';
+import type { Task, TaskCounts, TaskInput, TaskTransition } from './types';
+
+/** Phạm vi áp dụng khi sửa/xoá task lặp (FR-020). */
+export type Scope = 'this' | 'following';
+
+/** API đòi chọn phạm vi (409 `scope_required`) → giao diện hỏi rồi gửi lại. */
+export const isScopeRequired = (err: unknown): boolean =>
+  err instanceof ApiError && err.code === 'scope_required';
 
 /** Danh sách thông minh (feature 002 FR-009). */
 export type SmartView = 'today' | 'tomorrow' | 'next7' | 'all' | 'completed' | 'trash';
@@ -63,21 +70,34 @@ export const useCreateTask = () =>
   );
 
 export const useUpdateTask = () =>
-  useTaskMutation(async ({ id, input }: { id: number; input: Partial<TaskInput> }) =>
-    toTaskResult(
-      (await apiFetch<TaskResponse>(`/tasks/${id}`, { method: 'PATCH', body: input })).data,
-    ),
+  useTaskMutation(
+    async ({ id, input, scope }: { id: number; input: Partial<TaskInput>; scope?: Scope }) =>
+      toTaskResult(
+        (
+          await apiFetch<TaskResponse>(`/tasks/${id}`, {
+            method: 'PATCH',
+            body: scope ? { ...input, scope } : input,
+          })
+        ).data,
+      ),
   );
 
 export const useCompleteTask = () =>
   useTaskMutation(({ id, completed }: { id: number; completed: boolean }) =>
-    apiFetch<Task>(`/tasks/${id}/${completed ? 'complete' : 'uncomplete'}`, { method: 'POST' }),
+    apiFetch<TaskTransition>(`/tasks/${id}/${completed ? 'complete' : 'uncomplete'}`, {
+      method: 'POST',
+    }),
   );
 
 /** Chuyển vào Thùng rác (FR-030); trả task để có thể Hoàn tác. */
 export const useTrashTask = () =>
   useTaskMutation(
-    async (id: number) => (await apiFetch<Task>(`/tasks/${id}`, { method: 'DELETE' })).data,
+    async ({ id, scope }: { id: number; scope?: Scope }) =>
+      (
+        await apiFetch<TaskTransition>(`/tasks/${id}${scope ? `?scope=${scope}` : ''}`, {
+          method: 'DELETE',
+        })
+      ).data,
   );
 
 export const useRestoreTask = () =>

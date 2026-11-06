@@ -54,6 +54,10 @@ function placeholderTask(input: ReturnType<typeof quickAddInput>): Task {
     deleted_at: null,
     days_left_in_trash: null,
     trashed_from_list_name: null,
+    series_id: null,
+    recurrence: input.recurrence ?? null,
+    occurrence_no: null,
+    series_finished: false,
   };
 }
 
@@ -95,7 +99,7 @@ export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
         tags: tags.data ?? [],
         lists: lists.data ?? [],
         dismissed,
-        recurrence: false, // cụm lặp chỉ bật khi task lặp lại có trong app (đợt 4)
+        recurrence: true,
       }),
     [parsedText, defaults, tags.data, lists.data, dismissed],
   );
@@ -162,7 +166,7 @@ export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
       tags: tags.data ?? [],
       lists: lists.data ?? [],
       dismissed,
-      recurrence: false,
+      recurrence: true,
     });
     if (latest.titleMissing) return;
     const input = quickAddInput(latest.title, defaults, latest.fields);
@@ -258,7 +262,7 @@ export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
           )}
         </div>
       </div>
-      <QuickAddPreview parse={parse} today={today} lists={lists.data ?? []} recurrence={false} />
+      <QuickAddPreview parse={parse} today={today} lists={lists.data ?? []} recurrence />
     </div>
   );
 }
