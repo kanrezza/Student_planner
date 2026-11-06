@@ -99,6 +99,7 @@ export const vi = {
     due: 'Hạn chót',
     dueDate: 'Ngày hạn',
     dueTime: 'Giờ hạn',
+    clearDueTime: 'Xoá giờ (chỉ giữ ngày)',
     noTime: 'Không đặt giờ',
     clearDue: 'Bỏ hạn chót',
     setDue: 'Đặt hạn chót',

@@ -228,6 +228,118 @@ describe('Sửa task lặp hỏi phạm vi (FR-020)', () => {
     });
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  describe('đổi giờ hạn của task lặp', () => {
+    const setTime = async (value: string) => {
+      const input = (await screen.findByLabelText('Giờ hạn')) as HTMLInputElement;
+      fireEvent.change(input, { target: { value } });
+      fireEvent.blur(input);
+    };
+
+    it.each([
+      ['Chỉ lần này', 'this'],
+      ['Lần này và các lần sau', 'following'],
+    ])('đặt giờ → hỏi phạm vi → "%s" gửi lại với scope=%s', async (label, scope) => {
+      const bodies = renderPanel(SERIES_TASK, [409, 200]);
+      await setTime('20:15');
+      fireEvent.click(await screen.findByRole('button', { name: label }));
+      await waitFor(() => expect(bodies).toHaveLength(2));
+      expect(bodies[0]).toEqual({ due_date: '2026-11-05', due_time: '20:15' });
+      expect(bodies[1]).toEqual({ due_date: '2026-11-05', due_time: '20:15', scope });
+    });
+
+    it('Huỷ ở hộp phạm vi thì giờ trả về như cũ và không gửi lại', async () => {
+      const bodies = renderPanel(SERIES_TASK, [409]);
+      await setTime('20:15');
+      fireEvent.click(await screen.findByRole('button', { name: 'Huỷ' }));
+      await waitFor(() =>
+        expect((screen.getByLabelText('Giờ hạn') as HTMLInputElement).value).toBe(''),
+      );
+      expect(bodies).toHaveLength(1);
+    });
+
+    it('lưu theo giá trị thật của ô khi rời ô, kể cả khi state chưa kịp cập nhật', async () => {
+      const bodies = renderPanel(SERIES_TASK, [200]);
+      const input = (await screen.findByLabelText('Giờ hạn')) as HTMLInputElement;
+      // Giả lập WebKit: ô đã có giá trị nhưng sự kiện change chưa tới React trước blur.
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(
+        input,
+        '07:45',
+      );
+      fireEvent.blur(input);
+      await waitFor(() => expect(bodies).toHaveLength(1));
+      expect(bodies[0]).toMatchObject({ due_time: '07:45' });
+    });
+
+    it('nút "Xoá giờ" chỉ giữ ngày: gửi due_time=null (cả hai phạm vi)', async () => {
+      const timed = { ...SERIES_TASK, due_time: '20:15' };
+      const bodies = renderPanel(timed, [409, 200]);
+      fireEvent.click(await screen.findByRole('button', { name: 'Xoá giờ (chỉ giữ ngày)' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Lần này và các lần sau' }));
+      await waitFor(() => expect(bodies).toHaveLength(2));
+      expect(bodies[0]).toEqual({ due_date: '2026-11-05', due_time: null });
+      expect(bodies[1]).toEqual({ due_date: '2026-11-05', due_time: null, scope: 'following' });
+    });
+
+    it('đổi ngày hạn cũng hỏi phạm vi rồi gửi lại', async () => {
+      const bodies = renderPanel({ ...SERIES_TASK, due_time: '09:00' }, [409, 200]);
+      const date = await screen.findByLabelText('Ngày hạn');
+      fireEvent.change(date, { target: { value: '08/11/2026' } });
+      fireEvent.blur(date);
+      fireEvent.click(await screen.findByRole('button', { name: 'Chỉ lần này' }));
+      await waitFor(() => expect(bodies).toHaveLength(2));
+      expect(bodies[1]).toEqual({ due_date: '2026-11-08', due_time: '09:00', scope: 'this' });
+    });
+
+    it('hai lệnh lưu liên tiếp: lệnh bị 409 trước vẫn hiện hộp hỏi phạm vi', async () => {
+      const bodies = renderPanel(SERIES_TASK, [409, 409, 200, 200]);
+      await setTime('20:15');
+      const priority = (await screen.findByLabelText('Ưu tiên')) as HTMLSelectElement;
+      fireEvent.change(priority, { target: { value: '1' } }); // lệnh lưu thứ hai ngay sau
+      fireEvent.click(await screen.findByRole('button', { name: 'Chỉ lần này' }));
+      await waitFor(() => expect(bodies.length).toBeGreaterThanOrEqual(3));
+      fireEvent.click(await screen.findByRole('button', { name: 'Chỉ lần này' }));
+      await waitFor(() => expect(bodies.length).toBeGreaterThanOrEqual(4));
+      expect(bodies.some((b) => b.due_time === '20:15' && b.scope === 'this')).toBe(true);
+      expect(bodies.some((b) => b.priority === 1 && b.scope === 'this')).toBe(true);
+    });
+  });
+});
+
+describe('RecurrenceEditor: quy tắc và ngày kết thúc', () => {
+  it('đổi kiểu kết thúc: Vào ngày → Sau N lần → Không kết thúc', () => {
+    const onChange = vi.fn();
+    render(<RecurrenceEditor value={WEEKLY} dueDate="2026-11-05" onChange={onChange} />);
+    // WEEKLY đang kết thúc vào 30/11/2026.
+    fireEvent.change(screen.getByLabelText('Kết thúc'), { target: { value: 'after_count' } });
+    expect(onChange).toHaveBeenLastCalledWith({
+      freq: 'weekly',
+      weekdays: [1, 4],
+      end: { kind: 'after_count', count: 5 },
+    });
+    fireEvent.change(screen.getByLabelText('Kết thúc'), { target: { value: 'never' } });
+    expect(onChange).toHaveBeenLastCalledWith({
+      freq: 'weekly',
+      weekdays: [1, 4],
+      end: { kind: 'never' },
+    });
+    fireEvent.change(screen.getByLabelText('Kết thúc'), { target: { value: 'on_date' } });
+    // Quay lại "Vào ngày": giữ ngày kết thúc đã chọn trước đó.
+    expect(onChange).toHaveBeenLastCalledWith(WEEKLY);
+  });
+
+  it('đổi ngày kết thúc gửi quy tắc mới', () => {
+    const onChange = vi.fn();
+    render(<RecurrenceEditor value={WEEKLY} dueDate="2026-11-05" onChange={onChange} />);
+    const date = screen.getByLabelText('Ngày kết thúc');
+    fireEvent.change(date, { target: { value: '15/12/2026' } });
+    fireEvent.blur(date);
+    expect(onChange).toHaveBeenLastCalledWith({
+      freq: 'weekly',
+      weekdays: [1, 4],
+      end: { kind: 'on_date', date: '2026-12-15' },
+    });
+  });
 });
 
 describe('Xoá task lặp hỏi phạm vi (FR-020)', () => {
