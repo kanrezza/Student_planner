@@ -34,4 +34,16 @@ def calendar():
         "exams": [serialize_exam(e, now, conflicts[e.id]) for e in exams],
         "sessions": [serialize_session(s) for s in service.sessions_in_range(start, end, tag_ids)],
         "tasks": [serialize_task(t, now) for t in service.tasks_in_range(start, end, tag_ids)],
+        "projected_tasks": [
+            {
+                "kind": "projected_task",
+                "series_id": p.series_id,
+                "current_task_id": p.current_task_id,
+                "date": p.day.isoformat(),
+                "time": p.at_time.strftime("%H:%M") if p.at_time else None,
+                "title": p.title,
+                "color": p.color,
+            }
+            for p in service.projected_in_range(start, end, tag_ids, now.date())
+        ],
     }

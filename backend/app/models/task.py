@@ -43,6 +43,21 @@ class Task(IdMixin, TimestampMixin, db.Model):
             "work_end IS NULL OR work_end > work_start", name="ck_tasks_work_window_order"
         ),
         Index("ix_tasks_deleted_at", "deleted_at", postgresql_where=text("deleted_at IS NOT NULL")),
+        # Task lặp (feature 003): CHECK khớp migration 0008.
+        CheckConstraint("series_id IS NULL OR is_auto = false", name="ck_tasks_series_not_auto"),
+        CheckConstraint(
+            "trash_scope IS NULL OR trash_scope IN ('this', 'following')",
+            name="ck_tasks_trash_scope",
+        ),
+        # Đúng một lần hiện tại mỗi chuỗi.
+        Index(
+            "uq_tasks_series_current",
+            "series_id",
+            unique=True,
+            postgresql_where=text(
+                "series_id IS NOT NULL AND completed_at IS NULL AND deleted_at IS NULL"
+            ),
+        ),
     )
 
     list_id: Mapped[int] = mapped_column(
@@ -68,9 +83,19 @@ class Task(IdMixin, TimestampMixin, db.Model):
     # Thùng rác (feature 002 FR-030): NULL = đang dùng.
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     trashed_from_list_name: Mapped[str | None] = mapped_column(Text)
+    # Task lặp (feature 003 US3, data-model §4).
+    series_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("task_series.id", ondelete="SET NULL"), index=True
+    )
+    occurrence_no: Mapped[int | None] = mapped_column(SmallInteger)
+    # Không có FK tự tham chiếu: nó chặn `pg_restore --clean` khi khôi phục bản sao lưu cũ hơn
+    # (constraint phụ thuộc tasks_pkey mà bản cũ không biết). id không bao giờ được dùng lại.
+    spawned_from_task_id: Mapped[int | None] = mapped_column(BigInteger)
+    trash_scope: Mapped[str | None] = mapped_column(Text)
 
     list = relationship("TaskList", back_populates="tasks")
     source_session = relationship("ClassSession", back_populates="auto_task")
+    series = relationship("TaskSeries", foreign_keys=[series_id])
     tag_links = relationship(
         "TaskTag",
         cascade="all, delete-orphan",

@@ -175,3 +175,32 @@ def test_hai_lan_khoi_phuc_lien_tiep_deu_thanh_cong(client):
     assert restore(client, dump).status_code == 200
     assert restore(client, dump).status_code == 200
     assert time.monotonic() - start < 60  # SC-002: một học kỳ khôi phục dưới 1 phút
+
+
+def test_khoi_phuc_giu_du_chuoi_task_lap_va_quy_tac(client):
+    """quickstart R7: sao lưu → xoá chuỗi → khôi phục còn đủ chuỗi và quy tắc."""
+    rule = {"freq": "weekly", "weekdays": [1, 4], "end": {"kind": "after_count", "count": 5}}
+    resp = client.post(
+        "/api/tasks",
+        json={
+            "title": "Nộp báo cáo tuần",
+            "list_id": study_list_id(client),
+            "due_date": "2026-11-09",
+            "recurrence": rule,
+        },
+    )
+    assert resp.status_code == 201, resp.get_json()
+    original = resp.get_json()
+    dump = make_dump(client)
+
+    assert client.delete(f"/api/tasks/{original['id']}?scope=following").status_code == 200
+    assert client.delete("/api/trash").get_json()["deleted"] == 1
+    assert task_titles(client) == []
+
+    assert restore(client, dump).status_code == 200
+    tasks = client.get("/api/tasks?view=all").get_json()
+    assert [t["title"] for t in tasks] == ["Nộp báo cáo tuần"]
+    assert tasks[0]["series_id"] == original["series_id"]
+    assert tasks[0]["recurrence"] == original["recurrence"] == {**rule, "weekdays": [1, 4]}
+    nxt = client.post(f"/api/tasks/{tasks[0]['id']}/complete").get_json()["next_task"]
+    assert nxt["due_date"] == "2026-11-12"  # chuỗi vẫn sinh được lần kế tiếp sau khi khôi phục

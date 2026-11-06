@@ -17,7 +17,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCalendar } from '../../api/calendar';
 import { keys } from '../../api/keys';
 import { useSessionActions } from '../../api/sessions';
-import { useUpdateTask } from '../../api/tasks';
+import { isScopeRequired, useUpdateTask, type Scope } from '../../api/tasks';
+import { useAskScope } from '../tasks/recurrence/ScopeDialog';
 import type { CalendarData, ClassSession, Task } from '../../api/types';
 import { useColorScheme } from '../../app/useColorScheme';
 import { useHotkeys } from '../../app/useHotkeys';
@@ -87,6 +88,7 @@ export function CalendarScreen() {
   const actions = useTaskActions();
   const toast = useToast();
   const updateTask = useUpdateTask();
+  const askScope = useAskScope();
   const { update: updateSession } = useSessionActions();
   const calendarRef = useRef<FullCalendar>(null);
 
@@ -169,7 +171,7 @@ export function CalendarScreen() {
     const { kind, id } = arg.event.extendedProps as CalendarEventProps;
     if (kind === 'session')
       setOpenSession(calendar.data?.sessions.find((s) => s.id === id) ?? null);
-    else if (kind === 'task') openTask(id);
+    else if (kind === 'task' || kind === 'projected') openTask(id);
     else navigate('/lich-thi');
   }
 
@@ -195,20 +197,29 @@ export function CalendarScreen() {
     calendar.data?.tasks.find((item) => item.id === id);
 
   /** Lưu thay đổi của task; khối đã nằm ở chỗ mới nên chỉ `revert()` khi lỗi (FR-026, FR-029). */
-  function saveTaskPatch(before: Task, patch: TaskPatch, revert: () => void) {
+  function saveTaskPatch(before: Task, patch: TaskPatch, revert: () => void, scope?: Scope) {
     updateTask.mutate(
-      { id: before.id, input: patch },
+      { id: before.id, input: patch, scope },
       {
         onSuccess: ({ warnings }) => {
           for (const warning of warnings) toast.show(warning.message, { tone: 'warning' });
           toast.show(t('calendar.timeChanged'), {
             action: {
               label: t('calendar.undo'),
-              onClick: () => updateTask.mutate({ id: before.id, input: undoPatch(before, patch) }),
+              onClick: () =>
+                updateTask.mutate({ id: before.id, input: undoPatch(before, patch), scope }),
             },
           });
         },
         onError: (err) => {
+          if (isScopeRequired(err)) {
+            // Kéo lần hiện tại của task lặp: hỏi phạm vi; Huỷ thì trả khối về chỗ cũ (FR-020).
+            void askScope('edit').then((chosen) => {
+              if (chosen) saveTaskPatch(before, patch, revert, chosen);
+              else revert();
+            });
+            return;
+          }
           revert();
           toast.show(t('detail.saveFailed', { message: err.message }), { tone: 'danger' });
         },

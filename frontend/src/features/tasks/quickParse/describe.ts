@@ -1,9 +1,9 @@
 import { WEEKDAYS_VN } from '../../../lib/dates';
 import { t } from '../../../i18n/vi';
-import type { RecurrenceRule } from './types';
+import type { RecurrenceSpec } from './types';
 
 /** "hằng ngày", "mỗi 3 ngày", "hằng tuần vào Thứ Hai, Thứ Năm", "hằng tháng vào ngày 5". */
-export function describeRecurrence(rule: RecurrenceRule): string {
+export function describeRecurrence(rule: RecurrenceSpec): string {
   switch (rule.freq) {
     case 'daily':
       return t('quickAdd.repeatDaily');

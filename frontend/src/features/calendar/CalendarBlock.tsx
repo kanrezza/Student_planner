@@ -3,7 +3,7 @@ import { t } from '../../i18n/vi';
 import { formatDayAbbr, formatTime } from '../../lib/dates';
 import { Checkbox } from '../../ui/Checkbox';
 import { cx } from '../../ui/cx';
-import { IconFlag, IconStarFilled } from '../../ui/icons';
+import { IconFlag, IconRepeat, IconStarFilled } from '../../ui/icons';
 import type { CalendarEventProps } from './toCalendarEvents';
 
 const time = (d: Date | null) => (d ? formatTime(d.toISOString()) : '');
@@ -39,6 +39,7 @@ export function CalendarBlock({
     p.room,
     status,
     p.kind === 'exam' ? t('calendar.exam') : null,
+    p.kind === 'projected' ? t('recurrence.projected') : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -64,6 +65,13 @@ export function CalendarBlock({
         <IconStarFilled
           size={10}
           aria-label={t('important.label')}
+          className="mr-0.5 inline-block align-[-1px]"
+        />
+      )}
+      {p.kind === 'projected' && (
+        <IconRepeat
+          size={10}
+          aria-label={t('recurrence.projected')}
           className="mr-0.5 inline-block align-[-1px]"
         />
       )}

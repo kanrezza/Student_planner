@@ -3,8 +3,14 @@ import { DateInput } from '../../components/DateInput';
 import { ApiError } from '../../api/client';
 import { useLists } from '../../api/lists';
 import { useSettings } from '../../api/settings';
-import { useCreateTask, useTask, useUpdateTask } from '../../api/tasks';
-import type { Priority, Task, TaskInput } from '../../api/types';
+import {
+  isScopeRequired,
+  useCreateTask,
+  useTask,
+  useUpdateTask,
+  type Scope,
+} from '../../api/tasks';
+import type { Priority, RecurrenceRule, Task, TaskInput } from '../../api/types';
 import { useNow } from '../../app/useNow';
 import { ImportantToggle } from '../../components/ImportantToggle';
 import { minutesLabel, ReminderSelect } from '../../components/ReminderSelect';
@@ -21,6 +27,8 @@ import { IconAlert, IconClose, IconRepeat, IconTrash } from '../../ui/icons';
 import { SidePanel } from '../../ui/SidePanel';
 import { Switch } from '../../ui/Switch';
 import { useToast } from '../../ui/Toast';
+import { RecurrenceEditor } from './recurrence/RecurrenceEditor';
+import { useAskScope } from './recurrence/ScopeDialog';
 import { useTaskActions } from './useTaskActions';
 import { defaultWorkWindow, isWorkAfterDue, workWindowError, type WorkWindow } from './workWindow';
 
@@ -224,6 +232,7 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
   const update = useUpdateTask();
   const actions = useTaskActions();
   const toast = useToast();
+  const askScope = useAskScope();
   const lists = useLists().data ?? [];
   const settings = useSettings().data;
   const { now, today } = useNow();
@@ -239,17 +248,36 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
   );
   const [errors, setErrors] = useState<FieldErrors>({});
 
-  function save(input: Partial<TaskInput>, fields: string[] = Object.keys(input)) {
+  /** Task lặp: người dùng bấm Huỷ ở hộp phạm vi → bỏ thay đổi chưa lưu, trả ô về giá trị đang lưu. */
+  function resetFields() {
+    setTitle(task.title);
+    setNotes(task.notes ?? '');
+    setDueDate(task.due_date ?? '');
+    setDueTime(task.due_time ?? '');
+    setWork(
+      task.work_date
+        ? { work_date: task.work_date, work_start: task.work_start!, work_end: task.work_end! }
+        : null,
+    );
+  }
+
+  function save(input: Partial<TaskInput>, fields: string[] = Object.keys(input), scope?: Scope) {
     setErrors((current) => {
       const next = { ...current };
       for (const field of fields) delete next[field];
       return next;
     });
     update.mutate(
-      { id: task.id, input },
+      { id: task.id, input, scope },
       {
         onError: (err) => {
-          if (err instanceof ApiError && Object.keys(err.fields).length) {
+          if (isScopeRequired(err)) {
+            // Sửa lần hiện tại của task lặp: hỏi "Chỉ lần này" hay "Lần này và các lần sau" (FR-020).
+            void askScope('edit').then((chosen) => {
+              if (chosen) save(input, fields, chosen);
+              else resetFields();
+            });
+          } else if (err instanceof ApiError && Object.keys(err.fields).length) {
             setErrors((current) => ({ ...current, ...err.fields }));
           } else {
             toast.show(t('detail.saveFailed', { message: err.message }), { tone: 'danger' });
@@ -458,6 +486,26 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
               </>
             )}
           </Row>
+
+          {!task.is_auto && !task.completed && (
+            <Row label={t('recurrence.label')}>
+              {task.due_date ? (
+                <RecurrenceEditor
+                  value={task.recurrence}
+                  dueDate={task.due_date}
+                  onChange={(recurrence: RecurrenceRule | null) => save({ recurrence })}
+                />
+              ) : (
+                <p className="text-[12px] text-muted">{t('recurrence.needsDue')}</p>
+              )}
+              <FieldError message={errors.recurrence} />
+            </Row>
+          )}
+          {task.completed && task.series_finished && (
+            <Row label={t('recurrence.label')}>
+              <p className="text-[13px] text-muted">{t('recurrence.finished')}</p>
+            </Row>
+          )}
 
           <Row label={t('detail.priority')}>
             <select

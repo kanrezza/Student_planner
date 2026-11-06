@@ -184,6 +184,45 @@ describe('QuickAdd hiểu câu tiếng Việt (feature 003 US4)', () => {
     });
   });
 
+  it('cụm lặp (US4-8): "Họp lớp thứ 2 hàng tuần 7h" tạo task lặp hằng tuần T2, hạn 07:00 09/11', async () => {
+    const { input, posts } = await ready();
+    type(input, 'Họp lớp thứ 2 hàng tuần 7h');
+    expect(marks()).toEqual(['thứ 2 hàng tuần', '7h']);
+    expect(screen.getByRole('status').textContent).toContain('Lặp: hằng tuần vào Thứ Hai');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(JSON.parse(String(posts()[0][1]?.body))).toMatchObject({
+      title: 'Họp lớp',
+      due_date: '2026-11-09',
+      due_time: '07:00',
+      recurrence: { freq: 'weekly', weekdays: [1], end: { kind: 'never' } },
+    });
+  });
+
+  it('cụm lặp (US4-7): "Uống thuốc hằng ngày 20h" lặp hằng ngày, hạn 20:00 hôm nay', async () => {
+    const { input, posts } = await ready();
+    type(input, 'Uống thuốc hằng ngày 20h');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(JSON.parse(String(posts()[0][1]?.body))).toMatchObject({
+      title: 'Uống thuốc',
+      due_date: '2026-11-05',
+      due_time: '20:00',
+      recurrence: { freq: 'daily', end: { kind: 'never' } },
+    });
+  });
+
+  it('bấm vào cụm lặp để huỷ hiểu: không gửi recurrence, cụm giữ làm chữ', async () => {
+    const { input, posts } = await ready();
+    type(input, 'Uống thuốc hằng ngày');
+    fireEvent.click(document.querySelector('mark')!);
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    const body = JSON.parse(String(posts()[0][1]?.body));
+    expect(body.title).toBe('Uống thuốc hằng ngày');
+    expect(body.recurrence).toBeUndefined();
+  });
+
   it('Quan trọng và ưu tiên được gửi; nhãn mới gửi bằng tag_names', async () => {
     const { input, posts } = await ready();
     type(input, 'Viết báo cáo * !cao #ThóiQuenMới');

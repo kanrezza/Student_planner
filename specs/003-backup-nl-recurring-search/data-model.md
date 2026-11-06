@@ -162,7 +162,7 @@ CHECK đảm bảo các cột bắt buộc theo `freq`/`end_kind` như bảng tr
 |-----|------|---------|
 | `series_id` | bigint NULL FK → `task_series.id` ON DELETE SET NULL | |
 | `occurrence_no` | smallint NULL | lần thứ mấy của chuỗi |
-| `spawned_from_task_id` | bigint NULL FK → `tasks.id` ON DELETE SET NULL | lần vừa hoàn thành đã sinh ra task này (FR-019) |
+| `spawned_from_task_id` | bigint NULL (không có FK) | lần vừa hoàn thành đã sinh ra task này (FR-019). Không có khoá ngoại tự tham chiếu vì nó làm `pg_restore --clean` của bản sao lưu cũ báo lỗi (constraint phụ thuộc `tasks_pkey`); id task không bao giờ được dùng lại nên không sợ trỏ nhầm |
 | `trash_scope` | text NULL | `this` \| `following`; chỉ khi task lặp ở Thùng rác |
 
 - `user_modified` (đã có) được đặt `true` khi người dùng sửa một lần được sinh tự động (nghĩa mở rộng, R16).

@@ -50,5 +50,6 @@ export function quickAddInput(
     tag_ids: [...new Set([...(defaults.tag_ids ?? []), ...(parsed?.tag_ids ?? [])])],
   };
   if (parsed?.tag_names.length) input.tag_names = parsed.tag_names;
+  if (parsed?.recurrence) input.recurrence = parsed.recurrence;
   return input;
 }
