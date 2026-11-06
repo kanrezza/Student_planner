@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-05
 
-**Status**: Draft
+**Status**: Done (các kịch bản cần thao tác tay trên máy còn lại ghi ở validation.md)
 
 **Input**: User description: "Bổ sung 4 tính năng cho Lịch Học Cá Nhân (app macOS hiện có, feature 001
 và 002 đã xong): (1) Sao lưu tự động (ưu tiên cao nhất): mỗi ngày tự sao lưu toàn bộ dữ liệu vào một

@@ -241,11 +241,11 @@ Lời nhắc/iPhone; bật cụm lặp trong thêm nhanh.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T094 [P] Cập nhật `README.md`: thêm nhanh bằng câu (bảng cú pháp ngắn), tìm kiếm ⌘F, task lặp; bảng phím tắt thêm ⌘F; cập nhật `specs/002-redesign-macos-app/contracts/ui-shortcuts.md` hoặc trỏ sang `specs/003-backup-nl-recurring-search/contracts/ui.md`
-- [ ] T095 [P] Kiểm tra tương phản ≥ 4.5:1 ở chế độ sáng/tối cho màu tô sáng thêm nhanh, tô sáng tìm kiếm, khối dự kiến và thẻ cảnh báo sao lưu bằng `frontend/src/lib/contrast.ts` (thêm ca vào test tương phản hiện có)
-- [ ] T096 [P] Rà constitution IV: chạy app khi tắt mạng, xác nhận không có kết nối ra ngoài máy (`lsof -i` cho backend, agent, app) ngoài localhost; ghi kết quả vào `specs/003-backup-nl-recurring-search/quickstart.md` (SC-010)
-- [ ] T097 Chạy toàn bộ quickstart B1–B10, N1–N7, S1–S5, R1–R7 và kịch bản kiểm chứng của feature 001, 002 (SC-009); ghi kết quả vào `specs/003-backup-nl-recurring-search/validation.md`
-- [ ] T098 `./scripts/test.sh` và `./scripts/test-persistence.sh` pass lần cuối; đánh dấu Status "Done" trong `specs/003-backup-nl-recurring-search/spec.md`; commit
+- [x] T094 [P] Cập nhật `README.md`: thêm nhanh bằng câu (bảng cú pháp ngắn), tìm kiếm ⌘F, task lặp; bảng phím tắt thêm ⌘F; cập nhật `specs/002-redesign-macos-app/contracts/ui-shortcuts.md` hoặc trỏ sang `specs/003-backup-nl-recurring-search/contracts/ui.md`
+- [x] T095 [P] Kiểm tra tương phản ≥ 4.5:1 ở chế độ sáng/tối cho màu tô sáng thêm nhanh, tô sáng tìm kiếm, khối dự kiến và thẻ cảnh báo sao lưu bằng `frontend/src/lib/contrast.ts` (thêm ca vào test tương phản hiện có)
+- [x] T096 [P] Rà constitution IV: chạy app khi tắt mạng, xác nhận không có kết nối ra ngoài máy (`lsof -i` cho backend, agent, app) ngoài localhost; ghi kết quả vào `specs/003-backup-nl-recurring-search/quickstart.md` (SC-010)
+- [x] T097 (phần tự động; phần cần thao tác tay còn lại ghi ở validation.md) Chạy toàn bộ quickstart B1–B10, N1–N7, S1–S5, R1–R7 và kịch bản kiểm chứng của feature 001, 002 (SC-009); ghi kết quả vào `specs/003-backup-nl-recurring-search/validation.md`
+- [x] T098 `./scripts/test.sh` và `./scripts/test-persistence.sh` pass lần cuối; đánh dấu Status "Done" trong `specs/003-backup-nl-recurring-search/spec.md`; commit
 
 ---
 

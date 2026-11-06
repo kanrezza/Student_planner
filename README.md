@@ -62,6 +62,24 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 
 - **Công việc**: Hôm nay, Ngày mai, 7 ngày tới, Tất cả, các danh sách riêng, **Thùng rác** (giữ task 30 ngày
   rồi xoá hẳn). Gõ vào ô *Thêm công việc* + Enter; bấm task để mở bảng chi tiết (khung giờ làm, nhãn, nhắc).
+- **Thêm nhanh bằng câu tiếng Việt**: gõ cả câu vào ô *Thêm công việc*, phần hiểu được sẽ được tô sáng và
+  hiện trước kết quả (bấm vào chữ tô sáng để giữ nó làm chữ thường). Không cần gõ dấu, mọi xử lý chạy trên máy.
+
+  | Gõ | Hiểu là |
+  |----|---------|
+  | `mai`, `ngày mai`, `mốt`, `thứ 6`, `thứ 6 tuần sau`, `20/11`, `20/11/2027` | ngày hạn |
+  | `9h`, `9h30`, `9 giờ tối`, `9 rưỡi`, `tối nay`, `sáng mai` | giờ hạn (giờ 1–5 không ghi buổi là chiều) |
+  | `#Gấp` · `~Học tập` | nhãn (nhãn chưa có sẽ được tạo) · danh sách |
+  | `*` hoặc `quan trọng` · `!cao` `!tb` `!thấp` | Quan trọng · mức ưu tiên |
+  | `hằng ngày`, `mỗi 3 ngày`, `thứ 2 hàng tuần`, `ngày 5 hằng tháng` | lặp lại |
+
+  Ví dụ: `Nộp bài QTDA thứ 6 9h #Gấp * !cao`, `Họp lớp thứ 2 hàng tuần 7h`.
+- **Tìm kiếm** (⌘F): task, danh sách, nhãn, môn học, buổi học, buổi thi; không phân biệt dấu và hoa thường,
+  tô sáng chỗ khớp, có công tắc *Gồm cả đã hoàn thành*. Esc để thoát và quay lại màn hình trước.
+- **Task lặp lại**: trong bảng chi tiết chọn *Lặp lại* (hằng ngày, mỗi N ngày, hằng tuần chọn nhiều thứ, hằng
+  tháng vào ngày D; kết thúc không/vào ngày/sau N lần). Hoàn thành một lần thì lần kế tiếp xuất hiện; sửa hoặc
+  xoá sẽ hỏi *Chỉ lần này* hay *Lần này và các lần sau*. Lịch và bản tóm tắt hằng ngày hiện các lần dự kiến;
+  Lời nhắc/iPhone luôn theo lần hiện tại.
 - **Lịch**: ngày/tuần/tháng; kéo thả task, kéo dãn khung giờ làm, kéo chọn vùng trống để tạo task, kéo
   buổi học sang giờ/ngày khác (có xác nhận).
 - **Môn học**: học kỳ, thêm một hoặc nhiều môn, ca học; **Nhập từ ảnh** cho thời khoá biểu.
@@ -86,7 +104,8 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 | ← → | Tuần/tháng trước/sau (Lịch) |
 | T, D, W, M | Lịch: hôm nay, ngày, tuần, tháng |
 
-Đầy đủ: ⌘/ trong app, hoặc `specs/002-redesign-macos-app/contracts/ui-shortcuts.md`.
+Đầy đủ: ⌘/ trong app, hoặc `specs/002-redesign-macos-app/contracts/ui-shortcuts.md` (phím tắt thêm ở feature 003:
+`specs/003-backup-nl-recurring-search/contracts/ui.md`).
 
 ## Dữ liệu nằm ở đâu, sao lưu
 
