@@ -417,6 +417,54 @@ for (const [word, days, date] of [
     due_date: date,
   });
 }
+// Hạn lần đầu là ngày gần nhất khớp quy tắc (hôm nay là Thứ Năm 05/11, 10:00).
+add('Học quizz QTDA chủ nhật hàng tuần 21h', {
+  title: 'Học quizz QTDA',
+  recurrence: { freq: 'weekly', weekdays: [7], end: never },
+  due_date: '2026-11-08',
+  due_time: '21:00',
+  marks: ['chủ nhật hàng tuần', '21h'],
+});
+add('Học quizz QTDA chu nhat hang tuan 21h', {
+  title: 'Học quizz QTDA',
+  recurrence: { freq: 'weekly', weekdays: [7], end: never },
+  due_date: '2026-11-08',
+  due_time: '21:00',
+});
+add('Tập thể dục thứ 2, 4, 6 hàng tuần', {
+  title: 'Tập thể dục',
+  recurrence: { freq: 'weekly', weekdays: [1, 3, 5], end: never },
+  due_date: '2026-11-06',
+});
+add('Tập thể dục thứ 2, 4, 6 hàng tuần 9h', {
+  title: 'Tập thể dục',
+  recurrence: { freq: 'weekly', weekdays: [1, 3, 5], end: never },
+  due_date: '2026-11-06',
+  due_time: '09:00',
+});
+add('Tập thể dục thứ 3 và 5 hàng tuần 11h', {
+  title: 'Tập thể dục',
+  recurrence: { freq: 'weekly', weekdays: [2, 4], end: never },
+  due_date: TODAY,
+  due_time: '11:00',
+});
+add('Tập thể dục thứ 3 và 5 hàng tuần 9h', {
+  title: 'Tập thể dục',
+  recurrence: { freq: 'weekly', weekdays: [2, 4], end: never },
+  due_date: '2026-11-10',
+  due_time: '09:00',
+});
+add('Đóng tiền ngày 5 hằng tháng', {
+  title: 'Đóng tiền',
+  recurrence: { freq: 'monthly', month_day: 5, end: never },
+  due_date: TODAY,
+});
+add('Đóng tiền ngày 5 hằng tháng 9h', {
+  title: 'Đóng tiền',
+  recurrence: { freq: 'monthly', month_day: 5, end: never },
+  due_date: '2026-12-05',
+  due_time: '09:00',
+});
 add('Họp lớp thứ 2 hàng tuần', {
   title: 'Họp lớp',
   recurrence: { freq: 'weekly', weekdays: [1], end: never },

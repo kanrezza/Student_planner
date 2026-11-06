@@ -25,6 +25,9 @@ import { parseQuickAdd, type QuickToken } from './quickParse';
 let tempId = -1;
 
 /** Task tạm hiện ngay trong danh sách trong lúc chờ API (cập nhật lạc quan). */
+/** Hai lần gửi cùng một câu trong khoảng này coi là một. */
+const DUPLICATE_WINDOW_MS = 400;
+
 function placeholderTask(input: ReturnType<typeof quickAddInput>): Task {
   return {
     id: tempId--,
@@ -69,8 +72,12 @@ function placeholderTask(input: ReturnType<typeof quickAddInput>): Task {
  */
 export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
   const [title, setTitle] = useState('');
-  const [parsedText, setParsedText] = useState(''); // đứng yên khi đang soạn dấu bằng bộ gõ
+  // Đang soạn dấu bằng bộ gõ (Telex): giữ nguyên chữ đã chốt trước đó, chỉ hiểu/tô sáng lại sau
+  // `compositionend`. Ngoài lúc soạn, chữ được hiểu luôn chính là chữ trong ô.
   const [composing, setComposing] = useState(false);
+  const [frozenText, setFrozenText] = useState('');
+  const parsedText = composing ? frozenText : title;
+  const lastSubmit = useRef<{ text: string; at: number } | null>(null);
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
   const [caret, setCaret] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -131,7 +138,6 @@ export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
     setTitle(value);
     setCaret(selection);
     setActiveSuggestion(0);
-    if (!composing) setParsedText(value);
   }
 
   function syncScroll() {
@@ -158,7 +164,13 @@ export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
   }
 
   function submit() {
-    if (title.trim() === '' || defaults === null) return;
+    if (composing || title.trim() === '' || defaults === null) return;
+    // Chống gửi trùng: cùng một câu bị gửi lại trong vài trăm ms (Enter lặp của bộ gõ).
+    const previous = lastSubmit.current;
+    if (previous && previous.text === title && Date.now() - previous.at < DUPLICATE_WINDOW_MS) {
+      return;
+    }
+    lastSubmit.current = { text: title, at: Date.now() };
     // Phân tích lại câu hiện tại (ô có thể vừa đổi trong lúc đang soạn bằng bộ gõ).
     const latest = parseQuickAdd(title, {
       now: new Date(),
@@ -177,7 +189,6 @@ export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
     );
     const original = title;
     setTitle('');
-    setParsedText('');
     setDismissed(new Set());
     create.mutate(input, {
       onSuccess: () => {
@@ -186,13 +197,13 @@ export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
       onError: (err) => {
         toast.show(t('quickAdd.failed', { message: err.message }), { tone: 'danger' });
         setTitle((current) => current || original); // trả lại câu gõ để sửa lại không mất công
-        setParsedText((current) => current || original);
       },
     });
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.nativeEvent.isComposing) return;
+    // Enter chốt chữ của bộ gõ có `isComposing` hoặc keyCode 229: không phải lệnh tạo task.
+    if (e.nativeEvent.isComposing || e.keyCode === 229 || composing) return;
     if (suggestOpen) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
@@ -226,8 +237,8 @@ export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
         <IconPlus size={16} className="text-accent" />
         <div className="relative h-full flex-1">
           <QuickAddHighlight
-            text={parsedText}
-            tokens={parse.tokens}
+            text={title}
+            tokens={composing ? [] : parse.tokens}
             scrollLeft={scrollLeft}
             onDismiss={dismissToken}
           />
@@ -245,11 +256,11 @@ export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
             onKeyDown={onKeyDown}
             onKeyUp={syncScroll}
             onSelect={syncScroll}
-            onCompositionStart={() => setComposing(true)}
-            onCompositionEnd={(e) => {
-              setComposing(false);
-              setParsedText(e.currentTarget.value);
+            onCompositionStart={() => {
+              setFrozenText(title);
+              setComposing(true);
             }}
+            onCompositionEnd={() => setComposing(false)}
             className="h-full w-full border-0 bg-transparent px-0 text-[13px] text-text shadow-none focus:shadow-none"
           />
           {suggestOpen && suggestQuery && (
@@ -262,7 +273,10 @@ export function QuickAdd({ view, today }: { view: TaskView; today: string }) {
           )}
         </div>
       </div>
-      <QuickAddPreview parse={parse} today={today} lists={lists.data ?? []} recurrence />
+      {/* Ô trống không phải lỗi: chỉ xem trước khi đã gõ gì đó (tránh "Thiếu tên công việc" sau khi tạo xong). */}
+      {parsedText.trim() !== '' && (
+        <QuickAddPreview parse={parse} today={today} lists={lists.data ?? []} recurrence />
+      )}
     </div>
   );
 }
