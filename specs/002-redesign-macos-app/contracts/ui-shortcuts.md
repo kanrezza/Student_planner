@@ -18,6 +18,7 @@
 | Phím | Ở đâu | Hành vi |
 |------|-------|---------|
 | ⌘N | mọi nơi | về Công việc (giữ view hiện tại nếu đang ở Công việc) và đặt con trỏ vào ô "Thêm công việc" |
+| ⌘F | mọi nơi | tìm kiếm (feature 003; xem [contracts/ui.md](../../003-backup-nl-recurring-search/contracts/ui.md)) |
 | ⌘1 … ⌘5 | mọi nơi | Công việc, Lịch, Môn học, Lịch thi, Cài đặt |
 | ⌘, | mọi nơi | Cài đặt |
 | ⌘/ | mọi nơi | bảng phím tắt |
