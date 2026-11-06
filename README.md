@@ -50,7 +50,7 @@ triển không xác định (chữ ký ad-hoc): chuột phải vào app → **M�
 ### Agent nhắc lịch (iPhone nhận nhắc khi Mac gập)
 
 ```bash
-mac-agent/scripts/install.sh              # build LichHocAgent.app, cài LaunchAgent, chạy ngay
+mac-agent/scripts/install.sh              # cài LichHocAgent.app + Python riêng vào ~/Library/Application Support/LichHocAgent, cài LaunchAgent, chạy ngay (tháo SSD vẫn chạy)
 mac-agent/scripts/install.sh --uninstall
 ```
 
@@ -132,12 +132,12 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 - Script `backup.sh`/`restore.sh` ở trên vẫn dùng được để sao lưu thủ công.
 
 ```bash
-./scripts/backup.sh                              # → backups/lichhoc-YYYYmmdd-HHMM.dump
-./scripts/restore.sh backups/lichhoc-....dump    # khôi phục (hỏi xác nhận, ghi đè dữ liệu hiện tại)
+./scripts/backup.sh     # → ~/Library/Application Support/LichHocAgent/backups/lichhoc-YYYYmmdd-HHMM.dump
+./scripts/restore.sh "<file .dump>"   # khôi phục (hỏi xác nhận, ghi đè dữ liệu hiện tại)
 ```
 
 (Thủ công: `docker compose exec -T db pg_dump -U lichhoc -Fc lichhoc > lichhoc.dump`, khôi phục bằng
-`pg_restore --clean --if-exists -U lichhoc -d lichhoc`.) Thư mục `backups/` không được đưa lên git.
+`pg_restore --clean --if-exists -U lichhoc -d lichhoc`.) Đổi nơi lưu bằng biến `LICHHOC_BACKUP_DIR`; script không ghi gì vào thư mục dự án.
 
 ## Chạy test
 
