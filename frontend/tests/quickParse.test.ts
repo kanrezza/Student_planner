@@ -18,6 +18,8 @@ function actual(c: Case) {
     marks: parsed.tokens.filter((t) => !t.dismissed).map((t) => t.text),
     past: parsed.dueInPast,
     missing: parsed.titleMissing,
+    notes: f.notes,
+    rangeError: parsed.rangeError,
   };
 }
 
@@ -45,6 +47,8 @@ describe('hiểu câu thêm nhanh (US4)', () => {
       if (e.marks) expect(got.marks).toEqual(e.marks);
       expect(got.past).toBe(e.past ?? false);
       expect(got.missing).toBe(e.missing ?? e.title === '');
+      expect(got.notes).toBe(e.notes);
+      expect(got.rangeError).toBe(e.rangeError ?? false);
     });
   });
 

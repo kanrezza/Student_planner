@@ -223,6 +223,78 @@ describe('QuickAdd hiểu câu tiếng Việt (feature 003 US4)', () => {
     expect(body.recurrence).toBeUndefined();
   });
 
+  describe('khoảng ngày "từ A đến B" (FR-028a)', () => {
+    it('có cụm lặp: một khối tô sáng, lần đầu là A, lặp kết thúc vào B', async () => {
+      const { input, posts } = await ready();
+      type(input, 'học quizz quản trị 21h hằng ngày từ 6/11 đến 11/11');
+      expect(marks()).toEqual(['21h', 'hằng ngày', 'từ 6/11 đến 11/11']);
+      const preview = screen.getByRole('status').textContent;
+      expect(preview).toContain('Hạn: 21:00 Thứ Sáu, 06/11');
+      expect(preview).toContain('Lặp: hằng ngày · đến 11/11/2026');
+      fireEvent.keyDown(input, { key: 'Enter' });
+      await waitFor(() => expect(posts()).toHaveLength(1));
+      expect(JSON.parse(String(posts()[0][1]?.body))).toMatchObject({
+        title: 'học quizz quản trị',
+        due_date: '2026-11-06',
+        due_time: '21:00',
+        notes: null,
+        recurrence: { freq: 'daily', end: { kind: 'on_date', date: '2026-11-11' } },
+      });
+    });
+
+    it('không có cụm lặp: hạn là B, ghi chú "Bắt đầu: A"', async () => {
+      const { input, posts } = await ready();
+      type(input, 'học quizz quản trị từ 6/11 đến 11/11');
+      expect(marks()).toEqual(['từ 6/11 đến 11/11']);
+      expect(screen.getByRole('status').textContent).toContain('Ghi chú: Bắt đầu: 06/11/2026');
+      fireEvent.keyDown(input, { key: 'Enter' });
+      await waitFor(() => expect(posts()).toHaveLength(1));
+      const body = JSON.parse(String(posts()[0][1]?.body));
+      expect(body).toMatchObject({
+        title: 'học quizz quản trị',
+        due_date: '2026-11-11',
+        due_time: null,
+        notes: 'Bắt đầu: 06/11/2026',
+      });
+      expect(body.recurrence).toBeUndefined();
+    });
+
+    it('"đến hết B": hạn là B, không có ghi chú', async () => {
+      const { input, posts } = await ready();
+      type(input, 'Làm đồ án đến hết 20/11');
+      fireEvent.keyDown(input, { key: 'Enter' });
+      await waitFor(() => expect(posts()).toHaveLength(1));
+      expect(JSON.parse(String(posts()[0][1]?.body))).toMatchObject({
+        title: 'Làm đồ án',
+        due_date: '2026-11-20',
+        notes: null,
+      });
+    });
+
+    it('B trước A: báo lỗi nhẹ, không áp dụng, vẫn tạo được task', async () => {
+      const { input, posts } = await ready();
+      type(input, 'Nộp bài từ 11/11 đến 6/11');
+      expect(screen.getByRole('status').textContent).toContain('Ngày kết thúc trước ngày bắt đầu');
+      fireEvent.keyDown(input, { key: 'Enter' });
+      await waitFor(() => expect(posts()).toHaveLength(1));
+      const body = JSON.parse(String(posts()[0][1]?.body));
+      expect(body).toMatchObject({ title: 'Nộp bài', due_date: null, notes: null });
+    });
+
+    it('bấm vào khối tô sáng để giữ nguyên làm chữ', async () => {
+      const { input, posts } = await ready();
+      type(input, 'Ôn thi từ 6/11 đến 11/11');
+      fireEvent.click(document.querySelector('mark')!);
+      expect(marks()).toEqual([]);
+      fireEvent.keyDown(input, { key: 'Enter' });
+      await waitFor(() => expect(posts()).toHaveLength(1));
+      expect(JSON.parse(String(posts()[0][1]?.body))).toMatchObject({
+        title: 'Ôn thi từ 6/11 đến 11/11',
+        due_date: null,
+      });
+    });
+  });
+
   describe('bộ gõ Telex (lỗi N7)', () => {
     const SENTENCE = 'Học quizz QTDA chủ nhật hàng tuần 21h';
     const layerText = () => document.querySelector('[aria-hidden] > div')?.textContent;

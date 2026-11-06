@@ -16,6 +16,7 @@ const SLOT: Partial<Record<TokenKind, string>> = {
   date: 'date',
   time: 'time',
   daypart: 'time',
+  range: 'date',
   recurrence: 'recurrence',
   list: 'list',
   priority: 'priority',
@@ -104,7 +105,59 @@ function candidates(text: string, ctx: QuickParseContext): Candidate[] {
       add(entry.kind, m.index, m.index + m[0].length, value);
     }
   }
+  addRanges(found, text);
   return found;
+}
+
+// Nối giữa hai ngày của khoảng ngày: "đến", "đến hết", "-", "–".
+const RANGE_JOINER = /^\s*(?:-|–|den(?:\s+het)?)\s*$/;
+
+/**
+ * Khoảng ngày (FR-028a): hai cụm ngày kề nhau nối bằng "đến"/"-" (kèm "từ" ngay trước ngày đầu), hoặc
+ * "đến hết <ngày>". Cụm khoảng bao trọn các cụm ngày bên trong nên thắng khi chọn cụm không chồng nhau.
+ */
+function addRanges(found: Candidate[], text: string): void {
+  const all = found.filter((c) => c.kind === 'date' && isDateValue(c.value));
+  // Bỏ cụm nằm trọn trong cụm ngày dài hơn ("mai" trong "ngày mai").
+  const dates = all
+    .filter((c) => !all.some((o) => o !== c && o.start <= c.start && o.end >= c.end))
+    .sort((a, b) => a.start - b.start);
+  const used = new Set<Candidate>();
+  const push = (start: number, end: number, from: Candidate | null, to: Candidate) => {
+    if (!to.value || !isDateValue(to.value)) return;
+    const fromValue = from && isDateValue(from.value) ? from.value : null;
+    found.push({
+      kind: 'range',
+      start,
+      end,
+      text: text.slice(start, end),
+      value: { type: 'range', from: fromValue, to: to.value },
+    });
+  };
+  for (let i = 0; i + 1 < dates.length; i += 1) {
+    const a = dates[i];
+    const b = dates[i + 1];
+    if (used.has(a) || !RANGE_JOINER.test(foldVi(text.slice(a.end, b.start)).folded)) continue;
+    used.add(a);
+    used.add(b);
+    push(fromWordStart(text, a.start) ?? a.start, b.end, a, b);
+  }
+  for (const b of dates) {
+    if (used.has(b)) continue;
+    const before = foldVi(text.slice(0, b.start));
+    const m = /(?<![a-z0-9])den\s+het\s+$/.exec(before.folded);
+    if (m) push(before.map[m.index], b.end, null, b);
+  }
+}
+
+/** Vị trí chữ "từ" đứng ngay trước `start` (cách nhau khoảng trắng), hoặc null. */
+function fromWordStart(text: string, start: number): number | null {
+  const before = foldVi(text.slice(0, start));
+  const m = /(?<![a-z0-9])tu\s+$/.exec(before.folded);
+  if (!m) return null;
+  const at = before.map[m.index];
+  const word = text.slice(at, start).trim().normalize('NFC').toLowerCase();
+  return word === 'từ' || word === 'tu' ? at : null;
 }
 
 /** "mai" đứng một mình là tên người khi theo sau chị/anh/em/cô/thầy… hoặc viết hoa "Mai" giữa câu. */

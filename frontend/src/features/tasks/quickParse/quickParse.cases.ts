@@ -31,6 +31,8 @@ export type Expected = {
   marks?: string[];
   past?: boolean;
   missing?: boolean;
+  notes?: string;
+  rangeError?: boolean;
 };
 
 export type Case = {
@@ -793,3 +795,147 @@ add('Họp Ngày Mai', { title: 'Họp', due_date: TOMORROW });
 add('Họp mai 9h', { title: 'Họp', due_date: TOMORROW, due_time: '09:00', marks: ['mai', '9h'] });
 add('Cô Mai dạy mai', { title: 'Cô Mai dạy', due_date: TOMORROW });
 add('Mua hoa mai', { title: 'Mua hoa', due_date: TOMORROW }); // chữ thường vẫn hiểu là ngày; bấm để huỷ
+
+// ---- 11. Khoảng ngày "từ A đến B" (FR-028a) ----
+const until = (date: string) => ({ kind: 'on_date', date }) as const;
+add('học quizz quản trị 21h hằng ngày từ 6/11 đến 11/11', {
+  title: 'học quizz quản trị',
+  due_date: '2026-11-06',
+  due_time: '21:00',
+  recurrence: { freq: 'daily', end: until('2026-11-11') },
+  marks: ['21h', 'hằng ngày', 'từ 6/11 đến 11/11'],
+});
+add('học quizz quản trị từ 6/11 đến 11/11', {
+  title: 'học quizz quản trị',
+  due_date: '2026-11-11',
+  notes: 'Bắt đầu: 06/11/2026',
+  marks: ['từ 6/11 đến 11/11'],
+});
+add('Làm đồ án đến hết 20/11', {
+  title: 'Làm đồ án',
+  due_date: '2026-11-20',
+  marks: ['đến hết 20/11'],
+});
+for (const [phrase, mark] of [
+  ['từ 6/11 - 11/11', 'từ 6/11 - 11/11'],
+  ['6/11 - 11/11', '6/11 - 11/11'],
+  ['6/11-11/11', '6/11-11/11'],
+  ['6/11 đến 11/11', '6/11 đến 11/11'],
+  ['TỪ 6/11 ĐẾN 11/11', 'TỪ 6/11 ĐẾN 11/11'],
+  ['tu 6/11 den 11/11', 'tu 6/11 den 11/11'],
+  ['từ 06/11/2026 đến 11/11/2026', 'từ 06/11/2026 đến 11/11/2026'],
+] as const) {
+  add(`Ôn thi ${phrase}`, {
+    title: 'Ôn thi',
+    due_date: '2026-11-11',
+    notes: 'Bắt đầu: 06/11/2026',
+    marks: [mark],
+  });
+}
+add('Ôn thi từ 6/11 đến 11/11 9h', {
+  title: 'Ôn thi',
+  due_date: '2026-11-11',
+  due_time: '09:00',
+  notes: 'Bắt đầu: 06/11/2026',
+  marks: ['từ 6/11 đến 11/11', '9h'],
+});
+add('Ôn thi 9h từ 6/11 đến 11/11', {
+  title: 'Ôn thi',
+  due_date: '2026-11-11',
+  due_time: '09:00',
+  notes: 'Bắt đầu: 06/11/2026',
+});
+add('Làm đồ án đến hết 20/11 17h', {
+  title: 'Làm đồ án',
+  due_date: '2026-11-20',
+  due_time: '17:00',
+});
+add('Làm đồ án đến hết thứ 6', { title: 'Làm đồ án', due_date: '2026-11-06' });
+add('Làm đồ án từ mai đến 20/11', {
+  title: 'Làm đồ án',
+  due_date: '2026-11-20',
+  notes: 'Bắt đầu: 06/11/2026',
+});
+add('Làm đồ án từ ngày mai đến thứ 6 tuần sau', {
+  title: 'Làm đồ án',
+  due_date: '2026-11-13',
+  notes: 'Bắt đầu: 06/11/2026',
+  marks: ['từ ngày mai đến thứ 6 tuần sau'],
+});
+// A không năm đã qua nhưng không sau B: cùng năm với B.
+add('Ôn thi từ 1/11 đến 11/11', {
+  title: 'Ôn thi',
+  due_date: '2026-11-11',
+  notes: 'Bắt đầu: 01/11/2026',
+});
+add('Ôn thi từ 20/12 đến 5/1', {
+  title: 'Ôn thi',
+  due_date: '2027-01-05',
+  notes: 'Bắt đầu: 20/12/2026',
+});
+// Có cụm lặp.
+add('Ôn bài hằng ngày từ 1/11 đến 11/11', {
+  title: 'Ôn bài',
+  due_date: TODAY, // A đã qua → lần đầu từ hôm nay
+  recurrence: { freq: 'daily', end: until('2026-11-11') },
+});
+add('Ôn bài hằng ngày đến hết 11/11 21h', {
+  title: 'Ôn bài',
+  due_date: TODAY,
+  due_time: '21:00',
+  recurrence: { freq: 'daily', end: until('2026-11-11') },
+});
+add('Họp nhóm thứ 2 hàng tuần từ 6/11 đến 30/11', {
+  title: 'Họp nhóm',
+  due_date: '2026-11-09',
+  recurrence: { freq: 'weekly', weekdays: [1], end: until('2026-11-30') },
+});
+add('Họp nhóm hàng tuần từ 6/11 đến 30/11', {
+  title: 'Họp nhóm',
+  due_date: '2026-11-06',
+  recurrence: { freq: 'weekly', weekdays: [5], end: until('2026-11-30') },
+});
+add('Đóng tiền ngày 5 hằng tháng từ 1/12 đến 1/3/2027', {
+  title: 'Đóng tiền',
+  due_date: '2026-12-05',
+  recurrence: { freq: 'monthly', month_day: 5, end: until('2027-03-01') },
+});
+// Cụm lặp tắt → khối khoảng ngày vẫn hiểu, "hằng ngày" giữ là chữ.
+add(
+  'Ôn bài hằng ngày từ 6/11 đến 11/11',
+  { title: 'Ôn bài hằng ngày', due_date: '2026-11-11', notes: 'Bắt đầu: 06/11/2026' },
+  { recurrence: false },
+);
+// B trước A, hoặc không có lần lặp nào trong khoảng: báo nhẹ, không áp dụng.
+add('Nộp bài từ 11/11 đến 6/11', {
+  title: 'Nộp bài',
+  rangeError: true,
+  marks: ['từ 11/11 đến 6/11'],
+});
+add('Nộp bài từ 11/11/2026 đến 6/11/2026 9h', {
+  title: 'Nộp bài',
+  due_date: '2026-11-06',
+  due_time: '09:00',
+  rangeError: true,
+});
+add('Họp thứ 2 hàng tuần từ 6/11 đến 8/11', {
+  title: 'Họp',
+  due_date: '2026-11-09',
+  recurrence: { freq: 'weekly', weekdays: [1], end: never },
+  rangeError: true,
+});
+// Không phải khoảng ngày.
+add('Đọc chương 3 - 4 đến 5h', {
+  title: 'Đọc chương 3 - 4 đến',
+  due_date: TODAY,
+  due_time: '17:00',
+  marks: ['5h'],
+});
+add('Đi từ nhà đến trường', { title: 'Đi từ nhà đến trường' });
+add('Nộp bài đến 20/11', { title: 'Nộp bài đến', due_date: '2026-11-20' });
+// Huỷ hiểu khối khoảng ngày: giữ nguyên là chữ.
+add(
+  'Ôn thi từ 6/11 đến 11/11',
+  { title: 'Ôn thi từ 6/11 đến 11/11' },
+  { dismissed: ['range:7:từ 6/11 đến 11/11'] },
+);

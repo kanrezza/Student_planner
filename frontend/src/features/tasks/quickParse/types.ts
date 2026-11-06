@@ -2,7 +2,7 @@
 export type Daypart = 'sang' | 'trua' | 'chieu' | 'toi' | 'dem';
 
 export type TokenKind =
-  'date' | 'time' | 'daypart' | 'recurrence' | 'tag' | 'list' | 'important' | 'priority';
+  'date' | 'time' | 'daypart' | 'range' | 'recurrence' | 'tag' | 'list' | 'important' | 'priority';
 
 export type RecurrenceSpec = {
   freq: 'daily' | 'every_n_days' | 'weekly' | 'monthly';
@@ -12,7 +12,9 @@ export type RecurrenceSpec = {
   month_day?: number;
 };
 
-export type RecurrenceRule = RecurrenceSpec & { end: { kind: 'never' } };
+export type RecurrenceRule = RecurrenceSpec & {
+  end: { kind: 'never' } | { kind: 'on_date'; date: string };
+};
 
 /** Cụm chỉ ngày. */
 export type DateValue =
@@ -40,7 +42,9 @@ export type TokenValue =
   | { type: 'list'; listId: number }
   | { type: 'important' }
   | { type: 'priority'; priority: 1 | 2 | 3 }
-  | { type: 'recurrence'; spec: RecurrenceSpec };
+  | { type: 'recurrence'; spec: RecurrenceSpec }
+  /** Khoảng ngày "từ A đến B" (FR-028a); `from` null khi chỉ có "đến hết B". */
+  | { type: 'range'; from: DateValue | null; to: DateValue };
 
 export type QuickToken = {
   kind: TokenKind;
@@ -75,6 +79,8 @@ export type QuickFields = {
   is_important?: boolean;
   priority?: 1 | 2 | 3;
   recurrence?: RecurrenceRule;
+  /** "Bắt đầu: DD/MM/YYYY" từ khoảng ngày không có cụm lặp (FR-028a). */
+  notes?: string;
 };
 
 export type QuickParse = {
@@ -83,4 +89,6 @@ export type QuickParse = {
   fields: QuickFields;
   dueInPast: boolean;
   titleMissing: boolean;
+  /** Khoảng ngày có B trước A (hoặc không có lần lặp nào trong khoảng): không áp dụng, báo nhẹ. */
+  rangeError: boolean;
 };

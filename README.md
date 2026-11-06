@@ -72,6 +72,7 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
   | `#Gấp` · `~Học tập` | nhãn (nhãn chưa có sẽ được tạo) · danh sách |
   | `*` hoặc `quan trọng` · `!cao` `!tb` `!thấp` | Quan trọng · mức ưu tiên |
   | `hằng ngày`, `mỗi 3 ngày`, `thứ 2 hàng tuần`, `ngày 5 hằng tháng` | lặp lại |
+  | `từ 6/11 đến 11/11`, `6/11 - 11/11`, `đến hết 20/11` | khoảng ngày: có cụm lặp thì lần đầu là ngày bắt đầu và lặp kết thúc vào ngày cuối; không có thì hạn là ngày cuối, ghi chú "Bắt đầu: …" |
 
   Ví dụ: `Nộp bài QTDA thứ 6 9h #Gấp * !cao`, `Họp lớp thứ 2 hàng tuần 7h`.
 - **Tìm kiếm** (⌘F): task, danh sách, nhãn, môn học, buổi học, buổi thi; không phân biệt dấu và hoa thường,
