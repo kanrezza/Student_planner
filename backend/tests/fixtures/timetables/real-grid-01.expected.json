@@ -1,0 +1,48 @@
+{
+  "image": "real-grid-01.jpg",
+  "kind": "week_schedule",
+  "month_year": "2026-10",
+  "note": "Ảnh thật; chỉ liệt kê các ô nhìn thấy đủ (các ô bị cắt ở mép dưới bỏ qua).",
+  "rows": [
+    {
+      "name": "An toàn và bảo mật thông tin",
+      "class_code": "1-1-26(N01)",
+      "date": "2026-09-30",
+      "weekday": 3,
+      "start_time": "06:45",
+      "end_time": "09:25",
+      "room": "A8-101",
+      "lecturer": "Lê Minh Khoa"
+    },
+    {
+      "name": "Đánh giá và kiểm định chất lượng phần mềm*",
+      "class_code": "1-1-26(COUR01.LT2)",
+      "date": "2026-09-30",
+      "weekday": 3,
+      "start_time": "15:45",
+      "end_time": "18:25",
+      "room": "A6-101.102 (PC)",
+      "lecturer": "Cao Bích Ngọc"
+    },
+    {
+      "name": "Tối ưu hóa",
+      "class_code": "1-1-26(N01)",
+      "date": "2026-10-02",
+      "weekday": 5,
+      "start_time": "06:45",
+      "end_time": "09:25",
+      "room": "A2-202",
+      "lecturer": "Tạ Kim Liên"
+    },
+    {
+      "name": "An toàn và bảo mật thông tin",
+      "class_code": "1-1-26(N01.TH2)",
+      "date": "2026-10-02",
+      "weekday": 5,
+      "start_time": "13:00",
+      "end_time": "15:40",
+      "room": "A6-103 (PC)",
+      "lecturer": "Lê Minh Khoa"
+    }
+  ]
+}
