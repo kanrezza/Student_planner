@@ -53,7 +53,7 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
 | name | start_time | end_time |
 |------|-----------|----------|
 | Ca 1 | 06:45 | 09:25 |
-| Ca 2 | 09:35 | 12:10 |
+| Ca 2 | 09:30 | 12:10 |
 | Ca 3 | 13:00 | 15:40 |
 | Ca 4 | 15:45 | 18:25 |
 

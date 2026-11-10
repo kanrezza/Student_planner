@@ -39,10 +39,13 @@ def main(path: str) -> None:
     preview = build_preview(
         boxes, image.size, context(now=datetime(2026, 11, 10, 20, 30, tzinfo=TZ), subject_names=[])
     )
-    rows = {(r["fields"]["date"]["value"], r["fields"]["start_time"]["value"]): r for r in preview["rows"]}
+    rows = {
+        (r["fields"]["date"]["value"], r["fields"]["start_time"]["value"]): r
+        for r in preview["rows"]
+    }
     exact: dict[str, list[bool]] = defaultdict(list)
     fuzzy: dict[str, list[float]] = defaultdict(list)
-    for day, start, end, name, room, lecturer, code in SESSIONS:
+    for day, start, end, name, room, _lecturer, code in SESSIONS:
         row = rows.get((day, start))
         exact["buổi đọc được (ngày+giờ bắt đầu)"].append(row is not None)
         if row is None:
@@ -54,13 +57,17 @@ def main(path: str) -> None:
         fuzzy["tên môn"].append(similar(f["name"]["value"], name))
         if room:
             fuzzy["phòng"].append(similar(f["room"]["value"], room))
-        if lecturer:
-            fuzzy["giảng viên"].append(similar(f["lecturer"]["value"], lecturer))
+        # Tên giảng viên trong đáp án là tên giả (repo công khai) nên không so với ảnh thật.
     exams = preview["exam_rows"]
     exact["ô Lịch thi → buổi thi"].append(len(exams) == 1 and len(preview["rows"]) == len(SESSIONS))
     if exams:
         f = exams[0]["fields"]
-        got = (f["date"]["value"], f["start_time"]["value"], f["end_time"]["value"], f["room"]["value"])
+        got = (
+            f["date"]["value"],
+            f["start_time"]["value"],
+            f["end_time"]["value"],
+            f["room"]["value"],
+        )
         exact["buổi thi: ngày/giờ/phòng"].append(got == tuple(EXAM.values()))
     exact["tháng/năm"].append(preview["month_year"]["value"] == "2026-12")
     cut = rows.get(("2026-12-01", "21:05"))

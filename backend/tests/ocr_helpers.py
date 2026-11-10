@@ -34,7 +34,7 @@ def png_bytes(size: tuple[int, int] = (2000, 1000)) -> bytes:
 
 
 def shifts():
-    spans = [((6, 45), (9, 25)), ((9, 35), (12, 10)), ((13, 0), (15, 40)), ((15, 45), (18, 25))]
+    spans = [((6, 45), (9, 25)), ((9, 30), (12, 10)), ((13, 0), (15, 40)), ((15, 45), (18, 25))]
     return [
         SimpleNamespace(id=i + 1, position=i + 1, start_time=time(*a), end_time=time(*b))
         for i, (a, b) in enumerate(spans)

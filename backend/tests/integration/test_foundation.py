@@ -23,7 +23,7 @@ def test_seed_data(db_session):
     shifts = db_session.scalars(select(Shift).order_by(Shift.position)).all()
     assert [(s.name, s.start_time, s.end_time) for s in shifts] == [
         ("Ca 1", time(6, 45), time(9, 25)),
-        ("Ca 2", time(9, 35), time(12, 10)),
+        ("Ca 2", time(9, 30), time(12, 10)),
         ("Ca 3", time(13, 0), time(15, 40)),
         ("Ca 4", time(15, 45), time(18, 25)),
     ]
