@@ -54,12 +54,26 @@ lịch trong một lần. Tên môn đọc từ PDF cũng giúp nhập ảnh v�
 - Cùng một mã HP có thể có hai lớp học phần khác nhau (lý thuyết "N02" và thực hành "N02.TH1").
 - Cuối bảng có "Tổng cộng", "Viết bằng chữ", ngày lập và chỗ ký.
 
+## Clarifications
+
+### Session 2026-11-10
+
+- Q: Trong form sửa môn ở trang Môn học, người dùng có được thêm, sửa, xoá từng quy tắc lặp bằng tay
+  không? → A: Có. Form sửa môn hiện danh sách quy tắc; thêm, sửa, xoá từng quy tắc bằng tay; môn tạo
+  tay mặc định có 1 quy tắc.
+- Q: Khi thả hoặc dán file PDF ở trang Môn học, bảng xem trước mở ở đâu? → A: Màn "Nhập từ ảnh" đổi
+  thành "Nhập lịch", nhận cả ảnh lẫn PDF; thả/dán ở trang Môn học hay ở màn này đều mở cùng màn; PDF
+  hiện bảng xem trước theo môn.
+- Q: Trong mỗi ca 3 tiết, giờ từng tiết mặc định chia thế nào? → A: Mỗi tiết 50 phút, nghỉ 5 phút giữa
+  các tiết (tiết 1 06:45–07:35, tiết 2 07:40–08:30, tiết 3 08:35–09:25).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Nhập cả học kỳ từ file PDF (Priority: P1)
 
 Đầu học kỳ, người dùng tải file PDF "Thời khóa biểu chính thức" từ cổng sinh viên rồi kéo thả (hoặc
-chọn, hoặc dán bằng ⌘V) vào trang Môn học. Ứng dụng đọc file trên máy và hiện bảng xem trước nhóm theo
+chọn, hoặc dán bằng ⌘V) vào trang Môn học hoặc màn "Nhập lịch". Ứng dụng mở màn "Nhập lịch", đọc file
+trên máy và hiện bảng xem trước nhóm theo
 từng môn (lớp học phần): mỗi môn liệt kê các quy tắc lặp hằng tuần gồm khoảng ngày, thứ, tiết, ca, giờ
 và phòng. Người dùng kiểm tra, sửa nếu cần rồi bấm Lưu. Ứng dụng tạo các môn và toàn bộ buổi học của
 học kỳ; học kỳ phù hợp được chọn sẵn hoặc tạo mới.
@@ -149,7 +163,8 @@ không đổi, chỉ phần thay đổi được cập nhật.
    hiện môn đó là "Thay đổi" kèm phần khác (phòng cũ → phòng mới); sau khi lưu, các buổi chưa diễn ra
    đổi sang phòng mới, các buổi đã qua giữ nguyên.
 3. **Given** một buổi học đã được người dùng sửa riêng hoặc huỷ, **When** nhập lại PDF làm thay đổi môn
-   đó, **Then** buổi đã sửa riêng hoặc đã huỷ được giữ nguyên như quy tắc sửa môn hiện có.
+   đó, **Then** buổi đã sửa riêng hoặc đã huỷ được giữ nguyên; nếu buổi đó nằm ngoài lịch mới thì vẫn được
+   giữ (không hỏi xác nhận) và được nêu trong cảnh báo sau khi lưu (FR-022).
 4. **Given** đã có môn tạo từ ảnh lịch tuần với cùng tên và cùng mã lớp (ví dụ "2-2-26(N01)"), **When**
    nhập PDF, **Then** môn đó được nhận là "Đã có" hoặc "Thay đổi", không tạo môn thứ hai, và tên môn
    được sửa theo tên trong PDF nếu khác.
@@ -237,8 +252,11 @@ kiểm tra tên môn trong bảng xem trước được sửa theo danh sách t�
 
 **Nhận file**
 
-- **FR-001**: Trang Môn học PHẢI cho nhập file PDF bằng ba cách: kéo thả vào trang, chọn file, và dán
-  (⌘V) file PDF đã sao chép (ví dụ từ Finder).
+- **FR-001**: Người dùng PHẢI nhập được file PDF bằng ba cách: kéo thả, chọn file, và dán (⌘V) file PDF đã
+  sao chép (ví dụ từ Finder), ở cả trang Môn học lẫn màn nhập. Màn "Nhập từ ảnh" PHẢI đổi tên thành "Nhập
+  lịch" và nhận cả ảnh lẫn PDF; thả hoặc dán PDF ở trang Môn học PHẢI mở màn này với file đó, giống cách ảnh
+  đang được chuyển sang. Ảnh vẫn đi luồng nhận diện ảnh như hiện nay; PDF hiện bảng xem trước theo môn
+  (FR-016).
 - **FR-002**: File PDF PHẢI được đọc hoàn toàn trên máy từ nội dung chữ có sẵn trong file, KHÔNG dùng
   OCR, KHÔNG gửi file hay dữ liệu ra ngoài máy, và KHÔNG ghi file xuống đĩa; file chỉ nằm trong bộ nhớ
   trong lúc xử lý.
@@ -268,10 +286,11 @@ kiểm tra tên môn trong bảng xem trước được sửa theo danh sách t�
 
 - **FR-011**: Cài đặt → Ca học PHẢI có bảng tiết: mỗi tiết (đánh số từ 1) có giờ bắt đầu và giờ kết thúc,
   người dùng xem và chỉnh được.
-- **FR-012**: Giờ tiết mặc định PHẢI suy từ các ca hiện có: ca thứ k ứng với tiết 3k−2 đến 3k, chia ca
-  thành 3 tiết bằng nhau với 2 khoảng nghỉ bằng nhau 5 phút giữa các tiết (ví dụ Ca 1 06:45–09:25 → tiết 1
-  06:45–07:35, tiết 2 07:40–08:30, tiết 3 08:35–09:25). Đổi giờ một ca PHẢI cập nhật lại các tiết của
-  ca đó, trừ tiết người dùng đã chỉnh tay.
+- **FR-012**: Giờ tiết mặc định PHẢI suy từ các ca hiện có: ca thứ k ứng với tiết 3k−2 đến 3k; mỗi tiết
+  50 phút, nghỉ 5 phút giữa hai tiết liền nhau, tính từ giờ bắt đầu ca (ví dụ Ca 1 06:45–09:25 → tiết 1
+  06:45–07:35, tiết 2 07:40–08:30, tiết 3 08:35–09:25). Ca có thời lượng khác 160 phút thì chia thành 3
+  tiết bằng nhau với 2 khoảng nghỉ 5 phút, sao cho tiết cuối kết thúc đúng giờ kết thúc ca. Đổi giờ một
+  ca PHẢI cập nhật lại các tiết của ca đó, trừ tiết người dùng đã chỉnh tay.
 - **FR-013**: Tiết ngoài các ca hiện có không có giờ mặc định, trừ tiết 16–18 có mặc định 21:05–22:00
   (tiết 16 21:05–21:20, tiết 17 21:20–21:40, tiết 18 21:40–22:00, khớp với giờ cổng sinh viên ghi cho
   "Tiết 16-17" và "Tiết 16-18").
@@ -300,10 +319,19 @@ kiểm tra tên môn trong bảng xem trước được sửa theo danh sách t�
 - **FR-020**: Mỗi môn có thể có nhiều quy tắc lặp hằng tuần; buổi học PHẢI được tạo cho mọi ngày đúng thứ
   trong khoảng ngày của từng quy tắc, với giờ và phòng của quy tắc đó. Ngày nằm ngoài mọi quy tắc (ví dụ
   kỳ nghỉ Tết) KHÔNG có buổi.
-- **FR-021**: Môn đã có được nhận ra khi trùng mã lớp và (trùng mã học phần hoặc trùng tên môn không phân
-  biệt hoa thường). Môn đã có PHẢI được cập nhật (tên, mã học phần, số tín chỉ, quy tắc) thay vì tạo môn mới.
-- **FR-022**: Khi cập nhật môn đã có, buổi đã qua và buổi người dùng đã sửa riêng hoặc đã huỷ PHẢI giữ
-  nguyên; buổi chưa diễn ra được tạo, đổi hoặc xoá theo quy tắc mới, theo cùng cách sửa môn hiện có.
+- **FR-020a**: Form thêm/sửa môn ở trang Môn học PHẢI hiện danh sách quy tắc lặp của môn và cho người dùng
+  thêm, sửa (thứ, khoảng ngày, ca hoặc giờ, phòng), xoá từng quy tắc bằng tay; môn PHẢI còn ít nhất một
+  quy tắc. Môn tạo tay mặc định có 1 quy tắc. Lưu thay đổi quy tắc cập nhật buổi học theo cách sửa môn
+  hiện có của feature 001 (FR-013 của 001): buổi đã huỷ hoặc đã sửa riêng được giữ; buổi có ngoại lệ nằm
+  ngoài lịch mới thì hỏi xác nhận trước khi xoá. (Quy tắc giữ buổi khi nhập PDF ở FR-022 không áp dụng cho
+  sửa tay.)
+- **FR-021**: Môn đã có được nhận ra trong học kỳ được chọn để nhập, khi trùng mã lớp (không phân biệt hoa
+  thường) và (trùng mã học phần hoặc trùng tên môn không phân biệt hoa thường và dấu). Môn đã có PHẢI được
+  cập nhật (tên, mã học phần, số tín chỉ, quy tắc) thay vì tạo môn mới.
+- **FR-022**: Khi nhập PDF cập nhật môn đã có: buổi đã qua (ngày trước hôm nay) PHẢI giữ nguyên; buổi
+  người dùng đã sửa riêng hoặc đã huỷ PHẢI giữ nguyên; buổi có ngoại lệ nằm ngoài lịch mới PHẢI được giữ lại
+  (không hỏi xác nhận) và nêu trong cảnh báo sau khi lưu; các buổi chưa diễn ra còn lại được tạo, đổi hoặc
+  xoá theo quy tắc mới.
 - **FR-023**: Ứng dụng KHÔNG ĐƯỢC tạo buổi học trùng: hai buổi cùng môn, cùng ngày, cùng giờ bắt đầu chỉ
   được có một, kể cả khi hai quy tắc chồng nhau hoặc buổi đã có từ lần nhập ảnh trước.
 - **FR-024**: Môn có trong ứng dụng nhưng không có trong PDF PHẢI được giữ nguyên.
@@ -337,7 +365,8 @@ kiểm tra tên môn trong bảng xem trước được sửa theo danh sách t�
   mã lớp khi nhập PDF. Có một hoặc nhiều quy tắc lặp.
 - **Quy tắc lặp hằng tuần của môn**: thuộc một môn; gồm thứ, khoảng ngày (bắt đầu, kết thúc), giờ bắt
   đầu/kết thúc hoặc ca (dãy ca), khoảng tiết gốc (nếu có), phòng. Sinh ra buổi học. Môn tạo theo cách cũ
-  tương đương một môn có các quy tắc cùng khoảng ngày, giờ và phòng.
+  tương đương một môn có các quy tắc cùng khoảng ngày, giờ và phòng. Thêm, sửa, xoá được bằng tay trong
+  form môn (FR-020a).
 - **Tiết**: số thứ tự, giờ bắt đầu, giờ kết thúc, đánh dấu đã chỉnh tay hay suy từ ca.
 - **Tên môn chuẩn**: tên môn, mã học phần (nếu có), thời điểm thêm; dùng để sửa tên khi nhập ảnh.
 - **Bản xem trước nhập PDF** (chỉ trong bộ nhớ, không lưu): tên học kỳ đề xuất, khoảng ngày, danh sách môn
