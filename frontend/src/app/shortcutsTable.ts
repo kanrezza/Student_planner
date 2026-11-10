@@ -15,9 +15,22 @@ export function shortcutGroups(): ShortcutGroup[] {
         { keys: '⌘3', label: t('shortcuts.goSubjects') },
         { keys: '⌘4', label: t('shortcuts.goExams') },
         { keys: '⌘5  ·  ⌘,', label: t('shortcuts.goSettings') },
+        { keys: '⌘F', label: t('shortcuts.search') },
         { keys: '⌘V', label: t('shortcuts.pasteImage') },
         { keys: '⌘/', label: t('shortcuts.showShortcuts') },
         { keys: 'Esc', label: t('shortcuts.escape') },
+      ],
+    },
+    {
+      title: t('shortcuts.groupQuickAdd'),
+      rows: [
+        { keys: 'mai 9h', label: t('shortcuts.qaDate') },
+        { keys: '9 giờ tối', label: t('shortcuts.qaTime') },
+        { keys: '#Gấp', label: t('shortcuts.qaTag') },
+        { keys: '~Cá nhân', label: t('shortcuts.qaList') },
+        { keys: '*', label: t('shortcuts.qaImportant') },
+        { keys: '!cao  !tb  !thấp', label: t('shortcuts.qaPriority') },
+        { keys: 'Bấm', label: t('shortcuts.qaDismiss') },
       ],
     },
     {

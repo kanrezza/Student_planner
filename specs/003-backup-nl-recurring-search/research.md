@@ -161,6 +161,16 @@ bấm) và ghi lệch spec vào Complexity Tracking.
 **Đã cân nhắc**: app Tauri gửi thông báo (không chạy khi đã thoát); thông báo qua Lời nhắc của Apple (lẫn vào
 dữ liệu người dùng, cần đồng bộ bật).
 
+**Kết quả spike (2026-11-05, `mac-agent/spikes/notify_thread_spike.py`, build py2app + ký ad-hoc)**:
+- Vòng lặp Cocoa trên luồng chính (`AppHelper.runConsoleEventLoop`) chạy song song với luồng nền gọi
+  `EKEventStore.sources()` mỗi 3 giây: 7 lần gọi liên tiếp, 0 lỗi → **mô hình hai luồng khả thi**.
+- Chưa kiểm chứng được phần bấm vào thông báo → mở `lichhoc://cai-dat/sao-luu`: hộp xin quyền thông báo của
+  macOS chưa có người bấm "Cho phép" trong lúc chạy tự động. Phần này nằm trong hướng dẫn thử của đợt 1 (kịch
+  bản B5). Nếu bấm thông báo không mở được Cài đặt thì áp dụng phương án dự phòng (task T006): vẫn hiện thông
+  báo, bỏ phần mở trang, và ghi lệch FR-008 vào Complexity Tracking của plan.
+- `AppHelper.stopEventLoop()` gọi từ luồng khác không làm vòng lặp console dừng; agent thật chạy mãi và bị
+  launchd dừng bằng tín hiệu nên không cần dừng chủ động.
+
 ## R11. Chọn thư mục / file trong app Tauri
 
 **Quyết định**: Thêm ba lệnh Rust: `pick_backup_folder() -> Option<String>`, `pick_backup_file() ->

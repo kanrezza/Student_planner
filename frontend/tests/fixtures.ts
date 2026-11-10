@@ -37,6 +37,10 @@ export function makeTask(fields: Partial<Task> = {}): Task {
     deleted_at: null,
     days_left_in_trash: null,
     trashed_from_list_name: null,
+    series_id: null,
+    recurrence: null,
+    occurrence_no: null,
+    series_finished: false,
     ...fields,
     due_at,
   };

@@ -1,0 +1,342 @@
+"""Tạo và khôi phục bản sao lưu toàn bộ dữ liệu bằng pg_dump / pg_restore (feature 003).
+
+Định dạng `.lhbackup` (research R3): file ZIP không nén gồm `manifest.json` và `data.dump`
+(`pg_dump -Fc`). Khôi phục (research R8) chạy ở chế độ bảo trì, `pg_restore --single-transaction`
+nên hoặc thành công hoàn toàn hoặc dữ liệu hiện tại giữ nguyên; nâng cấp schema của bản cũ lỗi thì
+tự đưa dữ liệu về lúc trước khi khôi phục. Chỉ chạm vào localhost (constitution IV).
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import logging
+import os
+import shutil
+import subprocess
+import tempfile
+import zipfile
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+
+import sqlalchemy as sa
+from alembic.script import ScriptDirectory
+from flask import current_app
+from flask_migrate import upgrade as upgrade_database
+
+from app.api.errors import ApiError
+from app.config import APP_VERSION
+from app.extensions import db
+from app.lib import timeutil
+
+log = logging.getLogger(__name__)
+
+KINDS = ("tu-dong", "thu-cong", "truoc-khoi-phuc")
+MANIFEST_FORMAT = 1
+MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / "migrations"
+DEFAULT_FLAG_PATH = "/tmp/lichhoc-restoring"  # noqa: S108 — cờ nội bộ trong container
+
+# Khôi phục bản cũ không được đổi cấu hình/trạng thái sao lưu hay xoá việc đang chạy (research R9).
+PRESERVED_TABLES = ("backup_config", "backup_status", "backup_jobs", "agent_status")
+COUNTED_TABLES = (
+    "tasks",
+    "task_lists",
+    "tags",
+    "semesters",
+    "subjects",
+    "class_sessions",
+    "exams",
+    "shifts",
+)
+
+
+class BackupError(ApiError):
+    """Lỗi sao lưu/khôi phục; được trả nguyên cho giao diện theo định dạng lỗi chung của API."""
+
+
+@dataclass
+class BuiltBackup:
+    path: Path
+    name: str
+    sha256: str
+    size: int
+    workdir: Path
+
+    def cleanup(self) -> None:
+        shutil.rmtree(self.workdir, ignore_errors=True)
+
+
+# ---- Chế độ bảo trì -------------------------------------------------------------------------
+
+
+def _flag_path() -> Path:
+    return Path(current_app.config.get("RESTORE_FLAG_PATH", DEFAULT_FLAG_PATH))
+
+
+def is_restoring() -> bool:
+    return _flag_path().exists()
+
+
+@contextmanager
+def maintenance_mode():
+    flag = _flag_path()
+    flag.write_text(str(os.getpid()))
+    try:
+        yield
+    finally:
+        flag.unlink(missing_ok=True)
+
+
+def clear_stale_maintenance_flag() -> None:
+    """Backend vừa khởi động thì không thể đang khôi phục: gỡ cờ còn sót sau sự cố."""
+    _flag_path().unlink(missing_ok=True)
+
+
+# ---- pg_dump / pg_restore -------------------------------------------------------------------
+
+
+def _connection_args() -> tuple[list[str], dict[str, str]]:
+    url = db.engine.url
+    args = [
+        "-h",
+        url.host or "localhost",
+        "-p",
+        str(url.port or 5432),
+        "-U",
+        url.username or "lichhoc",
+        "-d",
+        url.database or "lichhoc",
+    ]
+    return args, {**os.environ, "PGPASSWORD": url.password or ""}
+
+
+def _run(command: list[str], env: dict[str, str]) -> subprocess.CompletedProcess:
+    return subprocess.run(command, env=env, capture_output=True, text=True, check=False)
+
+
+def _dump_to(path: Path) -> None:
+    args, env = _connection_args()
+    exclude = [f"--exclude-table-data={table}" for table in PRESERVED_TABLES]
+    result = _run(["pg_dump", "-Fc", "--no-owner", *exclude, *args, "-f", str(path)], env)
+    if result.returncode != 0:
+        log.error("pg_dump lỗi: %s", result.stderr.strip())
+        raise BackupError(
+            500, "dump_failed", "Không tạo được bản sao lưu. Hãy thử lại sau ít phút."
+        )
+    check = _run(["pg_restore", "--list", str(path)], env)
+    if check.returncode != 0:
+        log.error("pg_restore --list lỗi: %s", check.stderr.strip())
+        raise BackupError(500, "dump_failed", "Bản sao lưu vừa tạo không đọc lại được.")
+
+
+def _restore_dump(path: Path) -> None:
+    args, env = _connection_args()
+    command = [
+        "pg_restore",
+        "--clean",
+        "--if-exists",
+        "--single-transaction",
+        "--no-owner",
+        "--exit-on-error",
+        *args,
+        str(path),
+    ]
+    result = _run(command, env)
+    if result.returncode != 0:
+        log.error("pg_restore lỗi: %s", result.stderr.strip())
+        raise BackupError(
+            500, "restore_failed", "Không khôi phục được dữ liệu. Dữ liệu hiện tại giữ nguyên."
+        )
+
+
+# ---- Tạo bản sao lưu ------------------------------------------------------------------------
+
+
+def backup_name(created_at: datetime, kind: str) -> str:
+    return f"LichHoc-{created_at:%Y-%m-%d-%H%M}-{kind}.lhbackup"
+
+
+def _schema_revision() -> str:
+    return db.session.scalar(sa.text("SELECT version_num FROM alembic_version"))
+
+
+def _counts() -> dict[str, int]:
+    return {
+        table: db.session.scalar(sa.text(f"SELECT count(*) FROM {table}"))  # noqa: S608
+        for table in COUNTED_TABLES
+    }
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def build_backup(kind: str, now: datetime | None = None) -> BuiltBackup:
+    if kind not in KINDS:
+        raise BackupError(400, "invalid_kind", "Loại bản sao lưu không hợp lệ")
+    now = now or timeutil.now()
+    workdir = Path(tempfile.mkdtemp(prefix="lichhoc-backup-"))
+    try:
+        dump_path = workdir / "data.dump"
+        _dump_to(dump_path)
+        manifest = {
+            "format": MANIFEST_FORMAT,
+            "created_at": timeutil.iso(now),
+            "kind": kind,
+            "schema_revision": _schema_revision(),
+            "app_version": APP_VERSION,
+            "dump_sha256": _file_sha256(dump_path),
+            "dump_size": dump_path.stat().st_size,
+            "counts": _counts(),
+        }
+        name = backup_name(now, kind)
+        archive = workdir / name
+        with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
+            zf.write(dump_path, "data.dump")
+        dump_path.unlink()
+        return BuiltBackup(archive, name, _file_sha256(archive), archive.stat().st_size, workdir)
+    except Exception:
+        shutil.rmtree(workdir, ignore_errors=True)
+        raise
+
+
+# ---- Khôi phục ------------------------------------------------------------------------------
+
+_CORRUPT = BackupError(400, "backup_corrupt", "Bản sao lưu bị hỏng, không thể khôi phục")
+
+
+def _open_backup(archive: Path, workdir: Path) -> tuple[dict, Path]:
+    """Kiểm tra file `.lhbackup`, giải nén dump ra `workdir`; trả (manifest, đường dẫn dump)."""
+    try:
+        with zipfile.ZipFile(archive) as zf:
+            manifest = json.loads(zf.read("manifest.json"))
+            dump_path = workdir / "restore.dump"
+            with zf.open("data.dump") as src, dump_path.open("wb") as dst:
+                shutil.copyfileobj(src, dst, 1 << 20)
+    except (zipfile.BadZipFile, KeyError, ValueError, OSError) as error:
+        log.warning("Bản sao lưu không đọc được: %s", error)
+        raise _CORRUPT from error
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("format") != MANIFEST_FORMAT
+        or manifest.get("dump_sha256") != _file_sha256(dump_path)
+        or manifest.get("dump_size") != dump_path.stat().st_size
+    ):
+        raise _CORRUPT
+    _, env = _connection_args()
+    if _run(["pg_restore", "--list", str(dump_path)], env).returncode != 0:
+        raise _CORRUPT
+    return manifest, dump_path
+
+
+def _known_revision(revision: str) -> bool:
+    try:
+        return ScriptDirectory(str(MIGRATIONS_DIR)).get_revision(revision) is not None
+    except Exception:  # noqa: BLE001 — alembic ném nhiều loại lỗi cho revision lạ
+        return False
+
+
+def _head_revision() -> str:
+    return ScriptDirectory(str(MIGRATIONS_DIR)).get_current_head()
+
+
+def _upgrade_database() -> None:
+    upgrade_database(directory=str(MIGRATIONS_DIR))
+
+
+def _table(name: str) -> sa.Table:
+    return sa.Table(name, sa.MetaData(), autoload_with=db.engine)
+
+
+def _read_preserved() -> dict[str, list[dict]]:
+    return {
+        name: [dict(row) for row in db.session.execute(sa.select(_table(name))).mappings()]
+        for name in PRESERVED_TABLES
+    }
+
+
+def _write_preserved(preserved: dict[str, list[dict]], previous_revision: int) -> None:
+    with db.engine.begin() as conn:
+        for name, rows in preserved.items():
+            table = _table(name)
+            conn.execute(sa.delete(table))
+            if rows:
+                conn.execute(sa.insert(table), rows)
+        conn.execute(
+            sa.text(
+                "SELECT setval(pg_get_serial_sequence('backup_jobs', 'id'), "
+                "GREATEST((SELECT COALESCE(MAX(id), 0) FROM backup_jobs), 1))"
+            )
+        )
+        restored = conn.scalar(sa.text("SELECT revision FROM sync_state WHERE id = 1"))
+        conn.execute(
+            sa.text("UPDATE sync_state SET revision = :revision WHERE id = 1"),
+            {"revision": max(previous_revision, restored or 0) + 1},
+        )
+
+
+def _sync_revision() -> int:
+    return db.session.scalar(sa.text("SELECT revision FROM sync_state WHERE id = 1")) or 0
+
+
+def restore_backup(archive: Path) -> dict:
+    """Khôi phục từ file `.lhbackup` đã nằm trên đĩa của container (research R8)."""
+    workdir = Path(tempfile.mkdtemp(prefix="lichhoc-restore-"))
+    try:
+        manifest, dump_path = _open_backup(archive, workdir)
+        revision = manifest.get("schema_revision")
+        if not isinstance(revision, str) or not _known_revision(revision):
+            raise BackupError(
+                409,
+                "backup_too_new",
+                "Bản sao lưu được tạo bởi phiên bản app mới hơn. Hãy cập nhật app rồi thử lại.",
+            )
+        with maintenance_mode():
+            return _restore_in_maintenance(workdir, dump_path, revision)
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
+
+
+def _restore_in_maintenance(workdir: Path, dump_path: Path, revision: str) -> dict:
+    safety = workdir / "safety.dump"
+    _dump_to(safety)  # lưới an toàn nội bộ, ngoài bản "Trước khi khôi phục" của agent
+    preserved = _read_preserved()
+    previous_revision = _sync_revision()
+    db.session.remove()
+    db.engine.dispose()
+
+    _restore_dump(dump_path)  # lỗi → giao dịch bị huỷ, dữ liệu cũ còn nguyên
+    try:
+        upgraded = revision != _head_revision()
+        if upgraded:
+            _upgrade_database()
+        _write_preserved(preserved, previous_revision)
+    except Exception as error:  # noqa: BLE001 — mọi lỗi sau khi đã thay dữ liệu đều phải hoàn tác
+        log.exception("Khôi phục lỗi sau khi nạp dữ liệu, đang đưa về như cũ")
+        db.session.remove()
+        db.engine.dispose()
+        try:
+            _restore_dump(safety)
+            _write_preserved(preserved, previous_revision)
+        except Exception as rollback_error:  # noqa: BLE001
+            log.exception("Không hoàn tác được")
+            raise BackupError(
+                500,
+                "restore_failed",
+                'Khôi phục gặp lỗi nặng. Hãy khôi phục bằng bản "Trước khi khôi phục" mới nhất.',
+            ) from rollback_error
+        raise BackupError(
+            500,
+            "upgrade_failed",
+            "Không nâng cấp được dữ liệu của bản sao lưu cũ; "
+            "dữ liệu đã được đưa về như trước khi khôi phục.",
+        ) from error
+    log.info("Đã khôi phục dữ liệu (nâng cấp schema: %s)", upgraded)
+    return {"schema_upgraded": upgraded, "restored_schema_revision": revision}

@@ -298,14 +298,14 @@ tắt; đánh dấu một task là Quan trọng và kiểm tra lời nhắc củ
 ### User Story 8 - Ca học cố định (Priority: P2)
 
 Trường học xếp lịch theo ca cố định. Ứng dụng có bảng cấu hình ca học, mặc định Ca 1 06:45–09:25,
-Ca 2 09:35–12:10, Ca 3 13:00–15:40, Ca 4 15:45–18:25; người dùng chỉnh được giờ. Khi thêm môn học
+Ca 2 09:30–12:10, Ca 3 13:00–15:40, Ca 4 15:45–18:25; người dùng chỉnh được giờ. Khi thêm môn học
 hoặc nhập từ ảnh, người dùng chọn ca thay vì gõ giờ; giờ đọc được từ ảnh được đối chiếu với ca
 tương ứng.
 
 **Why this priority**: Giúp nhập lịch nhanh và giờ học luôn chính xác, nhưng vẫn có thể nhập giờ
 thủ công nếu chưa có tính năng này.
 
-**Independent Test**: Thêm một môn chọn "Ca 2" và kiểm tra giờ là 09:35–12:10; đổi giờ Ca 2 trong
+**Independent Test**: Thêm một môn chọn "Ca 2" và kiểm tra giờ là 09:30–12:10; đổi giờ Ca 2 trong
 cài đặt và kiểm tra môn đó cập nhật theo; nhập một ảnh có giờ 13:00–15:40 và kiểm tra bảng xem
 trước hiện "Ca 3".
 
@@ -319,7 +319,7 @@ trước hiện "Ca 3".
    06:45–12:10.
 4. **Given** có môn học đang dùng Ca 2, **When** người dùng đổi giờ Ca 2 và xác nhận, **Then** các buổi
    học của môn đó cập nhật giờ mới, trừ các buổi đã sửa giờ riêng.
-5. **Given** ảnh thời khoá biểu ghi giờ 09:35–12:10 hoặc ghi "Ca 2", **When** nhận diện, **Then** bảng
+5. **Given** ảnh thời khoá biểu ghi giờ 09:30–12:10 hoặc ghi "Ca 2", **When** nhận diện, **Then** bảng
    xem trước gán "Ca 2" cho dòng đó với giờ theo bảng ca.
 6. **Given** giờ trong ảnh không khớp ca nào, **When** nhận diện, **Then** dòng đó giữ giờ đọc được,
    ghi "Giờ tuỳ chỉnh" và có ghi chú "không khớp ca nào" để người dùng kiểm tra.
@@ -661,7 +661,7 @@ tạo trùng.
 
 **Ca học**
 
-- **FR-038**: Ứng dụng PHẢI có bảng ca học, mặc định: Ca 1 06:45–09:25, Ca 2 09:35–12:10, Ca 3
+- **FR-038**: Ứng dụng PHẢI có bảng ca học, mặc định: Ca 1 06:45–09:25, Ca 2 09:30–12:10, Ca 3
   13:00–15:40, Ca 4 15:45–18:25. Người dùng PHẢI sửa được giờ, thêm và xoá ca; giờ kết thúc PHẢI sau
   giờ bắt đầu.
 - **FR-039**: Khi thêm hoặc sửa môn học (kể cả nhập nhiều môn), người dùng PHẢI chọn được một ca,

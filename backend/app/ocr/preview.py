@@ -10,10 +10,10 @@ from datetime import date, datetime, time
 
 from rapidfuzz import fuzz
 
-from app.lib.text import ci_key
+from app.lib.text import ci_key, fold_key
 from app.lib.timeutil import combine
-from app.ocr.exam_table import ExamRowData, parse_exam_table
-from app.ocr.fields import extract_fields
+from app.ocr.exam_table import ExamRowData, format_duration, parse_exam_table
+from app.ocr.fields import extract_exam_fields, extract_fields, is_exam_cell
 from app.ocr.layout import (
     WeekdayHeader,
     detect_layout,
@@ -29,6 +29,9 @@ from app.services.shifts import match_shift_range
 
 MIN_CONFIDENCE = 0.6  # dưới mức này → ô tô vàng "chưa chắc chắn"
 NAME_FIX_RATIO = 90  # tên gần giống môn đã có (rapidfuzz ≥ 90) → sửa theo tên đã có
+# Tên đọc kém (độ tin cậy thấp): so không dấu, ngưỡng thấp hơn nhưng phải hơn hẳn ứng viên thứ hai.
+WEAK_NAME_FIX_RATIO = 70
+WEAK_NAME_MARGIN = 15
 KIND_BY_LAYOUT = {"week_grid": "week_schedule", "list": "week_schedule", "exam_table": "exam_table"}
 
 
@@ -164,12 +167,36 @@ def _fix_name(name: str, known: list[str]) -> tuple[str, bool]:
     return name, False
 
 
+def _fix_weak_name(name: str, known: list[str]) -> tuple[str, bool]:
+    """Tên đọc kém ("Tal uuhóa", "TIch hop va phan Uch dữ…") → tên đã biết giống nhất (không dấu).
+
+    Chỉ sửa khi giống ≥ 70% và hơn ứng viên thứ hai ≥ 15 điểm, để không đoán bừa; kết quả vẫn bị
+    tô "chưa chắc chắn" nên người dùng xem lại ở bảng xem trước.
+    """
+    key = fold_key(name)
+    scored = sorted(((fuzz.ratio(key, fold_key(c)), c) for c in set(known)), reverse=True)
+    if not scored or scored[0][0] < WEAK_NAME_FIX_RATIO:
+        return name, False
+    if len(scored) > 1 and scored[0][0] - scored[1][0] < WEAK_NAME_MARGIN:
+        return name, False
+    return scored[0][1], scored[0][1] != name
+
+
 # ---- Lịch học -----------------------------------------------------------------------------------
 
 
-def _week_rows(
-    content: list[TextBox], headers: list[WeekdayHeader], month_year: MonthYear, ctx: PreviewContext
-) -> list[dict]:
+TRUNCATED_REASON = "Ô bị cắt ở mép dưới ảnh, chỉ đọc được dòng tiêu đề — hãy kiểm tra lại"
+
+
+def _is_truncated(fields: dict) -> bool:
+    """Ô bị cắt ở mép dưới: có dòng giờ nhưng không có phần thân (nhóm lớp, phòng, giảng viên)."""
+    has_time = "start_time" in fields or "tiet" in fields
+    return has_time and not ({"class_code", "room", "lecturer"} & fields.keys())
+
+
+def _week_dates_for(
+    month_year: MonthYear, headers: list[WeekdayHeader]
+) -> tuple[dict[int, date | None], bool]:
     weekdays = [h.weekday for h in headers]
     if all(h.full_date for h in headers):
         dates, dates_certain = [h.full_date for h in headers], True
@@ -179,32 +206,101 @@ def _week_rows(
             dates, dates_certain = [None] * len(headers), False
         else:
             dates, dates_certain = week_dates([h.day for h in headers], weekdays, center)
-    date_of = dict(zip(weekdays, dates, strict=True))
+    return dict(zip(weekdays, dates, strict=True)), dates_certain
 
-    rows = []
+
+def _week_rows(
+    content: list[TextBox], headers: list[WeekdayHeader], month_year: MonthYear, ctx: PreviewContext
+) -> tuple[list[dict], list[dict]]:
+    """(buổi học, buổi thi). Ô "Lịch thi: …" trong lưới tuần là buổi thi, không phải môn."""
+    date_of, dates_certain = _week_dates_for(month_year, headers)
+
+    parsed = []
     for cell in group_cells(content, headers):
+        if is_exam_cell(cell.lines):
+            parsed.append((cell, extract_exam_fields(cell.lines), True))
+            continue
         fields = extract_fields(cell.lines)
         if not ({"start_time", "tiet", "class_code"} & fields.keys()):
             continue  # ô không có dấu hiệu của buổi học (chữ rác)
-        rows.append(
-            _week_row(
-                cell.weekday, date_of.get(cell.weekday), dates_certain, month_year, fields, ctx
-            )
-        )
-    return _mark_duplicates_and_merges(rows, ctx)
+        parsed.append((cell, fields, False))
+
+    # Tên đọc rõ ở các ô khác trong ảnh (có hậu tố nhóm lớp) giúp sửa tên của ô bị cắt/đọc kém.
+    in_image = [
+        str(f["name"][0]) for _, f, exam in parsed if not exam and "name" in f and "class_code" in f
+    ]
+    known = ctx.subject_names + in_image
+
+    rows, exam_rows = [], []
+    for cell, fields, exam in parsed:
+        day = date_of.get(cell.weekday)
+        if exam:
+            exam_rows.append(_exam_cell_row(fields, day, dates_certain, known, ctx))
+        else:
+            rows.append(_week_row(cell.weekday, day, dates_certain, month_year, fields, ctx, known))
+    _mark_exam_duplicates_in_image(exam_rows)
+    return _mark_duplicates_and_merges(rows, ctx), exam_rows
 
 
-def _week_row(weekday, day, dates_certain, month_year, fields, ctx) -> dict:
+def _exam_cell_row(
+    fields: dict, day: date | None, dates_certain: bool, known: list[str], ctx: PreviewContext
+) -> dict:
+    """Buổi thi từ ô "Lịch thi: …" của lưới tuần (cùng dạng với dòng của bảng lịch thi)."""
+    name, name_conf = fields.get("name", (None, 0.0))
+    if name:
+        name = str(name)
+        fixed, changed = _fix_name(name, known)
+        if not changed:
+            fixed, changed = _fix_weak_name(name, known)
+        name = fixed
+        if changed:
+            name_conf = 0.0  # đã đoán theo tên có sẵn → luôn để người dùng xem lại
+    start, start_conf = fields.get("start_time", (None, 0.0))
+    end, end_conf = fields.get("end_time", (None, 0.0))
+    fmt, fmt_conf = fields.get("exam_format", (None, 1.0))
+    room, room_conf = fields.get("room", (None, 1.0))
+    end_source = "image" if end else None
+    if start and not end and (minutes := format_duration(fmt)):
+        total = start.hour * 60 + start.minute + minutes
+        if total < 24 * 60:
+            end, end_source = time(total // 60, total % 60), "format_duration"
+    data = ExamRowData(
+        course_code=(None, 1.0),
+        course_name=(name, name_conf),
+        attempt=(1, 1.0, True),
+        date=(day, 1.0 if dates_certain else 0.0),
+        start_time=(start, start_conf),
+        end_time=(end, end_conf),
+        end_time_source=end_source,
+        exam_format=(fmt, fmt_conf),
+        room=(room, room_conf),
+        candidate_number=(None, 1.0),
+    )
+    row = _exam_row(data, ctx)
+    if not dates_certain and day is not None:
+        row["fields"]["date"]["reason"] = "Ngày suy ra từ tháng/năm trong ảnh, hãy kiểm tra lại"
+    return row
+
+
+def _week_row(weekday, day, dates_certain, month_year, fields, ctx, known=None) -> dict:
+    known = ctx.subject_names if known is None else known
+    truncated = _is_truncated(fields)
+
     def get(key):
         return fields.get(key, (None, 1.0))
 
     name, name_conf = get("name")
-    reason = None
+    reason, weak = None, False
     if name:
-        name, fixed = _fix_name(str(name), ctx.subject_names)
+        name, fixed = _fix_name(str(name), known)
         reason = "Đã sửa theo tên môn có sẵn" if fixed else None
+        if not fixed and (name_conf < MIN_CONFIDENCE or truncated):
+            name, fixed = _fix_weak_name(str(name), known)
+            if fixed:
+                name_conf, weak = 0.0, True
+                reason = "Tên đọc kém, đã đoán theo tên môn khác — hãy kiểm tra lại"
     name_field = (
-        _field(name, name_conf, reason, certain=True if reason else None)
+        _field(name, name_conf, reason, certain=(not weak) if reason else None)
         if name
         else _field(None, certain=False, reason="Không đọc được tên môn")
     )
@@ -262,6 +358,10 @@ def _week_row(weekday, day, dates_certain, month_year, fields, ctx) -> dict:
     code, code_conf = get("class_code")
     semester = semester_of(day, ctx.semesters)
     until = semester.end_date if semester else day
+    if truncated:
+        for field_ in (name_field, start_field, end_field):
+            field_["certain"] = False
+            field_["reason"] = TRUNCATED_REASON
     return {
         "fields": {
             "name": name_field,
@@ -277,6 +377,7 @@ def _week_row(weekday, day, dates_certain, month_year, fields, ctx) -> dict:
             {"start_shift_id": shift_ids[0], "end_shift_id": shift_ids[1]} if shift_ids else None
         ),
         "shift_note": None if shift_ids or not start else "Giờ tuỳ chỉnh – không khớp ca nào",
+        "truncated": truncated,
         "suggested_tags": ["e_learning"] if "e_learning" in fields else [],
         "semester_id": semester.id if semester else None,
         "duplicate_of_session_id": None,
@@ -424,9 +525,11 @@ def build_preview(
     if resolved == "week_schedule":
         headers = find_week_headers(content)
         month_year = infer_month_year(content, headers, menu, ctx.now.date())
+        rows, exam_rows = _week_rows(content, headers, month_year, ctx) if headers else ([], [])
         return {
             "kind": "week_schedule",
             "month_year": month_year.as_dict(),
-            "rows": _week_rows(content, headers, month_year, ctx) if headers else [],
+            "rows": rows,
+            "exam_rows": exam_rows,
         }
     return {"kind": "unknown"}

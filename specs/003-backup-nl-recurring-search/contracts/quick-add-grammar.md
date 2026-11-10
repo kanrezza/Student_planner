@@ -40,12 +40,25 @@ type QuickParseContext = {
 | tag | `#<chữ không khoảng trắng>` hoặc tên chọn từ gợi ý | nhãn có sẵn (khớp không dấu) hoặc nhãn mới |
 | list | `~<chữ>` hoặc tên chọn từ gợi ý | chỉ danh sách có sẵn |
 | important | `*` đứng riêng, `quan trọng` | `is_important = true` |
-| priority | `!cao`, `!tb`, `!thấp` | 3, 2, 1 |
+| priority | `!cao`, `!tb`, `!thấp` | 1, 2, 3 (theo nhãn của app: 1 = Cao, 2 = Trung bình, 3 = Thấp) |
+| range | `từ <ngày> đến <ngày>`, `từ <ngày> - <ngày>`, `<ngày> đến <ngày>`, `<ngày> - <ngày>`, `đến hết <ngày>` (ngày = cụm `date` ở trên) | một khối: `{from, to}`; xem "Khoảng ngày" |
 | recurrence | `hằng ngày`, `hàng ngày`, `mỗi ngày` | daily |
 | recurrence | `mỗi N ngày` (N 2–365) | every_n_days |
 | recurrence | `hằng tuần`, `hàng tuần`, `mỗi tuần` | weekly, thứ của hạn (hoặc hôm nay) |
 | recurrence | `<thứ>[, <thứ>…] [và <thứ>] hằng/hàng tuần`, `mỗi <thứ>` | weekly với các thứ đó |
 | recurrence | `hằng tháng`, `hàng tháng`, `mỗi tháng`, `ngày D hằng/hàng tháng` | monthly, ngày của hạn hoặc D |
+
+## Buổi trong ngày và "mai" (sửa sau khi dùng thử đợt 2)
+
+- **Buổi** (`sáng`, `trưa`, `chiều`, `tối`, `đêm`) chỉ được hiểu khi **đi sát** (chỉ cách nhau khoảng trắng)
+  một giờ ("9h tối", "7 giờ sáng", "sáng 9h") hoặc một cụm ngày ("tối nay", "sáng mai", "chiều thứ 6",
+  "thứ 6 chiều", "CN chiều", "sáng mai 9h"). Đứng riêng thì **không** hiểu ("Đi chơi tối" giữ nguyên).
+- **Từ ghép không phải buổi**: buổi theo sau bởi tối→(ưu, giản, đa, thiểu, cao, mật…), sáng→(tạo, kiến,
+  suốt, chế, lập, tác, giá…), chiều→(chuộng, cao, dài, rộng, sâu, theo, ý…), hoặc đứng sau "ánh" (ánh sáng)
+  thì không phải buổi, kể cả khi đi sát một giờ ("9h sáng tạo nội dung" chỉ hiểu 9h).
+- **"mai"** đứng một mình là ngày mai, trừ khi: đứng sau chị/anh/em/cô/thầy/bạn/bà/ông/chú/bác/dì/cậu
+  ("chị mai" là tên người), hoặc viết đúng dạng "Mai" ở giữa câu (tên riêng). "Mai" đầu câu vẫn là ngày;
+  "ngày mai", "sáng mai", "mai 9h" luôn là ngày.
 
 ## Bảng giờ
 
@@ -68,6 +81,19 @@ type QuickParseContext = {
 4. Thứ X là hôm nay mà giờ đã qua → tuần sau.
 5. recurrence không có date → ngày khớp quy tắc gần nhất từ hôm nay (áp quy tắc 3–4 cho giờ).
 6. Không có date/time → `fields` không có hạn; giao diện dùng mặc định của danh sách đang xem.
+
+## Khoảng ngày (FR-028a)
+
+Token `range` `{from: DateValue | null, to: DateValue}` chiếm ô `date`. Nhận diện: hai cụm `date` kề nhau, ở giữa
+chỉ có `-`, `–`, `đến` hoặc `đến hết` (phần "từ" đứng ngay trước A được gộp vào khối); hoặc `đến hết <ngày>`.
+
+| Có cụm lặp? | `due_date` | Còn lại |
+|-------------|------------|---------|
+| có | ngày khớp quy tắc gần nhất từ A (từ hôm nay nếu không có A) | `recurrence.end = {kind:'on_date', date:B}` |
+| không | B (kèm `due_time` nếu có giờ) | `notes = "Bắt đầu: DD/MM/YYYY"` khi có A |
+
+B < A, hoặc không có lần lặp nào trong khoảng → `rangeError = true`: khoảng không áp dụng (không `due_date`/`notes`/`end`
+từ khối), giao diện báo nhẹ, không chặn tạo task. A không năm đã qua nhưng không sau B → dùng năm của B.
 
 ## Tiêu đề
 

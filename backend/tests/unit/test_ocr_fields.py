@@ -1,10 +1,12 @@
 from datetime import time
 
 from app.ocr.fields import (
+    extract_exam_fields,
     extract_fields,
     fix_code_token,
     fix_digit_letters,
     is_e_learning,
+    is_exam_cell,
     parse_lecturer,
     parse_room,
     parse_time_line,
@@ -104,3 +106,69 @@ def test_ocr_confusion_fixes():
     assert fix_code_token("ENG10O1") == "ENG1001"
     assert split_class_label("Tối ưu hóa-1-1-26(N01)") == ("Tối ưu hóa", "1-1-26(N01)")
     assert split_class_label("Không có hậu tố") == ("Không có hậu tố", None)
+
+
+def test_time_line_with_ocr_damage():
+    # "09.80" (3 → 8), giờ kết thúc dính liền "1210", "Tiết 46" thiếu dấu gạch (ảnh thật 30/11)
+    assert parse_time_line("09.80-1210 (Tlet 4 6)") == (time(9, 30), time(12, 10), (4, 6))
+    assert parse_time_line("09.30- 1210 (Tlet 46)") == (time(9, 30), time(12, 10), (4, 6))
+    assert parse_time_line("06*45-09,25 (Tlet 1 3)") == (time(6, 45), time(9, 25), (1, 3))
+    assert parse_time_line("21.05 - 22.00 (Tiet 16-18)") == (time(21, 5), time(22, 0), (16, 18))
+
+
+def test_class_suffix_with_dropped_dash():
+    assert split_class_label("Giao diện người máy-2-2 26(N02 TH1)") == (
+        "Giao diện người máy",
+        "2-2-26(N02.TH1)",
+    )
+    # nhãn bị ngắt dòng ngay sau "-2-2" và dòng sau mất dấu gạch
+    cell = extract_fields(
+        lines(
+            "Tích hợp",
+            "13.00 - 15.40 (Tiết 7-9)",
+            "Tích hợp và phân tích dữ liệu lớn-2-2",
+            "26(COUR01.LT2)",
+            "A6-301.302 (PC)",
+            "Đỗ Thu Hà",
+        )
+    )
+    assert cell["name"][0] == "Tích hợp và phân tích dữ liệu lớn"
+    assert cell["class_code"][0] == "2-2-26(COUR01.LT2)"
+
+
+def test_place_before_lecturer_is_the_room():
+    cell = extract_fields(
+        lines(
+            "Bóng đá",
+            "09:30 - 12:10 (Tiết 4-6)",
+            "Bóng đá-2-2-26(N01)",
+            "Sân bóng đá",
+            "Phan Gia Huy",
+        )
+    )
+    assert cell["room"][0] == "Sân bóng đá" and cell["lecturer"][0] == "Phan Gia Huy"
+
+
+def test_exam_cell_inside_week_grid():
+    exam = lines(
+        "Lịch thi: Tối ưu hóa",
+        "18:30 - 20:00 (Ca 5)",
+        "Trắc nghiệm trên máy 90p",
+        "A6-101.102 (PC)",
+    )
+    assert is_exam_cell(exam)
+    fields = extract_exam_fields(exam)
+    assert fields["name"][0] == "Tối ưu hóa"
+    assert fields["start_time"][0] == time(18, 30) and fields["end_time"][0] == time(20, 0)
+    assert fields["exam_format"][0] == "Trắc nghiệm trên máy 90p"
+    assert fields["room"][0] == "A6-101.102 (PC)"
+    # OCR đọc hỏng tiêu đề: vẫn nhận ra nhờ "(Ca n)" thay cho "(Tiết a-b)"
+    assert is_exam_cell(lines("Llch thl: Tal uuhóa", "18.30 - 20.00 (Ca 5)", "A6-101.102 (PC)"))
+    assert is_exam_cell(lines("Bất kỳ", "18:30 - 20:00 (Ca 5)"))
+
+
+def test_normal_cells_are_not_exam_cells():
+    assert not is_exam_cell(
+        lines("Giải tích", "06:45 - 09:25 (Tiết 1-3)", "MAT1101-1-1-26(N01)", "A101")
+    )
+    assert not is_exam_cell(lines("Giải tích", "Ca 2", "A101"))

@@ -72,6 +72,17 @@ Kiểm tra nhanh thời gian: các kịch bản B1–B4 đặt giờ sao lưu = 
 | R6 | Thêm nhanh có lặp | Gõ "Họp lớp thứ 2 hàng tuần 7h" | Task lặp hằng tuần T2, hạn 07:00 09/11 | US4-8 |
 | R7 | Sao lưu có task lặp | Sao lưu → xoá chuỗi → khôi phục | Chuỗi và quy tắc trở lại đầy đủ | SC-002 |
 
+### Kiểm tra không kết nối ra ngoài (SC-010, constitution IV)
+
+Ngày 2026-11-06, khi app đang chạy bình thường:
+
+- `lsof -nP -i -c LichHocAgent`: chỉ một kết nối `127.0.0.1 → 127.0.0.1:8080`.
+- Ba container (`backend`, `web`, `db`): mọi kết nối TCP đang mở đều trong mạng cầu `192.168.147.0/24` của
+  Docker (backend ↔ db, web ↔ backend, web ← máy chủ); không có địa chỉ ngoài.
+- Mã nguồn (`frontend/src`, `desktop/src-tauri`, `mac-agent`, `backend/app`) không chứa URL `http(s)://` nào
+  ngoài `127.0.0.1`/`localhost` (trừ `$schema` của `tauri.conf.json`, không phải kết nối).
+- Chưa thử tắt hẳn Wi-Fi: các kết quả trên cho thấy tính năng mới không cần mạng; B10 nên bấm thử thật.
+
 ### Hồi quy
 
 `./scripts/test.sh` và các kịch bản kiểm chứng của feature 001 và 002 vẫn pass (SC-009).

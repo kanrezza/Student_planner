@@ -78,6 +78,7 @@ export function ImportScreen() {
           setPreview(result);
           if (result.kind === 'week_schedule') {
             setRows(result.rows);
+            setExamRows(result.exam_rows ?? []);
             setELearning({});
           }
           if (result.kind === 'exam_table') setExamRows(result.exam_rows);
@@ -128,17 +129,20 @@ export function ImportScreen() {
     if (!preview) return;
     const onSuccess = (result: CommitResult) => {
       for (const warning of result.warnings) toast.show(warning.message, { tone: 'warning' });
+      const weekMessage = t('import.saved', {
+        subjects: result.created_subjects ?? 0,
+        sessions: result.created_sessions ?? 0,
+        skipped: result.skipped_duplicates,
+      });
       setSaved(
         preview.kind === 'exam_table'
           ? t('import.savedExams', {
               count: result.created_exams ?? 0,
               skipped: result.skipped_duplicates,
             })
-          : t('import.saved', {
-              subjects: result.created_subjects ?? 0,
-              sessions: result.created_sessions ?? 0,
-              skipped: result.skipped_duplicates,
-            }),
+          : result.created_exams
+            ? `${weekMessage} ${t('import.savedWeekExams', { count: result.created_exams })}`
+            : weekMessage,
       );
       setPreview(null);
       setRows([]);
@@ -154,15 +158,21 @@ export function ImportScreen() {
             ? [eLearningTag.id]
             : [],
       }));
-      commit.mutate({ kind: 'week_schedule', rows: body }, { onSuccess });
+      commit.mutate({ kind: 'week_schedule', rows: body, exam_rows: examRows }, { onSuccess });
     }
   }
 
+  const selectedExams = examRows.filter((r) => r.selected).length;
+  const selectedRows = rows.filter((r) => r.selected).length;
   const selectedCount =
+    preview?.kind === 'exam_table' ? selectedExams : selectedRows + selectedExams;
+  // Ảnh tuần có thể chỉ có buổi thi (hoặc chỉ có buổi học): mỗi nhóm có dòng được chọn phải hợp lệ.
+  const canSave =
     preview?.kind === 'exam_table'
-      ? examRows.filter((r) => r.selected).length
-      : rows.filter((r) => r.selected).length;
-  const canSave = preview?.kind === 'exam_table' ? canSaveExams(examRows) : canSaveWeek(rows);
+      ? canSaveExams(examRows)
+      : selectedCount > 0 &&
+        (selectedRows === 0 || canSaveWeek(rows)) &&
+        (selectedExams === 0 || canSaveExams(examRows));
 
   return (
     <Screen
@@ -249,9 +259,10 @@ export function ImportScreen() {
               {preview.month_year.reason ? ` — ${preview.month_year.reason}` : ''}
             </Notice>
           )}
-          {rows.length === 0 ? (
+          {rows.length === 0 && examRows.length === 0 && (
             <Notice tone="warning">{t('import.noRows')}</Notice>
-          ) : (
+          )}
+          {rows.length > 0 && (
             <ImportPreviewTable
               rows={rows}
               onChange={setRows}
@@ -259,6 +270,17 @@ export function ImportScreen() {
               eLearning={eLearning}
               onELearning={(i, on) => setELearning((prev) => ({ ...prev, [i]: on }))}
             />
+          )}
+          {examRows.length > 0 && (
+            <section aria-label={t('import.examsInWeek')} className="flex flex-col gap-2">
+              <h2 className="text-[15px] font-semibold">{t('import.examsInWeek')}</h2>
+              <p className="text-muted">{t('import.examsInWeekHelp')}</p>
+              <ExamPreviewTable
+                rows={examRows}
+                onChange={setExamRows}
+                errors={apiErrors ? errorsByRow(apiErrors.fields, 'exam_rows') : {}}
+              />
+            </section>
           )}
         </>
       )}

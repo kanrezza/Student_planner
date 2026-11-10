@@ -4,6 +4,7 @@
   python3 scripts/persistence_check.py verify <snapshot.json>   # đọc lại, so với ảnh chụp
   python3 scripts/persistence_check.py add-task <snapshot.json> # tạo thêm task (trước khi kill)
   python3 scripts/persistence_check.py cleanup                  # xoá mọi dữ liệu test
+  python3 scripts/persistence_check.py backup-check             # kiểm tra sao lưu
 
 Dữ liệu test có tiền tố "__persist_test__" và học kỳ ở năm 2099 để không đụng dữ liệu thật.
 Chỉ dùng thư viện chuẩn của Python.
@@ -207,6 +208,46 @@ def cleanup() -> None:
             call("DELETE", f"/tasks/{task['id']}?permanent=true")
 
 
+def backup_check() -> None:
+    """Sao lưu (feature 003): bản .lhbackup tạo được, đọc lại khớp số liệu hiện tại, và nginx nhận
+    được file lớn hơn 21 MB (gửi file rác 30 MB → backend trả 400 "bị hỏng", KHÔNG phải 413).
+
+    Cố ý KHÔNG khôi phục lên database thật; việc khôi phục được test trên database riêng
+    (backend/tests/integration/test_restore_api.py).
+    """
+    import hashlib
+    import io
+    import zipfile
+
+    with urllib.request.urlopen(f"{API}/backup/dump?kind=thu-cong", timeout=300) as response:
+        data = response.read()
+        expected_sha = response.headers["X-Backup-Sha256"]
+    if hashlib.sha256(data).hexdigest() != expected_sha:
+        raise SystemExit("Mã SHA-256 của bản sao lưu không khớp header")
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        manifest = json.loads(zf.read("manifest.json"))
+        dump = zf.read("data.dump")
+    if hashlib.sha256(dump).hexdigest() != manifest["dump_sha256"]:
+        raise SystemExit("Dump trong bản sao lưu không khớp manifest")
+    counts_now = {"task_lists": len(call("GET", "/lists"))}
+    if manifest["counts"]["task_lists"] != counts_now["task_lists"]:
+        raise SystemExit("Số danh sách trong bản sao lưu khác dữ liệu hiện tại")
+
+    junk = urllib.request.Request(
+        f"{API}/backup/restore",
+        data=b"\0" * (30 * 1024 * 1024),
+        method="POST",
+        headers={"Content-Type": "application/zip"},
+    )
+    try:
+        urllib.request.urlopen(junk, timeout=120)
+    except urllib.error.HTTPError as e:
+        if e.code != 400:
+            raise SystemExit(f"Gửi file 30 MB: mong đợi HTTP 400, nhận {e.code}") from None
+    else:
+        raise SystemExit("File rác 30 MB không được bị từ chối")
+
+
 def without(data: dict, key: str) -> dict:
     return {k: v for k, v in data.items() if k != key}
 
@@ -223,4 +264,10 @@ def write(path: str, data: dict) -> None:
 
 if __name__ == "__main__":
     command, *args = sys.argv[1:]
-    {"setup": setup, "verify": verify, "add-task": add_task, "cleanup": cleanup}[command](*args)
+    {
+        "setup": setup,
+        "verify": verify,
+        "add-task": add_task,
+        "cleanup": cleanup,
+        "backup-check": backup_check,
+    }[command](*args)

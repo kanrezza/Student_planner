@@ -13,7 +13,7 @@ from app.extensions import db
 from app.lib.timeutil import TZ, combine
 from app.models import ClassSession, Exam, Task
 from app.services.shifts import shift_label
-from app.services.tasks import active_tasks, due_at
+from app.services.tasks import END_OF_DAY, active_tasks, due_at
 
 MAX_TASKS_SHOWN = 3
 DAYS_AHEAD = 14  # hôm nay + 13 ngày (research R15)
@@ -167,10 +167,21 @@ def digests_for_range(start: date, days: int, settings) -> list[Digest]:
             )
         )
     )
+    # Lần dự kiến của task lặp rơi vào ngày nào cũng là việc đến hạn ngày đó (feature 003 FR-023).
+    from app.services.task_series import projected_occurrences
+
+    projected_by_day: dict[date, list[DigestTask]] = {}
+    for p in projected_occurrences(start, end, start):
+        projected_by_day.setdefault(p.day, []).append(
+            DigestTask(
+                p.title, combine(p.day, p.at_time or END_OF_DAY), p.at_time is not None, p.important
+            )
+        )
     result = []
     for offset in range(days):
         day = start + timedelta(days=offset)
         due_today, overdue = classify_tasks(day, tasks)
+        due_today = [*due_today, *projected_by_day.get(day, [])]
         digest = build_digest(
             day,
             exams_by_day.get(day, []),

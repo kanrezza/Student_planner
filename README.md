@@ -13,7 +13,7 @@ có telemetry. Giao diện hoàn toàn bằng tiếng Việt.
 |------------|-----------|------------|
 | Backend + CSDL | Flask, PostgreSQL 16, EasyOCR | Docker (OrbStack) |
 | Giao diện | React + Tailwind, FullCalendar | Docker (nginx, cổng `127.0.0.1:8080`) |
-| App macOS "Lịch Học Cá Nhân" | Tauri 2 (cửa sổ riêng, icon Dock) | `~/Applications` |
+| App macOS "Lịch Học Cá Nhân" | Tauri 2 (cửa sổ riêng, icon Dock) | `/Applications` |
 | Agent nhắc lịch (`LichHocAgent`) | Python + EventKit | Chạy nền, đẩy vào Lịch/Lời nhắc của Apple |
 
 ## Yêu cầu
@@ -38,7 +38,7 @@ Các lần sau chỉ cần `docker compose up -d` (các dịch vụ cũng tự c
 ### App macOS
 
 ```bash
-desktop/scripts/install.sh               # build, ký ad-hoc, chép vào ~/Applications
+desktop/scripts/install.sh               # build, ký ad-hoc, chép vào /Applications (xoá bản cũ ở ~/Applications)
 desktop/scripts/install.sh --uninstall   # gỡ
 ```
 
@@ -50,7 +50,7 @@ triển không xác định (chữ ký ad-hoc): chuột phải vào app → **M�
 ### Agent nhắc lịch (iPhone nhận nhắc khi Mac gập)
 
 ```bash
-mac-agent/scripts/install.sh              # build LichHocAgent.app, cài LaunchAgent, chạy ngay
+mac-agent/scripts/install.sh              # cài LichHocAgent.app + Python riêng vào ~/Library/Application Support/LichHocAgent, cài LaunchAgent, chạy ngay (tháo SSD vẫn chạy)
 mac-agent/scripts/install.sh --uninstall
 ```
 
@@ -62,6 +62,25 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 
 - **Công việc**: Hôm nay, Ngày mai, 7 ngày tới, Tất cả, các danh sách riêng, **Thùng rác** (giữ task 30 ngày
   rồi xoá hẳn). Gõ vào ô *Thêm công việc* + Enter; bấm task để mở bảng chi tiết (khung giờ làm, nhãn, nhắc).
+- **Thêm nhanh bằng câu tiếng Việt**: gõ cả câu vào ô *Thêm công việc*, phần hiểu được sẽ được tô sáng và
+  hiện trước kết quả (bấm vào chữ tô sáng để giữ nó làm chữ thường). Không cần gõ dấu, mọi xử lý chạy trên máy.
+
+  | Gõ | Hiểu là |
+  |----|---------|
+  | `mai`, `ngày mai`, `mốt`, `thứ 6`, `thứ 6 tuần sau`, `20/11`, `20/11/2027` | ngày hạn |
+  | `9h`, `9h30`, `9 giờ tối`, `9 rưỡi`, `tối nay`, `sáng mai` | giờ hạn (giờ 1–5 không ghi buổi là chiều) |
+  | `#Gấp` · `~Học tập` | nhãn (nhãn chưa có sẽ được tạo) · danh sách |
+  | `*` hoặc `quan trọng` · `!cao` `!tb` `!thấp` | Quan trọng · mức ưu tiên |
+  | `hằng ngày`, `mỗi 3 ngày`, `thứ 2 hàng tuần`, `ngày 5 hằng tháng` | lặp lại |
+  | `từ 6/11 đến 11/11`, `6/11 - 11/11`, `đến hết 20/11` | khoảng ngày: có cụm lặp thì lần đầu là ngày bắt đầu và lặp kết thúc vào ngày cuối; không có thì hạn là ngày cuối, ghi chú "Bắt đầu: …" |
+
+  Ví dụ: `Nộp bài QTDA thứ 6 9h #Gấp * !cao`, `Họp lớp thứ 2 hàng tuần 7h`.
+- **Tìm kiếm** (⌘F): task, danh sách, nhãn, môn học, buổi học, buổi thi; không phân biệt dấu và hoa thường,
+  tô sáng chỗ khớp, có công tắc *Gồm cả đã hoàn thành*. Esc để thoát và quay lại màn hình trước.
+- **Task lặp lại**: trong bảng chi tiết chọn *Lặp lại* (hằng ngày, mỗi N ngày, hằng tuần chọn nhiều thứ, hằng
+  tháng vào ngày D; kết thúc không/vào ngày/sau N lần). Hoàn thành một lần thì lần kế tiếp xuất hiện; sửa hoặc
+  xoá sẽ hỏi *Chỉ lần này* hay *Lần này và các lần sau*. Lịch và bản tóm tắt hằng ngày hiện các lần dự kiến;
+  Lời nhắc/iPhone luôn theo lần hiện tại.
 - **Lịch**: ngày/tuần/tháng; kéo thả task, kéo dãn khung giờ làm, kéo chọn vùng trống để tạo task, kéo
   buổi học sang giờ/ngày khác (có xác nhận).
 - **Môn học**: học kỳ, thêm một hoặc nhiều môn, ca học; **Nhập từ ảnh** cho thời khoá biểu.
@@ -76,6 +95,7 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 | Phím | Việc |
 |------|------|
 | ⌘N | Thêm công việc mới |
+| ⌘F | Tìm kiếm (task, danh sách, nhãn, môn học, buổi học, buổi thi; không cần gõ dấu) |
 | ⌘1 … ⌘5 | Công việc, Lịch, Môn học, Lịch thi, Cài đặt |
 | ⌘, / ⌘/ | Cài đặt / bảng phím tắt |
 | ⌘⌫ | Chuyển task vào Thùng rác |
@@ -85,7 +105,8 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 | ← → | Tuần/tháng trước/sau (Lịch) |
 | T, D, W, M | Lịch: hôm nay, ngày, tuần, tháng |
 
-Đầy đủ: ⌘/ trong app, hoặc `specs/002-redesign-macos-app/contracts/ui-shortcuts.md`.
+Đầy đủ: ⌘/ trong app, hoặc `specs/002-redesign-macos-app/contracts/ui-shortcuts.md` (phím tắt thêm ở feature 003:
+`specs/003-backup-nl-recurring-search/contracts/ui.md`).
 
 ## Dữ liệu nằm ở đâu, sao lưu
 
@@ -95,13 +116,28 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 
 > ⚠️ **`docker compose down -v` xoá toàn bộ dữ liệu.** Dùng `docker compose down` (không `-v`) để dừng.
 
+### Sao lưu tự động (Cài đặt → Sao lưu)
+
+- Mỗi ngày lúc **21:00** (đổi được) agent `LichHocAgent` tự sao lưu toàn bộ dữ liệu thành một file
+  `LichHoc-YYYY-MM-DD-HHMM-<loại>.lhbackup` (loại: `tu-dong`, `thu-cong`, `truoc-khoi-phuc`).
+  Máy tắt hoặc ngủ lúc đến giờ thì sao lưu bù ngay khi có thể (chỉ một bản bù).
+- Mặc định ghi vào `iCloud Drive/Lịch Học Cá Nhân/Sao lưu` (macOS tự đưa lên iCloud); đổi sang thư
+  mục khác, ví dụ ổ SSD rời, ngay trong trang Sao lưu. Giữ 14 bản gần nhất (chỉnh được 1–365).
+  Ổ không có thì bỏ qua, cảnh báo nhẹ và thử lại; quá 3 ngày chưa sao lưu được thì có thông báo macOS.
+- **Khôi phục**: bấm "Khôi phục" ở một bản trong danh sách (hoặc "Chọn bản sao lưu khác…" sau khi
+  cài lại máy). App tự sao lưu dữ liệu hiện tại thành bản `truoc-khoi-phuc` trước khi thay.
+- Lần đầu macOS hỏi quyền cho LichHocAgent ghi vào iCloud Drive / ổ rời và gửi thông báo: bấm "Cho phép".
+  Nếu bị từ chối: Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Tệp và thư mục.
+- Log của sao lưu nằm cùng file log của agent: `~/Library/Logs/LichHocAgent/agent.log`.
+- Script `backup.sh`/`restore.sh` ở trên vẫn dùng được để sao lưu thủ công.
+
 ```bash
-./scripts/backup.sh                              # → backups/lichhoc-YYYYmmdd-HHMM.dump
-./scripts/restore.sh backups/lichhoc-....dump    # khôi phục (hỏi xác nhận, ghi đè dữ liệu hiện tại)
+./scripts/backup.sh     # → ~/Library/Application Support/LichHocAgent/backups/lichhoc-YYYYmmdd-HHMM.dump
+./scripts/restore.sh "<file .dump>"   # khôi phục (hỏi xác nhận, ghi đè dữ liệu hiện tại)
 ```
 
 (Thủ công: `docker compose exec -T db pg_dump -U lichhoc -Fc lichhoc > lichhoc.dump`, khôi phục bằng
-`pg_restore --clean --if-exists -U lichhoc -d lichhoc`.) Thư mục `backups/` không được đưa lên git.
+`pg_restore --clean --if-exists -U lichhoc -d lichhoc`.) Đổi nơi lưu bằng biến `LICHHOC_BACKUP_DIR`; script không ghi gì vào thư mục dự án.
 
 ## Chạy test
 

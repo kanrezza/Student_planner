@@ -14,6 +14,19 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
+# pg_dump / pg_restore phải cùng hoặc mới hơn server (PostgreSQL 16) nên lấy từ kho PGDG chính thức
+# (kho Debian chỉ có bản cũ hơn). Chỉ cần internet lúc build image (feature 003, research R2).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && install -d /etc/apt/keyrings \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /etc/apt/keyrings/pgdg.asc \
+    && . /etc/os-release \
+    && echo "deb [signed-by=/etc/apt/keyrings/pgdg.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+        > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-16 \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # PyTorch bản CPU (có wheel linux/arm64 cho Apple Silicon) — nhỏ hơn bản CUDA nhiều.

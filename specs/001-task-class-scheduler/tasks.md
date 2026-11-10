@@ -220,7 +220,7 @@ Toàn bộ bảng dữ liệu được tạo trong Phase 2 bằng một migratio
   - Ràng buộc học kỳ không chồng lấn: `EXCLUDE USING gist (daterange(start_date, end_date, '[]')
     WITH &&)`.
   - Dữ liệu mặc định:
-    - 4 ca: Ca 1 06:45–09:25, Ca 2 09:35–12:10, Ca 3 13:00–15:40, Ca 4 15:45–18:25.
+    - 4 ca: Ca 1 06:45–09:25, Ca 2 09:30–12:10, Ca 3 13:00–15:40, Ca 4 15:45–18:25.
     - 3 danh sách: "Học tập" (`is_default_study`), "Cá nhân", "Công việc", màu c01, c02, c03.
     - Nhãn hệ thống "E-Learning" (`system_key='e_learning'`, màu c05).
     - Một dòng `settings`, `sync_state(revision=0)`, `agent_status(permission='unknown')`.
@@ -577,7 +577,7 @@ ngày và đúng màu (SC-006).
 
 **Goal**: Bảng ca chỉnh được; chọn ca khi thêm môn; đổi hoặc xoá ca lan sang các môn.
 
-**Independent Test**: Thêm môn chọn "Ca 2" → 09:35–12:10; đổi giờ Ca 2 → môn cập nhật, trừ buổi đã
+**Independent Test**: Thêm môn chọn "Ca 2" → 09:30–12:10; đổi giờ Ca 2 → môn cập nhật, trừ buổi đã
 sửa giờ riêng (quickstart V5).
 
 ### Tests for User Story 8 ⚠️

@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "backup",
+  "description": "Trang giao diện tải từ http://127.0.0.1:8080 chỉ được gọi ba lệnh của trang Cài đặt → Sao lưu: chọn thư mục, chọn file sao lưu, hiện trong Finder. Không có quyền plugin nào khác.",
+  "windows": ["main"],
+  "remote": { "urls": ["http://127.0.0.1:8080/*"] },
+  "permissions": ["allow-pick-backup-folder", "allow-pick-backup-file", "allow-reveal-in-finder"]
+}

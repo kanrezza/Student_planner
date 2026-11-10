@@ -43,3 +43,9 @@ def test_menu_bar_uses_current_year():
 def test_no_source():
     result = infer_month_year([box("Không có gì", 0, 0)], [], [], TODAY)
     assert result.value is None and result.certain is False
+
+
+def test_mini_calendar_title_in_menu_bar_zone():
+    # Ảnh cuộn sát mép trên: "Tháng 12-2026" nằm trong vùng thanh menu nhưng vẫn là lịch thu nhỏ
+    result = infer_month_year([], [], [box("Tháng 12-2026", 0, 0)], TODAY)
+    assert (result.value, result.source, result.certain) == ("2026-12", "mini_calendar", True)

@@ -12,6 +12,8 @@ export const keys = {
   subjects: ['subjects'] as const,
   shifts: ['shifts'] as const,
   tags: ['tags'] as const,
+  /** Kết quả tìm kiếm: làm mới sau mọi thay đổi dữ liệu để kết quả luôn đúng. */
+  search: ['search'] as const,
 };
 
 /** Mọi dữ liệu hiển thị đều có thể đổi (ví dụ đổi màu nhãn) → làm mới tất cả. */
@@ -21,14 +23,14 @@ export function invalidateAll(qc: QueryClient) {
 
 /** Task thay đổi → danh sách task, số đếm của danh sách, trang Hôm nay, lịch. */
 export function invalidateTaskViews(qc: QueryClient) {
-  for (const key of [keys.tasks, keys.lists, keys.today, keys.calendar]) {
+  for (const key of [keys.tasks, keys.lists, keys.today, keys.calendar, keys.search]) {
     void qc.invalidateQueries({ queryKey: key });
   }
 }
 
 /** Học kỳ/môn học thay đổi → môn học, học kỳ, trang Hôm nay, lịch. */
 export function invalidateScheduleViews(qc: QueryClient) {
-  for (const key of [keys.subjects, keys.semesters, keys.today, keys.calendar]) {
+  for (const key of [keys.subjects, keys.semesters, keys.today, keys.calendar, keys.search]) {
     void qc.invalidateQueries({ queryKey: key });
   }
 }

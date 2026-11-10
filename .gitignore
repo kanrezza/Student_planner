@@ -39,12 +39,14 @@ backend/spikes/results/
 mac-agent/spikes/build/
 mac-agent/spikes/dist/
 
-# Ảnh chụp thật của người dùng (có thông tin cá nhân) — không commit; chỉ bản đã che nằm trong tests/fixtures
-/samples/*.jpg
-/samples/*.jpeg
-/samples/*.png
-/samples/*.heic
+# File thật của người dùng (ảnh chụp, PDF thời khoá biểu… có thông tin cá nhân) — không commit, mọi
+# loại file; chỉ samples/synthetic/ (dữ liệu giả lập) được theo dõi. Bản đã che nằm trong tests/fixtures.
+/samples/*
+!/samples/synthetic/
 
 # Cấu hình Claude Code cục bộ (không đưa lên git)
 CLAUDE.md
 .claude/
+
+# Bản sao lưu của app (chứa dữ liệu cá nhân)
+*.lhbackup

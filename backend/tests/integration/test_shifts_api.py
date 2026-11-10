@@ -8,7 +8,7 @@ def shifts(client):
 def test_default_shifts(client):
     assert [(s["name"], s["start_time"], s["end_time"]) for s in shifts(client)] == [
         ("Ca 1", "06:45", "09:25"),
-        ("Ca 2", "09:35", "12:10"),
+        ("Ca 2", "09:30", "12:10"),
         ("Ca 3", "13:00", "15:40"),
         ("Ca 4", "15:45", "18:25"),
     ]

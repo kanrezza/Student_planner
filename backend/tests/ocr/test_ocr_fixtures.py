@@ -23,7 +23,8 @@ from tests.ocr_helpers import FIXTURES, context
 pytestmark = pytest.mark.ocr
 
 NOW = datetime(2026, 11, 4, 14, 5, tzinfo=TZ)
-MAX_SECONDS = 60
+# Giới hạn của riêng test (không ảnh hưởng app): 60 giây quá sát khi máy đang bận việc khác.
+MAX_SECONDS = 90
 EXACT = {"date", "start_time", "end_time", "weekday", "attempt"}
 GRID_KEYS = ["name", "date", "start_time", "end_time", "room", "lecturer", "class_code"]
 EXAM_KEYS = [

@@ -6,6 +6,7 @@ import { NowProvider } from './app/useNow';
 import { SyncPrompt } from './components/SyncPrompt';
 import { useReminders } from './reminders/useReminders';
 import { router } from './routes';
+import { ScopeProvider } from './features/tasks/recurrence/ScopeDialog';
 import { ToastProvider } from './ui/Toast';
 
 const queryClient = new QueryClient({
@@ -24,9 +25,11 @@ export function App() {
       <NowProvider>
         <ShellProvider>
           <ToastProvider>
-            <ReminderRunner />
-            <SyncPrompt />
-            <RouterProvider router={router} />
+            <ScopeProvider>
+              <ReminderRunner />
+              <SyncPrompt />
+              <RouterProvider router={router} />
+            </ScopeProvider>
           </ToastProvider>
         </ShellProvider>
       </NowProvider>

@@ -82,7 +82,8 @@ def infer_month_year(
     candidates = {
         "grid_dates": _from_headers(headers),
         "week_header": _from_week_text(boxes),
-        "mini_calendar": _from_mini_calendar(boxes),
+        # Ảnh cắt sát mép trên: tiêu đề lịch nhỏ ("Tháng 12-2026") có thể rơi vào vùng thanh menu.
+        "mini_calendar": _from_mini_calendar(boxes + menu_boxes),
         "menu_bar": _from_menu_bar(menu_boxes, today),
     }
     chosen = next(((s, c[0]) for s in SOURCES if (c := candidates[s])), None)

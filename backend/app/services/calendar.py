@@ -36,3 +36,10 @@ def tasks_in_range(start: date, end: date, tag_ids: list[int]) -> list[Task]:
     if tag_ids:
         query = query.where(Task.id.in_(select(TaskTag.task_id).where(TaskTag.tag_id.in_(tag_ids))))
     return list(db.session.scalars(query.order_by(Task.due_date, Task.due_time)))
+
+
+def projected_in_range(start: date, end: date, tag_ids: list[int], today: date) -> list:
+    """Lần dự kiến của các chuỗi task lặp trong [start, end] (feature 003 FR-022)."""
+    from app.services.task_series import projected_occurrences
+
+    return projected_occurrences(start, end, today, tag_ids)
