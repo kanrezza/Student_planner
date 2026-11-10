@@ -109,3 +109,12 @@ def test_list_layout_by_column_titles():
 
 def test_unknown_when_no_markers():
     assert detect_layout([box("Xin chào", 10, 10), box("Không phải bảng", 10, 50)]) == "unknown"
+
+
+def test_header_with_misread_first_letter_keeps_the_whole_row():
+    # Ảnh thật 30/11: "Thứ 7" bị đọc thành "Ihứ 7"; nếu bỏ tiêu đề này cả hàng không còn khớp
+    boxes = [
+        box(t, 100 + 200 * i, 50, w=60)
+        for i, t in enumerate(["Thú 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Ihứ 7", "Chú nhât"])
+    ]
+    assert [h.weekday for h in find_week_headers(boxes)] == [1, 2, 3, 4, 5, 6, 7]

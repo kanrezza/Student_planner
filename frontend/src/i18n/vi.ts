@@ -489,6 +489,10 @@ export const vi = {
     save: 'Lưu {count} buổi',
     saved: 'Đã tạo {subjects} môn ({sessions} buổi học), bỏ qua {skipped} buổi đã có.',
     savedExams: 'Đã thêm {count} buổi thi, bỏ qua {skipped} buổi đã có.',
+    savedWeekExams: 'Đã thêm {count} buổi thi.',
+    examsInWeek: 'Buổi thi trong ảnh',
+    examsInWeekHelp:
+      'Các ô “Lịch thi: …” trong lưới tuần được lưu thành buổi thi, không phải môn học.',
     uncertainHelp: 'Ô tô vàng là chưa chắc chắn: kiểm tra, sửa nếu cần rồi bấm vào ô để xác nhận.',
     alreadyIn: 'Đã có trong lịch',
     inImage: 'Trùng trong ảnh',

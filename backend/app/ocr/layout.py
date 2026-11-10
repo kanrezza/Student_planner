@@ -14,7 +14,8 @@ from app.ocr.reader import TextBox
 MENU_BAR_FRACTION = 0.028  # thanh menu macOS ≈ 2,7% chiều cao ảnh chụp toàn màn hình
 DOCK_FRACTION = 0.93
 
-_WEEKDAY_RE = re.compile(r"^thu\w?\s*([2-7])?$")
+# OCR hay đọc nhầm chữ cái đầu của "Thứ" ("Ihứ 7", "1hứ 7"): chấp nhận một chữ giống chữ T.
+_WEEKDAY_RE = re.compile(r"^[t1il]?hu\w?\s*([2-7])?$")
 _SUNDAY_RE = re.compile(r"^(?:cn|chu\s*nhat|chu\s*nhut)$")
 _HOUR_LABEL_RE = re.compile(r"^\d{1,2}\s*[:;.]\s*\w{1,2}$")
 _DAY_RE = re.compile(r"^\d{1,2}$")

@@ -10,14 +10,25 @@ import re
 from datetime import time
 
 from app.lib.text import nfc
-from app.ocr.geometry import find_times
+from app.ocr.geometry import find_times, strip_accents
 from app.ocr.reader import TextBox
 
 E_LEARNING_RE = re.compile(r"e[\s-]?learning|\bonline\b", re.IGNORECASE)
-_TIET_RE = re.compile(r"t[il1]\S{0,2}t\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})", re.IGNORECASE)
+# "(Tiết 7-9)"; OCR hay làm rơi dấu gạch: "Tiết 1 3", "Tiết 46", "Tiết 1012".
+_TIET_RE = re.compile(
+    r"t[il1]\S{0,2}t\s*(?:(?P<a>\d{1,2})\s*(?:[-–—]\s*|\s+)(?P<b>\d{1,2})|(?P<c>\d{2})(?P<d>\d{2})|(?P<e>\d)(?P<f>\d))(?!\d)",
+    re.IGNORECASE,
+)
+# Ô "Lịch thi: Tên môn" lẫn trong lưới tuần; OCR hay đọc "Lịch thi" thành "Llch thl".
+_EXAM_TITLE_RE = re.compile(r"^l[il1]ch\s*th[il1]\s*[:;.]?\s*")
+_CA_RE = re.compile(r"\(\s*ca\s*\d\s*\)", re.IGNORECASE)
 # Hậu tố nhóm lớp của cổng thông tin: "-1-1-26(N01)", "-1-1-26(COUR01.LT2)", "-1-1-26(N01).TH".
-_SUFFIX_START_RE = re.compile(r"-\s*\d\s*-\s*\d\s*-")
-_CLASS_SUFFIX_RE = re.compile(r"\s*-\s*(\d)\s*-\s*(\d)\s*-\s*(\d{2})\s*\((.*?)\)\s*(\.\w+)?\s*$")
+# Dấu gạch trước năm ("-26") hay bị OCR làm rơi nên cho phép khoảng trắng;
+# dòng có thể ngắt ngay sau "-2-2".
+_SUFFIX_START_RE = re.compile(r"-\s*\d\s*-\s*\d\s*(?:[-\s]|$)")
+_CLASS_SUFFIX_RE = re.compile(
+    r"\s*-\s*(\d)\s*-\s*(\d)\s*[-\s]\s*(\d{2})\s*\((.*?)\)\s*(\.\w+)?\s*$"
+)
 _CODE_LINE_RE = re.compile(r"^[A-Z]{2,5}\d{3,}[\w\-.]*(\(\w+\))?$")
 _ROOM_PREFIX_RE = re.compile(
     r"^(?:có\s*mặt|vắng(?:\s*mặt)?|nghỉ|phòng|p\.)\s*[:.]?\s*", re.IGNORECASE
@@ -61,19 +72,59 @@ def fix_code_token(token: str) -> str:
     return match.group(1) + digits
 
 
+def _tiet_of(match: re.Match) -> tuple[int, int] | None:
+    groups = match.groupdict()
+    if groups["a"]:
+        pair = (int(groups["a"]), int(groups["b"]))
+    elif groups["c"]:
+        pair = (int(groups["c"]), int(groups["d"]))
+    else:
+        pair = (int(groups["e"]), int(groups["f"]))
+    return pair if pair[0] <= pair[1] else None
+
+
+_BAD_MINUTE_RE = re.compile(r"(?<!\d)(\d{1,2})\s*([:.hg,;*\-])\s*[6-9]\d(?!\d)")
+_GLUED_TIME_RE = re.compile(r"(?<!\d)([01]\d|2[0-3])([0-5]\d)(?!\d)")
+
+
+def _fix_minutes(text: str) -> str:
+    """Chữ số phút đầu tiên không thể là 6–9: OCR hay nhầm 3 → 8 ("09.80" → "09.30")."""
+
+    def repair(match: re.Match) -> str:
+        whole = match.group(0)
+        minute = whole[-2:]
+        return whole[:-2] + ("3" + minute[1] if minute[0] == "8" else minute)
+
+    return _BAD_MINUTE_RE.sub(repair, text)
+
+
+def _times(text: str) -> list[tuple[int, int]]:
+    """Các giờ trong dòng giờ (đã bỏ "(Tiết a-b)"), chịu lỗi "09.80" và giờ kết thúc dính "1210"."""
+    text = _fix_minutes(_TIET_RE.sub(" ", text))
+    found = find_times(text)
+    if len(found) == 1:
+        # Dấu phân cách của giờ thứ hai bị rơi: "09.30- 1210" → bỏ giờ đầu rồi tìm 4 chữ số liền.
+        rest = text[text.rfind(f"{found[0][1]:02d}") + 2 :] if f"{found[0][1]:02d}" in text else ""
+        if glued := _GLUED_TIME_RE.search(rest):
+            found.append((int(glued.group(1)), int(glued.group(2))))
+    return found
+
+
 def parse_time_line(text: str) -> tuple[time | None, time | None, tuple[int, int] | None]:
     """(giờ bắt đầu, giờ kết thúc, (tiết đầu, tiết cuối)) của dòng "13.00 - 15.40 (Tiết 7-9)"."""
-    tiet = _TIET_RE.search(text)
+    match = _TIET_RE.search(text)
+    tiet = _tiet_of(match) if match else None
     # Bỏ "(Tiết 7-9)" trước khi tìm giờ để "7-9" không bị đọc nhầm thành giờ.
-    times = find_times(_TIET_RE.sub(" ", text))
+    times = _times(text)
     start = time(*times[0]) if times else None
     end = time(*times[1]) if len(times) > 1 else None
-    return start, end, (int(tiet.group(1)), int(tiet.group(2))) if tiet else None
+    return start, end, tiet
 
 
 def is_time_line(text: str) -> bool:
     """Dòng giờ: có hai giờ, hoặc có "(Tiết a-b)" (kể cả khi giờ không đọc được)."""
-    return len(find_times(_TIET_RE.sub(" ", text))) >= 2 or bool(_TIET_RE.search(text))
+    match = _TIET_RE.search(text)
+    return len(_times(text)) >= 2 or (match is not None and _tiet_of(match) is not None)
 
 
 def is_e_learning(text: str) -> bool:
@@ -111,7 +162,8 @@ def split_class_label(text: str) -> tuple[str, str | None]:
     match = _CLASS_SUFFIX_RE.search(text)
     if not match:
         return text, None
-    group = fix_digit_letters(match.group(4).strip())
+    # OCR hay đọc dấu chấm trong "N02.TH1" thành khoảng trắng.
+    group = fix_digit_letters(re.sub(r"\s+", ".", match.group(4).strip()))
     tail = (match.group(5) or "").upper()
     return text[
         : match.start()
@@ -194,6 +246,7 @@ def extract_fields(lines: list[TextBox]) -> dict[str, tuple[object, float]]:
         rest_from = last + 1
 
     tail = list(zip(body[rest_from:], body_texts[rest_from:], strict=True))
+    assigned: set[str] = set()
     for k, (line, text) in enumerate(tail):
         if "room" not in fields and (room := parse_room(text)):
             fields["room"] = (room, line.conf)
@@ -204,6 +257,12 @@ def extract_fields(lines: list[TextBox]) -> dict[str, tuple[object, float]]:
             if _LECTURER_LABEL_RE.match(text) and _NAME_TAIL_RE.match(nxt):
                 lecturer = f"{lecturer} {nxt}"  # tên giảng viên bị xuống dòng
             fields["lecturer"] = (lecturer, line.conf)
+            if "room" not in fields and k > 0 and tail[k - 1][1] not in assigned:
+                # Địa điểm không phải mã phòng ("Sân bóng đá") nằm ngay trước dòng giảng viên.
+                fields["room"] = (tail[k - 1][1], tail[k - 1][0].conf)
+        else:
+            continue
+        assigned.add(text)
 
     if "name" not in fields:
         # Không có hậu tố nhóm lớp: tên môn là phần tiêu đề phía trên dòng giờ; nếu ô không có
@@ -224,4 +283,48 @@ def extract_fields(lines: list[TextBox]) -> dict[str, tuple[object, float]]:
     if any(is_e_learning(t) for t in texts):
         fields["e_learning"] = (True, 1.0)
         fields.setdefault("room", ("E-Learning", 1.0))
+    return fields
+
+
+def _exam_prefix_len(text: str) -> int | None:
+    """Độ dài tiền tố "Lịch thi:" ở đầu dòng (so khớp trên chữ đã bỏ dấu); None nếu không có."""
+    match = _EXAM_TITLE_RE.match(strip_accents(nfc(text)))
+    return match.end() if match else None
+
+
+def is_exam_cell(lines: list[TextBox]) -> bool:
+    """Ô lưới tuần là buổi thi: tiêu đề "Lịch thi: …" hoặc dòng giờ có "(Ca n)", không "(Tiết)"."""
+    lines = _join_tiet_continuation(lines)
+    time_idx = next((i for i, line in enumerate(lines) if is_time_line(line.text)), None)
+    if time_idx is None:
+        return bool(lines) and _exam_prefix_len(lines[0].text) is not None
+    if any(_exam_prefix_len(line.text) is not None for line in lines[:time_idx]):
+        return True
+    text = lines[time_idx].text
+    return bool(_CA_RE.search(text)) and not _TIET_RE.search(text)
+
+
+def extract_exam_fields(lines: list[TextBox]) -> dict[str, tuple[object, float]]:
+    """Trường của ô "Lịch thi: Tên môn", "18:30 - 20:00 (Ca 5)", hình thức thi, phòng.
+
+    Khoá: name, start_time, end_time, exam_format, room (cùng kiểu {khoá: (giá trị, độ tin cậy)}).
+    """
+    fields = extract_fields(lines)
+    lines = _join_tiet_continuation(lines)
+    time_idx = next((i for i, line in enumerate(lines) if is_time_line(line.text)), len(lines))
+    header = lines[:time_idx]
+    if header:
+        title = " ".join(nfc(h.text) for h in header)
+        cut = _exam_prefix_len(title) or 0
+        name = title[cut:].strip()
+        if name:
+            fields["name"] = (name, _mean_conf(header))
+        else:
+            fields.pop("name", None)
+    for line in lines[time_idx + 1 :]:
+        text = nfc(line.text)
+        if parse_room(text) is None and re.search(r"[^\W\d_]{3}", text):
+            fields["exam_format"] = (text, line.conf)
+            break
+    fields.pop("tiet", None)
     return fields

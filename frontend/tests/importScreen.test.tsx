@@ -195,4 +195,50 @@ describe('Nhập từ ảnh (US6, US11)', () => {
     expect(within(row).getByText(/giờ kết thúc tính từ “Trắc nghiệm trên máy 60p”/)).toBeTruthy();
     expect(screen.queryByText(/Nguyễn/)).toBeNull();
   });
+
+  it('ảnh tuần có ô "Lịch thi": hiện thành buổi thi riêng và lưu cùng một lần', async () => {
+    const examRow = {
+      fields: {
+        course_code: ok(null),
+        course_name: ok('Tối ưu hóa'),
+        attempt: ok(1),
+        date: ok('2026-11-30'),
+        start_time: ok('18:30'),
+        end_time: ok('20:00'),
+        exam_format: ok('Trắc nghiệm trên máy 90p'),
+        room: ok('A6-101.102 (PC)'),
+        candidate_number: ok(null),
+      },
+      end_time_source: 'image',
+      is_past: false,
+      duplicate_of_exam_id: null,
+      selected: true,
+    };
+    const api = mockApi({
+      'GET /semesters': [SEMESTER],
+      'GET /shifts': [],
+      'GET /tags': [],
+      'POST /imports/recognize': { ...WEEK_PREVIEW, rows: [], exam_rows: [examRow] },
+      'POST /imports/commit': {
+        created_subjects: 0,
+        created_sessions: 0,
+        created_exams: 1,
+        skipped_duplicates: 0,
+        warnings: [],
+      },
+    });
+    renderScreen();
+    upload(new File(['x'], 'tuan.png', { type: 'image/png' }));
+    const row = await screen.findByTestId('exam-import-row');
+    expect(screen.getByText('Buổi thi trong ảnh')).toBeTruthy();
+    expect(screen.queryByText('Không tìm thấy buổi nào trong ảnh.')).toBeNull();
+    expect(within(row).getByDisplayValue('Tối ưu hóa')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /Lưu 1 buổi/ }));
+    await waitFor(() => expect(api.calls('POST', '/imports/commit')).toHaveLength(1));
+    const body = JSON.parse(api.calls('POST', '/imports/commit')[0][1]!.body as string);
+    expect(body.kind).toBe('week_schedule');
+    expect(body.exam_rows).toHaveLength(1);
+    await screen.findByText(/Đã thêm 1 buổi thi/);
+  });
 });

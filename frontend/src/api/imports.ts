@@ -28,6 +28,8 @@ export type ImportRow = {
   semester_id: number | null;
   duplicate_of_session_id: number | null;
   duplicate_in_image?: boolean;
+  /** Ô bị cắt ở mép dưới ảnh: chỉ đọc được từ dòng tiêu đề. */
+  truncated?: boolean;
   repeat: { mode: 'once' | 'weekly'; until: string | null };
   merge_group: string | null;
   merge_accepted: boolean;
@@ -65,6 +67,8 @@ export type ImportPreview =
         reason?: string;
       };
       rows: ImportRow[];
+      /** Ô "Lịch thi: …" lẫn trong lưới tuần: là buổi thi, không phải môn học. */
+      exam_rows?: ExamRow[];
     }
   | { kind: 'exam_table'; exam_rows: ExamRow[] };
 
@@ -91,7 +95,8 @@ export function useRecognize() {
 }
 
 export type CommitBody =
-  { kind: 'week_schedule'; rows: ImportRow[] } | { kind: 'exam_table'; exam_rows: ExamRow[] };
+  | { kind: 'week_schedule'; rows: ImportRow[]; exam_rows?: ExamRow[] }
+  | { kind: 'exam_table'; exam_rows: ExamRow[] };
 
 export function useCommitImport() {
   const qc = useQueryClient();

@@ -118,8 +118,16 @@ def _session_exists(name: str, class_code: str | None, day: date, start: time) -
 
 def commit(payload: CommitIn) -> dict:
     if payload.kind == "exam_table":
-        return _commit_exams(payload)
-    return _commit_week(payload)
+        return _commit_exams(_prepare_exams(payload))
+    # Ảnh tuần có thể kèm ô "Lịch thi: …" (buổi thi): kiểm tra hợp lệ trước khi ghi bất cứ thứ gì.
+    exams = _prepare_exams(payload)
+    result = _commit_week(payload)
+    if exams:
+        exam_result = _commit_exams(exams)
+        result["created_exams"] = exam_result["created_exams"]
+        result["skipped_duplicates"] += exam_result["skipped_duplicates"]
+        result["warnings"] = result["warnings"] + exam_result["warnings"]
+    return result
 
 
 def _commit_week(payload: CommitIn) -> dict:
@@ -192,7 +200,8 @@ def _commit_week(payload: CommitIn) -> dict:
     }
 
 
-def _commit_exams(payload: CommitIn) -> dict:
+def _prepare_exams(payload: CommitIn) -> list[dict]:
+    """Kiểm tra và chuẩn hoá các dòng thi được chọn; sai thì báo lỗi 400 (chưa ghi gì)."""
     errors: dict[str, str] = {}
     prepared = []
     for i, row in enumerate(payload.exam_rows):
@@ -226,7 +235,10 @@ def _commit_exams(payload: CommitIn) -> dict:
         )
     if errors:
         _fail(errors)
+    return prepared
 
+
+def _commit_exams(prepared: list[dict]) -> dict:
     skipped, created, keys = 0, [], []
     for data in prepared:
         key = duplicate_key(
