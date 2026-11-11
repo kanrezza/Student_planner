@@ -19,7 +19,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { IconBook, IconPlus } from '../../ui/icons';
 import { Card, ItemList, ItemRow, Notice, Screen } from '../../ui/layout';
 import { useToast } from '../../ui/Toast';
-import { usePasteToImport } from '../imports/usePasteImage';
+import { usePasteToImport } from '../imports/usePasteFile';
 
 /**
  * Mục Môn học (feature 002 US8 kịch bản 3): môn theo học kỳ, thêm một môn, nhập nhiều môn, sửa,

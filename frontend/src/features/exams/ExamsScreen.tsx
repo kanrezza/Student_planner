@@ -16,7 +16,7 @@ import { IconExam, IconPlus, IconStarFilled } from '../../ui/icons';
 import { ItemList, ItemRow, Screen, SubHeading } from '../../ui/layout';
 import { Switch } from '../../ui/Switch';
 import { useToast } from '../../ui/Toast';
-import { usePasteToImport } from '../imports/usePasteImage';
+import { usePasteToImport } from '../imports/usePasteFile';
 import { ExamForm } from './ExamForm';
 
 /** Mục Lịch thi (feature 001 US11, FR-055 đến FR-058): buổi thi sắp tới theo ngày. */
