@@ -27,6 +27,8 @@ def test_get_settings_defaults(client):
         "daily_digest_enabled": True,
         "daily_digest_time": "05:00",
         "daily_digest_overdue_only": True,
+        "attachment_max_mb": 50,
+        "backup_attachments_warn_mb": 1024,
     }
 
 

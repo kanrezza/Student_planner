@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import type { ApiWarning } from '../../api/client';
 import { useSemesters } from '../../api/semesters';
+import { ApiError } from '../../api/client';
 import { useDeleteSubject, useSubjects } from '../../api/subjects';
 import type { Subject } from '../../api/types';
 import { BulkSubjectForm } from '../subjects/BulkSubjectForm';
@@ -19,6 +20,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { IconBook, IconPlus } from '../../ui/icons';
 import { Card, ItemList, ItemRow, Notice, Screen } from '../../ui/layout';
 import { useToast } from '../../ui/Toast';
+import { AttachmentBadge } from '../attachments/AttachmentBadge';
 import { usePasteToImport } from '../imports/usePasteFile';
 
 /**
@@ -33,6 +35,7 @@ export function SubjectsScreen() {
   const [deleting, setDeleting] = useState<Subject | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const remove = useDeleteSubject();
+  const [withFiles, setWithFiles] = useState<{ subject: Subject; count: number } | null>(null);
   const toast = useToast();
 
   const all = semesters.data ?? [];
@@ -51,7 +54,9 @@ export function SubjectsScreen() {
     const found = wantedSubject ? subjects.data?.find((s) => s.id === wantedSubject) : undefined;
     if (!found) return;
     setDialog(found);
-    setParams({}, { replace: true });
+    setParams(params.get('attachment') ? { attachment: params.get('attachment')! } : {}, {
+      replace: true,
+    });
   }, [wantedSubject, subjects.data, setParams]);
 
   if (semesters.isLoading) {
@@ -127,6 +132,7 @@ export function SubjectsScreen() {
                   <span className="tabular-nums">{describeSchedules(s)}</span>
                   {s.lecturer && <span>{s.lecturer}</span>}
                   {s.class_code && <span>{s.class_code}</span>}
+                  <AttachmentBadge count={s.attachment_count} />
                   <span>
                     {formatDate(s.start_date)} – {formatDate(s.end_date)} ·{' '}
                     {t('subjects.sessions', { count: s.session_count ?? 0 })}
@@ -178,8 +184,35 @@ export function SubjectsScreen() {
         })}
         onCancel={() => setDeleting(null)}
         onConfirm={() => {
-          if (deleting) remove.mutate(deleting.id);
+          if (deleting) {
+            const subject = deleting;
+            remove.mutate(
+              { id: subject.id },
+              {
+                onError: (err) => {
+                  // Có file đính kèm: hỏi lại và nêu số file trước khi xoá (feature 005, FR-024).
+                  if (err instanceof ApiError && err.code === 'confirm_required')
+                    setWithFiles({
+                      subject,
+                      count: (err.details as { attachment_count: number }).attachment_count,
+                    });
+                },
+              },
+            );
+          }
           setDeleting(null);
+        }}
+      />
+      <ConfirmDialog
+        open={withFiles !== null}
+        message={t('attachments.deleteWithFiles', {
+          name: withFiles?.subject.name ?? '',
+          count: withFiles?.count ?? 0,
+        })}
+        onCancel={() => setWithFiles(null)}
+        onConfirm={() => {
+          if (withFiles) remove.mutate({ id: withFiles.subject.id, confirm: true });
+          setWithFiles(null);
         }}
       />
     </Screen>

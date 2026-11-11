@@ -32,7 +32,13 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
-DEFAULT_OUT = Path(__file__).resolve().parents[2] / "backend" / "tests" / "fixtures" / "timetables"
+DEFAULT_OUT = (
+    Path(__file__).resolve().parents[2]
+    / "backend"
+    / "tests"
+    / "fixtures"
+    / "timetables"
+)
 
 FONT_DIRS = ["/usr/share/fonts/truetype/dejavu", "/System/Library/Fonts/Supplemental"]
 FONT_FILES = {"DejaVu": "DejaVuSans.ttf", "DejaVu-Bold": "DejaVuSans-Bold.ttf"}
@@ -68,59 +74,137 @@ BODY_SIZE = 6.6
 # Mỗi dòng của bảng: số thứ tự, mã HP và tên lớp học phần (kèm chỗ ngắt dòng như file thật), số tín chỉ,
 # các ô thứ {thứ: (các dòng chữ trong ô, tiết đầu, tiết cuối, phòng ĐÃ GHÉP — đáp án)}, khoảng ngày.
 ROWS = [
-    dict(stt=1, code=["FFS7010", "69"], label=["Bóng đá-2-2-26(N01)"], tc=1,
-         cells={0: (["4 - 6 (Sân", "bóng đá)"], 4, 6, "Sân bóng đá")},
-         dates=("15/02/2027", "28/02/2027")),
-    dict(stt=1, code=["FFS7010", "69"], label=["Bóng đá-2-2-26(N01)"], tc=1,
-         cells={0: (["4 - 6 (Sân", "bóng đá)"], 4, 6, "Sân bóng đá")},
-         dates=("30/11/2026", "24/01/2027")),
-    dict(stt=2, code=["CSE703", "016"], label=["Giao diện người", "máy-2-2-26(N02.TH1)"], tc=3,
-         cells={5: (["1 - 3", "(A6-1", "03", "(PC))"], 1, 3, "A6-103 (PC)")},
-         dates=("15/02/2027", "28/02/2027")),
-    dict(stt=2, code=["CSE703", "016"], label=["Giao diện người", "máy-2-2-26(N02.TH1)"], tc=3,
-         cells={5: (["1 - 3", "(A6-1", "01.102", "(PC))"], 1, 3, "A6-101.102 (PC)")},
-         dates=("30/11/2026", "24/01/2027")),
-    dict(stt=3, code=["CSE703", "065"], label=["Xử lý ngôn ngữ tự", "nhiên-2-2-26(N01)"], tc=3,
-         cells={1: (["4 - 6", "(A6-103", "(PC))"], 4, 6, "A6-103 (PC)")},
-         dates=("15/02/2027", "28/02/2027")),
-    dict(stt=3, code=["CSE703", "065"], label=["Xử lý ngôn ngữ tự", "nhiên-2-2-26(N01)"], tc=3,
-         cells={1: (["4 - 6", "(A6-203", "(PC))"], 4, 6, "A6-203 (PC)"),
-                4: (["4 - 6", "(A6-702", "(PC))"], 4, 6, "A6-702 (PC)")},
-         dates=("21/12/2026", "24/01/2027")),
-    dict(stt=3, code=["CSE703", "065"], label=["Xử lý ngôn ngữ tự", "nhiên-2-2-26(N01)"], tc=3,
-         cells={4: (["4 - 6", "(A6-501", "(PC))"], 4, 6, "A6-501 (PC)")},
-         dates=("30/11/2026", "20/12/2026")),
-    dict(stt=4, code=["CSE703", "054"],
-         label=["Tích hợp và phân tích dữ", "liệu", "lớn-2-2-26(COUR01.LT2)"], tc=3,
-         cells={1: (["7 - 9", "(A6-103", "(PC))"], 7, 9, "A6-103 (PC)")},
-         dates=("15/02/2027", "28/02/2027")),
-    dict(stt=4, code=["CSE703", "054"],
-         label=["Tích hợp và phân tích dữ", "liệu", "lớn-2-2-26(COUR01.LT2)"], tc=3,
-         cells={1: (["7 - 9", "(A6-301.30", "2 (PC))"], 7, 9, "A6-301.302 (PC)")},
-         dates=("30/11/2026", "24/01/2027")),
-    dict(stt=5, code=["CSE702", "060"], label=["Trực quan hoá dữ", "liệu-2-2-26(N01.TH1)"], tc=2,
-         cells={1: (["1 - 3", "(A6-103", "(PC))"], 1, 3, "A6-103 (PC)")},
-         dates=("14/12/2026", "17/01/2027")),
-    dict(stt=6, code=["CSE703", "016"], label=["Giao diện người", "máy-2-2-26(N02)"], tc=3,
-         cells={1: (["7 - 9", "(A8-101)"], 7, 9, "A8-101")},
-         dates=("15/02/2027", "28/02/2027")),
-    dict(stt=6, code=["CSE703", "016"], label=["Giao diện người", "máy-2-2-26(N02)"], tc=3,
-         cells={1: (["7 - 9", "(A2-402.40", "4)"], 7, 9, "A2-402.404")},
-         dates=("30/11/2026", "24/01/2027")),
-    dict(stt=7, code=["CSE702", "060"], label=["Trực quan hoá dữ", "liệu-2-2-26(N01)"], tc=2,
-         cells={0: (["1 - 2", "(A8-104)"], 1, 2, "A8-104")},
-         dates=("18/01/2027", "24/01/2027")),
-    dict(stt=7, code=["CSE702", "060"], label=["Trực quan hoá dữ", "liệu-2-2-26(N01)"], tc=2,
-         cells={0: (["1 - 3", "(A8-104)"], 1, 3, "A8-104")},
-         dates=("30/11/2026", "17/01/2027")),
-    dict(stt=8, code=["CSE703", "054"], label=["Tích hợp và phân tích dữ", "liệu lớn-2-2-26(COUR01)"],
-         tc=3,
-         cells={1: (["16 - 18", "(ONLINE-", "Elearning)"], 16, 18, "ONLINE-Elearning")},
-         dates=("15/02/2027", "28/02/2027")),
-    dict(stt=8, code=["CSE703", "054"], label=["Tích hợp và phân tích dữ", "liệu lớn-2-2-26(COUR01)"],
-         tc=3,
-         cells={1: (["16 - 18", "(ONLINE-", "Elearning)"], 16, 18, "ONLINE-Elearning")},
-         dates=("30/11/2026", "24/01/2027")),
+    dict(
+        stt=1,
+        code=["FFS7010", "69"],
+        label=["Bóng đá-2-2-26(N01)"],
+        tc=1,
+        cells={0: (["4 - 6 (Sân", "bóng đá)"], 4, 6, "Sân bóng đá")},
+        dates=("15/02/2027", "28/02/2027"),
+    ),
+    dict(
+        stt=1,
+        code=["FFS7010", "69"],
+        label=["Bóng đá-2-2-26(N01)"],
+        tc=1,
+        cells={0: (["4 - 6 (Sân", "bóng đá)"], 4, 6, "Sân bóng đá")},
+        dates=("30/11/2026", "24/01/2027"),
+    ),
+    dict(
+        stt=2,
+        code=["CSE703", "016"],
+        label=["Giao diện người", "máy-2-2-26(N02.TH1)"],
+        tc=3,
+        cells={5: (["1 - 3", "(A6-1", "03", "(PC))"], 1, 3, "A6-103 (PC)")},
+        dates=("15/02/2027", "28/02/2027"),
+    ),
+    dict(
+        stt=2,
+        code=["CSE703", "016"],
+        label=["Giao diện người", "máy-2-2-26(N02.TH1)"],
+        tc=3,
+        cells={5: (["1 - 3", "(A6-1", "01.102", "(PC))"], 1, 3, "A6-101.102 (PC)")},
+        dates=("30/11/2026", "24/01/2027"),
+    ),
+    dict(
+        stt=3,
+        code=["CSE703", "065"],
+        label=["Xử lý ngôn ngữ tự", "nhiên-2-2-26(N01)"],
+        tc=3,
+        cells={1: (["4 - 6", "(A6-103", "(PC))"], 4, 6, "A6-103 (PC)")},
+        dates=("15/02/2027", "28/02/2027"),
+    ),
+    dict(
+        stt=3,
+        code=["CSE703", "065"],
+        label=["Xử lý ngôn ngữ tự", "nhiên-2-2-26(N01)"],
+        tc=3,
+        cells={
+            1: (["4 - 6", "(A6-203", "(PC))"], 4, 6, "A6-203 (PC)"),
+            4: (["4 - 6", "(A6-702", "(PC))"], 4, 6, "A6-702 (PC)"),
+        },
+        dates=("21/12/2026", "24/01/2027"),
+    ),
+    dict(
+        stt=3,
+        code=["CSE703", "065"],
+        label=["Xử lý ngôn ngữ tự", "nhiên-2-2-26(N01)"],
+        tc=3,
+        cells={4: (["4 - 6", "(A6-501", "(PC))"], 4, 6, "A6-501 (PC)")},
+        dates=("30/11/2026", "20/12/2026"),
+    ),
+    dict(
+        stt=4,
+        code=["CSE703", "054"],
+        label=["Tích hợp và phân tích dữ", "liệu", "lớn-2-2-26(COUR01.LT2)"],
+        tc=3,
+        cells={1: (["7 - 9", "(A6-103", "(PC))"], 7, 9, "A6-103 (PC)")},
+        dates=("15/02/2027", "28/02/2027"),
+    ),
+    dict(
+        stt=4,
+        code=["CSE703", "054"],
+        label=["Tích hợp và phân tích dữ", "liệu", "lớn-2-2-26(COUR01.LT2)"],
+        tc=3,
+        cells={1: (["7 - 9", "(A6-301.30", "2 (PC))"], 7, 9, "A6-301.302 (PC)")},
+        dates=("30/11/2026", "24/01/2027"),
+    ),
+    dict(
+        stt=5,
+        code=["CSE702", "060"],
+        label=["Trực quan hoá dữ", "liệu-2-2-26(N01.TH1)"],
+        tc=2,
+        cells={1: (["1 - 3", "(A6-103", "(PC))"], 1, 3, "A6-103 (PC)")},
+        dates=("14/12/2026", "17/01/2027"),
+    ),
+    dict(
+        stt=6,
+        code=["CSE703", "016"],
+        label=["Giao diện người", "máy-2-2-26(N02)"],
+        tc=3,
+        cells={1: (["7 - 9", "(A8-101)"], 7, 9, "A8-101")},
+        dates=("15/02/2027", "28/02/2027"),
+    ),
+    dict(
+        stt=6,
+        code=["CSE703", "016"],
+        label=["Giao diện người", "máy-2-2-26(N02)"],
+        tc=3,
+        cells={1: (["7 - 9", "(A2-402.40", "4)"], 7, 9, "A2-402.404")},
+        dates=("30/11/2026", "24/01/2027"),
+    ),
+    dict(
+        stt=7,
+        code=["CSE702", "060"],
+        label=["Trực quan hoá dữ", "liệu-2-2-26(N01)"],
+        tc=2,
+        cells={0: (["1 - 2", "(A8-104)"], 1, 2, "A8-104")},
+        dates=("18/01/2027", "24/01/2027"),
+    ),
+    dict(
+        stt=7,
+        code=["CSE702", "060"],
+        label=["Trực quan hoá dữ", "liệu-2-2-26(N01)"],
+        tc=2,
+        cells={0: (["1 - 3", "(A8-104)"], 1, 3, "A8-104")},
+        dates=("30/11/2026", "17/01/2027"),
+    ),
+    dict(
+        stt=8,
+        code=["CSE703", "054"],
+        label=["Tích hợp và phân tích dữ", "liệu lớn-2-2-26(COUR01)"],
+        tc=3,
+        cells={1: (["16 - 18", "(ONLINE-", "Elearning)"], 16, 18, "ONLINE-Elearning")},
+        dates=("15/02/2027", "28/02/2027"),
+    ),
+    dict(
+        stt=8,
+        code=["CSE703", "054"],
+        label=["Tích hợp và phân tích dữ", "liệu lớn-2-2-26(COUR01)"],
+        tc=3,
+        cells={1: (["16 - 18", "(ONLINE-", "Elearning)"], 16, 18, "ONLINE-Elearning")},
+        dates=("30/11/2026", "24/01/2027"),
+    ),
 ]
 # Chỉ số cột thứ trong bảng: 0 = Thứ 2 … 5 = Thứ 7, 6 = CN. Trong đáp án `weekday` = chỉ số + 1
 # (1 = Thứ Hai … 7 = Chủ Nhật, như isoweekday).
@@ -156,7 +240,9 @@ def register_fonts() -> None:
                 pdfmetrics.registerFont(TTFont(name, str(path)))
                 break
         else:
-            sys.exit(f"Không tìm thấy phông {filename}; cài fonts-dejavu-core (xem docstring).")
+            sys.exit(
+                f"Không tìm thấy phông {filename}; cài fonts-dejavu-core (xem docstring)."
+            )
 
 
 def class_label_key(row: dict) -> tuple[str, str]:
@@ -184,7 +270,9 @@ def column_x() -> list[float]:
     return xs
 
 
-def draw_cell_lines(c: canvas.Canvas, x0: float, x1: float, top: float, lines: list[str], bold=True):
+def draw_cell_lines(
+    c: canvas.Canvas, x0: float, x1: float, top: float, lines: list[str], bold=True
+):
     c.setFont("DejaVu-Bold" if bold else "DejaVu", BODY_SIZE)
     y = top - PAD - BODY_SIZE
     for line in lines:
@@ -214,7 +302,13 @@ def draw_row(c: canvas.Canvas, xs: list[float], top: float, row: dict) -> float:
     draw_cell_lines(c, xs[2], xs[3], top, row["label"])
     draw_cell_lines(c, xs[3], xs[4], top, [str(row["tc"])])
     for weekday_index, (lines, *_rest) in row["cells"].items():
-        draw_cell_lines(c, xs[day_start + weekday_index], xs[day_start + weekday_index + 1], top, lines)
+        draw_cell_lines(
+            c,
+            xs[day_start + weekday_index],
+            xs[day_start + weekday_index + 1],
+            top,
+            lines,
+        )
     draw_cell_lines(c, xs[11], xs[12], top, list(row["dates"]))
     return top - height
 
@@ -228,7 +322,9 @@ def draw_page_head(c: canvas.Canvas) -> None:
     c.setFont("DejaVu-Bold", 12)
     c.drawCentredString(width / 2 + 40, height - 52, "THỜI KHÓA BIỂU CHÍNH THỨC")
     c.setFont("DejaVu-Bold", 7)
-    c.drawCentredString(width / 2 + 40, height - 64, "Học kỳ 2 Năm học 2026 - 2027 Đợt 2")
+    c.drawCentredString(
+        width / 2 + 40, height - 64, "Học kỳ 2 Năm học 2026 - 2027 Đợt 2"
+    )
     c.setFont("DejaVu", 7)
     c.drawString(80, height - 90, "Sinh viên :")
     c.drawString(80, height - 102, "Khóa, lớp :")
@@ -249,7 +345,11 @@ def draw_footer(c: canvas.Canvas, xs: list[float], top: float) -> None:
     c.rect(xs[0], top - 11, xs[-1] - xs[0], 11)
     c.drawString(xs[0] + 2, top - 8, "Tổng cộng:")
     c.drawString(xs[0] + 2, top - 22, "Viết bằng chữ:")
-    c.drawRightString(xs[-1], top - 22, "(................................................................đồng chẵn )")
+    c.drawRightString(
+        xs[-1],
+        top - 22,
+        "(................................................................đồng chẵn )",
+    )
     c.setFont("DejaVu", 6.5)
     c.drawRightString(xs[-1] - 20, top - 33, "Ngày 7 tháng 11 năm 2026")
     c.setFont("DejaVu-Bold", 7)

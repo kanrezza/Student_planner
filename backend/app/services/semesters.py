@@ -8,7 +8,7 @@ from app.api.errors import ApiError, not_found
 from app.extensions import db
 from app.lib import timeutil
 from app.models import Semester, Subject
-from app.services import auto_deadlines
+from app.services import attachments, auto_deadlines
 from app.services.revision import bump_revision
 
 
@@ -93,6 +93,9 @@ def update_semester(semester_id: int, changes: dict, clamp_subjects: bool) -> Se
             "conflict",
             "Một số môn học nằm ngoài khoảng ngày mới của học kỳ",
             details={
+                "attachment_count": attachments.count_for_subjects(
+                    [s.id for s in affected if _all_outside(s, start, end)]
+                ),
                 "subjects": [
                     {
                         "id": s.id,
@@ -102,13 +105,15 @@ def update_semester(semester_id: int, changes: dict, clamp_subjects: bool) -> Se
                         "will_be_deleted": _all_outside(s, start, end),
                     }
                     for s in affected
-                ]
+                ],
             },
         )
 
     if changes.get("name"):
         semester.name = changes["name"]
     semester.start_date, semester.end_date = start, end
+    doomed = [s.id for s in affected if _all_outside(s, start, end)]
+    shas = attachments.shas_for_subjects(doomed)
     kept = []
     for subject in affected:
         if _all_outside(subject, start, end):
@@ -130,6 +135,7 @@ def update_semester(semester_id: int, changes: dict, clamp_subjects: bool) -> Se
     auto_deadlines.reconcile(subject_ids=kept)
     bump_revision(db.session)
     db.session.commit()
+    attachments.collect_garbage(shas)
     return semester
 
 
@@ -141,14 +147,19 @@ def _all_outside(subject, start: date, end: date) -> bool:
 def delete_semester(semester_id: int, confirm: bool) -> None:
     semester = get_semester(semester_id)
     count = len(semester.subjects)
+    subject_ids = [s.id for s in semester.subjects]
+    files = attachments.count_for_subjects(subject_ids)
     if count and not confirm:
         raise ApiError(
             409,
             "conflict",
-            f"Xoá học kỳ sẽ xoá {count} môn học cùng mọi buổi học",
-            details={"subject_count": count},
+            f"Xoá học kỳ sẽ xoá {count} môn học cùng mọi buổi học"
+            + (f" và {files} file đính kèm" if files else ""),
+            details={"subject_count": count, **({"attachment_count": files} if files else {})},
         )
+    shas = attachments.shas_for_subjects(subject_ids)
     auto_deadlines.drop_for_subjects(auto_deadlines.subject_ids_of_semester(semester_id))
     db.session.delete(semester)
     bump_revision(db.session)
     db.session.commit()
+    attachments.collect_garbage(shas)

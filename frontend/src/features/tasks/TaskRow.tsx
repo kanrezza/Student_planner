@@ -6,6 +6,7 @@ import { toIsoDate } from '../../lib/dates';
 import { Checkbox } from '../../ui/Checkbox';
 import { cx } from '../../ui/cx';
 import { IconClock, IconRepeat, IconStarFilled } from '../../ui/icons';
+import { AttachmentBadge } from '../attachments/AttachmentBadge';
 import { Highlighted } from '../search/Highlighted';
 import { isOverdue } from './groupTasks';
 import { describeRule } from './recurrence/describeRule';
@@ -67,6 +68,11 @@ export const TaskRow = forwardRef<
       >
         {highlight ? <Highlighted text={task.title} query={highlight} /> : task.title}
       </span>
+      {task.status === 'doing' && (
+        <span className="shrink-0 rounded-full bg-accent-soft px-2 py-px text-[11px] font-medium text-accent-strong">
+          {t('board.inProgress')}
+        </span>
+      )}
       {task.is_auto && (
         <span aria-label={t('tasks.auto')} title={t('tasks.auto')} className="text-muted">
           <IconRepeat size={14} />
@@ -81,6 +87,7 @@ export const TaskRow = forwardRef<
           <IconRepeat size={14} />
         </span>
       )}
+      <AttachmentBadge count={task.attachment_count} />
       {task.tags.length > 0 && (
         <span
           aria-label={`${t('tags.title')}: ${task.tags.map((tag) => tag.name).join(', ')}`}

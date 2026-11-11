@@ -61,7 +61,8 @@ export function useCreateBulk() {
 export function useDeleteSubject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => apiFetch(`/subjects/${id}`, { method: 'DELETE' }),
+    mutationFn: ({ id, confirm }: { id: number; confirm?: boolean }) =>
+      apiFetch(`/subjects/${id}${confirm ? '?confirm=true' : ''}`, { method: 'DELETE' }),
     onSuccess: () => invalidateScheduleViews(qc),
   });
 }

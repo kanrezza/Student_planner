@@ -131,7 +131,12 @@ def render(sample: Sample) -> Image.Image:
     # --- Trình duyệt: thanh tab + thanh địa chỉ (tên miền giả)
     d.rectangle([0, 24 * S, W, 86 * S], fill=CHROME)
     d.rounded_rectangle([90 * S, 30 * S, 330 * S, 52 * S], radius=6 * S, fill=WHITE)
-    d.text((104 * S, 34 * S), "Lịch học - Cổng sinh viên", font=f("regular", 12), fill=TEXT_DARK)
+    d.text(
+        (104 * S, 34 * S),
+        "Lịch học - Cổng sinh viên",
+        font=f("regular", 12),
+        fill=TEXT_DARK,
+    )
     d.rounded_rectangle([380 * S, 58 * S, 1060 * S, 80 * S], radius=6 * S, fill=WHITE)
     d.text(
         (395 * S, 61 * S),
@@ -145,7 +150,9 @@ def render(sample: Sample) -> Image.Image:
     # --- Sidebar trái
     d.rectangle([0, top, 190 * S, H], fill=SIDEBAR)
     d.text((20 * S, top + 18 * S), "CỔNG SINH VIÊN", font=f("bold", 14), fill=WHITE)
-    for i, item in enumerate(["Trang chủ", "Lịch học", "Lịch thi", "Kết quả học tập", "Học phí"]):
+    for i, item in enumerate(
+        ["Trang chủ", "Lịch học", "Lịch thi", "Kết quả học tập", "Học phí"]
+    ):
         y = top + (60 + i * 36) * S
         if item == "Lịch học":
             d.rectangle([0, y - 8 * S, 190 * S, y + 24 * S], fill=(40, 80, 150))
@@ -170,13 +177,18 @@ def render(sample: Sample) -> Image.Image:
     col_w = (grid_right - grid_left) / 7
     hour_h = (body_bottom - body_top) / (GRID_END_HOUR - GRID_START_HOUR)
 
-    d.rectangle([grid_left, header_top, grid_right, body_bottom], fill=WHITE, outline=GRID_LINE)
+    d.rectangle(
+        [grid_left, header_top, grid_right, body_bottom], fill=WHITE, outline=GRID_LINE
+    )
     for i in range(7):
         x0 = grid_left + i * col_w
         day = sample.week_monday + timedelta(days=i)
         d.line([x0, header_top, x0, body_bottom], fill=GRID_LINE, width=S)
         d.text(
-            (x0 + 10 * S, header_top + 4 * S), f"{day.day:02d}", font=f("bold", 22), fill=TEXT_DARK
+            (x0 + 10 * S, header_top + 4 * S),
+            f"{day.day:02d}",
+            font=f("bold", 22),
+            fill=TEXT_DARK,
         )
         d.text(
             (x0 + 48 * S, header_top + 14 * S),
@@ -189,7 +201,10 @@ def render(sample: Sample) -> Image.Image:
         y = body_top + (h - GRID_START_HOUR) * hour_h
         d.line([grid_left, y, grid_right, y], fill=(238, 240, 244), width=S)
         d.text(
-            (grid_left - 44 * S, y - 7 * S), f"{h:02d}:00", font=f("regular", 11), fill=TEXT_MUTED
+            (grid_left - 44 * S, y - 7 * S),
+            f"{h:02d}:00",
+            font=f("regular", 11),
+            fill=TEXT_MUTED,
         )
 
     # --- Ô môn học
@@ -204,7 +219,12 @@ def render(sample: Sample) -> Image.Image:
         for line in wrap(d, s.name, name_font, int(x1 - x0 - 10 * S)):
             d.text((x0 + 5 * S, y), line, font=name_font, fill=WHITE)
             y += 14 * S
-        for line in [time_label(s), s.class_code, f"Phòng: {s.room}", f"GV: {s.lecturer}"]:
+        for line in [
+            time_label(s),
+            s.class_code,
+            f"Phòng: {s.room}",
+            f"GV: {s.lecturer}",
+        ]:
             for part in wrap(d, line, line_font, int(x1 - x0 - 10 * S)):
                 d.text((x0 + 5 * S, y), part, font=line_font, fill=(225, 232, 255))
                 y += 13 * S
@@ -215,16 +235,30 @@ def render(sample: Sample) -> Image.Image:
     d.rounded_rectangle(
         [cx, cy, 1420 * S, cy + 230 * S], radius=6 * S, fill=WHITE, outline=GRID_LINE
     )
-    d.text((cx + 14 * S, cy + 10 * S), f"Tháng {month}/{year}", font=f("bold", 14), fill=TEXT_DARK)
+    d.text(
+        (cx + 14 * S, cy + 10 * S),
+        f"Tháng {month}/{year}",
+        font=f("bold", 14),
+        fill=TEXT_DARK,
+    )
     cell = 33 * S
     for i, label in enumerate(["T2", "T3", "T4", "T5", "T6", "T7", "CN"]):
-        d.text((cx + 12 * S + i * cell, cy + 40 * S), label, font=f("bold", 11), fill=TEXT_MUTED)
+        d.text(
+            (cx + 12 * S + i * cell, cy + 40 * S),
+            label,
+            font=f("bold", 11),
+            fill=TEXT_MUTED,
+        )
     week_days = {sample.week_monday + timedelta(days=i) for i in range(7)}
-    for r, week in enumerate(calendar.Calendar(firstweekday=0).monthdatescalendar(year, month)):
+    for r, week in enumerate(
+        calendar.Calendar(firstweekday=0).monthdatescalendar(year, month)
+    ):
         for c, day in enumerate(week):
             x, y = cx + 12 * S + c * cell, cy + (62 + r * 26) * S
             if day in week_days:
-                d.rectangle([x - 4 * S, y - 3 * S, x + 24 * S, y + 17 * S], fill=(220, 230, 250))
+                d.rectangle(
+                    [x - 4 * S, y - 3 * S, x + 24 * S, y + 17 * S], fill=(220, 230, 250)
+                )
             color = TEXT_DARK if day.month == month else (190, 195, 205)
             d.text((x, y), f"{day.day}", font=f("regular", 12), fill=color)
 
@@ -563,12 +597,72 @@ EXAM_HEADERS = [
 ]
 # (mã, tên, lần, ngày, giờ ghi trên ảnh, hình thức, phòng, SBD, ghi chú)
 EXAM_ROWS = [
-    ("MAT1101", "Giải tích 1", 1, date(2026, 10, 12), "07:30 - 09:00", "Tự luận 90 phút", "A2-301", "101", "đã qua"),
-    ("PHI1001", "Triết học Mác - Lênin", 1, date(2026, 10, 20), "13:00 - 14:30", "Trắc nghiệm trên máy 90p", "A5-310", "102", "đã qua"),
-    ("CSE2301", "Cơ sở dữ liệu", 1, date(2026, 12, 15), "07:30", "Trắc nghiệm trên máy 60p", "A5-310", "103", "chỉ giờ bắt đầu"),
-    ("CSE2302", "Lập trình hướng đối tượng", 2, date(2026, 12, 18), "09:35 - 11:05", "Thực hành trên máy", "A8-101", "104", "lần thi 2"),
-    ("INT1306", "Cấu trúc dữ liệu và giải thuật nâng cao", 1, date(2026, 12, 22), "13:00 - 15:00", "Tự luận 120 phút", "", "105", "phòng trống"),
-    ("ENG1001", "Tiếng Anh chuyên ngành", 1, date(2026, 12, 29), "15:45 - 17:15", "Vấn đáp", "B1-204", "106", ""),
+    (
+        "MAT1101",
+        "Giải tích 1",
+        1,
+        date(2026, 10, 12),
+        "07:30 - 09:00",
+        "Tự luận 90 phút",
+        "A2-301",
+        "101",
+        "đã qua",
+    ),
+    (
+        "PHI1001",
+        "Triết học Mác - Lênin",
+        1,
+        date(2026, 10, 20),
+        "13:00 - 14:30",
+        "Trắc nghiệm trên máy 90p",
+        "A5-310",
+        "102",
+        "đã qua",
+    ),
+    (
+        "CSE2301",
+        "Cơ sở dữ liệu",
+        1,
+        date(2026, 12, 15),
+        "07:30",
+        "Trắc nghiệm trên máy 60p",
+        "A5-310",
+        "103",
+        "chỉ giờ bắt đầu",
+    ),
+    (
+        "CSE2302",
+        "Lập trình hướng đối tượng",
+        2,
+        date(2026, 12, 18),
+        "09:35 - 11:05",
+        "Thực hành trên máy",
+        "A8-101",
+        "104",
+        "lần thi 2",
+    ),
+    (
+        "INT1306",
+        "Cấu trúc dữ liệu và giải thuật nâng cao",
+        1,
+        date(2026, 12, 22),
+        "13:00 - 15:00",
+        "Tự luận 120 phút",
+        "",
+        "105",
+        "phòng trống",
+    ),
+    (
+        "ENG1001",
+        "Tiếng Anh chuyên ngành",
+        1,
+        date(2026, 12, 29),
+        "15:45 - 17:15",
+        "Vấn đáp",
+        "B1-204",
+        "106",
+        "",
+    ),
 ]
 
 
@@ -577,10 +671,25 @@ def render_exam_table(scale: int) -> Image.Image:
     img = Image.new("RGB", (W, H), WHITE)
     d = ImageDraw.Draw(img)
     d.rectangle([0, 0, W, 24 * scale], fill=MENU_BAR)
-    d.text((16 * scale, 5 * scale), "Safari   Tệp   Sửa   Xem", font=load_font("regular", 13 * scale), fill=TEXT_DARK)
-    d.text((W - 150 * scale, 5 * scale), "Th 4 4 thg 11 14:05", font=load_font("regular", 13 * scale), fill=TEXT_DARK)
+    d.text(
+        (16 * scale, 5 * scale),
+        "Safari   Tệp   Sửa   Xem",
+        font=load_font("regular", 13 * scale),
+        fill=TEXT_DARK,
+    )
+    d.text(
+        (W - 150 * scale, 5 * scale),
+        "Th 4 4 thg 11 14:05",
+        font=load_font("regular", 13 * scale),
+        fill=TEXT_DARK,
+    )
     left, right = 40 * scale, W - 40 * scale
-    d.text((left, 70 * scale), "Lịch thi cá nhân", font=load_font("bold", 22 * scale), fill=TEXT_DARK)
+    d.text(
+        (left, 70 * scale),
+        "Lịch thi cá nhân",
+        font=load_font("bold", 22 * scale),
+        fill=TEXT_DARK,
+    )
     font, bold = load_font("regular", 14 * scale), load_font("bold", 14 * scale)
 
     xs, x = [], left
@@ -592,21 +701,49 @@ def render_exam_table(scale: int) -> Image.Image:
     d.rectangle([left, top, right, top + 54 * scale], fill=(238, 244, 252))
     for i, (title, _) in enumerate(EXAM_HEADERS):
         for j, line in enumerate(wrap(d, title, bold, xs[i + 1] - xs[i] - 12 * scale)):
-            d.text((xs[i] + 6 * scale, top + (8 + 18 * j) * scale), line, font=bold, fill=(90, 100, 115))
+            d.text(
+                (xs[i] + 6 * scale, top + (8 + 18 * j) * scale),
+                line,
+                font=bold,
+                fill=(90, 100, 115),
+            )
     y = top + 54 * scale
     row_h = 64 * scale
-    for n, (code, name, attempt, day, hours, fmt, room, sbd, _note) in enumerate(EXAM_ROWS, start=1):
+    for n, (code, name, attempt, day, hours, fmt, room, sbd, _note) in enumerate(
+        EXAM_ROWS, start=1
+    ):
         if n % 2 == 0:
             d.rectangle([left, y, right, y + row_h], fill=(247, 247, 247))
-        cells = [str(n), code, name, str(attempt), day.strftime("%d/%m/%Y"), hours, fmt, room, sbd, FAKE_STUDENT]
+        cells = [
+            str(n),
+            code,
+            name,
+            str(attempt),
+            day.strftime("%d/%m/%Y"),
+            hours,
+            fmt,
+            room,
+            sbd,
+            FAKE_STUDENT,
+        ]
         for i, text in enumerate(cells):
             lines = wrap(d, text, font, xs[i + 1] - xs[i] - 12 * scale) or [""]
             start = y + (row_h - 18 * scale * len(lines)) // 2
             for j, line in enumerate(lines):
-                d.text((xs[i] + 6 * scale, start + 18 * scale * j), line, font=font, fill=TEXT_DARK)
+                d.text(
+                    (xs[i] + 6 * scale, start + 18 * scale * j),
+                    line,
+                    font=font,
+                    fill=TEXT_DARK,
+                )
         d.line([left, y + row_h, right, y + row_h], fill=GRID_LINE, width=scale)
         y += row_h
-    d.text((W - 150 * scale, H - 22 * scale), "ẢNH GIẢ LẬP", font=load_font("regular", 11 * scale), fill=TEXT_MUTED)
+    d.text(
+        (W - 150 * scale, H - 22 * scale),
+        "ẢNH GIẢ LẬP",
+        font=load_font("regular", 11 * scale),
+        fill=TEXT_MUTED,
+    )
     return img
 
 
@@ -617,7 +754,9 @@ def exam_expected(file_name: str, scale: int) -> dict:
     for code, name, attempt, day, hours, fmt, room, sbd, note in EXAM_ROWS:
         start = hours.split(" - ")[0]
         end = hours.split(" - ")[1] if " - " in hours else None
-        if end is None:  # chỉ ghi giờ bắt đầu: kết thúc = bắt đầu + thời lượng trong hình thức thi
+        if (
+            end is None
+        ):  # chỉ ghi giờ bắt đầu: kết thúc = bắt đầu + thời lượng trong hình thức thi
             minutes = int(fmt.split()[-1].rstrip("p"))
             begin = datetime.strptime(start, "%H:%M")
             end = (begin + timedelta(minutes=minutes)).strftime("%H:%M")
@@ -657,13 +796,17 @@ def main() -> None:
             img.save(path, "PNG")
         exp_path = path.with_name(path.stem + ".expected.json")
         exp_path.write_text(
-            json.dumps(expected(sample), ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            json.dumps(expected(sample), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
         )
         print(
             f"{path.name}: {img.size[0]}x{img.size[1]}, "
             f"{len(sample.sessions)} buổi → {exp_path.name}"
         )
-    for number, scale in ((1, 2), (2, 1)):  # exam-01: Retina 2880×1800; exam-02: 1440×900
+    for number, scale in (
+        (1, 2),
+        (2, 1),
+    ):  # exam-01: Retina 2880×1800; exam-02: 1440×900
         name = f"exam-0{number}.png"
         render_exam_table(scale).save(OUT_DIR / name, "PNG")
         (OUT_DIR / f"exam-0{number}.expected.json").write_text(

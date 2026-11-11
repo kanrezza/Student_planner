@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select, text
 
 from app.api.errors import ApiError
 from app.extensions import db
@@ -185,6 +185,20 @@ def _moment(value: datetime | None) -> str | None:
     return iso(value) if value else None
 
 
+def attachments_summary() -> dict:
+    """Dung lượng file đính kèm và ước tính mỗi bản sao lưu; cảnh báo khi vượt ngưỡng (FR-026)."""
+    from app.models import AttachmentBlob, Settings  # tránh import vòng khi nạp module
+
+    total = db.session.scalar(select(func.coalesce(func.sum(AttachmentBlob.size), 0))) or 0
+    database = db.session.scalar(text("SELECT pg_database_size(current_database())")) or 0
+    limit_mb = db.session.get(Settings, 1).backup_attachments_warn_mb
+    return {
+        "attachments_bytes": int(total),
+        "estimated_backup_bytes": int(total) + int(database),
+        "attachments_warning": int(total) > limit_mb * 1024 * 1024,
+    }
+
+
 def status_view() -> dict:
     now = timeutil.now()
     expire_stuck_jobs(now)
@@ -213,4 +227,5 @@ def status_view() -> dict:
         "stale": is_stale(config, status, now),
         "files": status.files,
         "job": job_view(job) if job else None,
+        **attachments_summary(),
     }

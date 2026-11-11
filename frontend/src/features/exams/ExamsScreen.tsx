@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import type { ApiWarning } from '../../api/client';
+import { ApiError } from '../../api/client';
 import { useDeleteExam, useExams } from '../../api/exams';
 import type { Exam } from '../../api/types';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -16,6 +17,7 @@ import { IconExam, IconPlus, IconStarFilled } from '../../ui/icons';
 import { ItemList, ItemRow, Screen, SubHeading } from '../../ui/layout';
 import { Switch } from '../../ui/Switch';
 import { useToast } from '../../ui/Toast';
+import { AttachmentBadge } from '../attachments/AttachmentBadge';
 import { usePasteToImport } from '../imports/usePasteFile';
 import { ExamForm } from './ExamForm';
 
@@ -27,6 +29,7 @@ export function ExamsScreen() {
   const [dialog, setDialog] = useState<'add' | Exam | null>(null);
   const [deleting, setDeleting] = useState<Exam | null>(null);
   const remove = useDeleteExam();
+  const [withFiles, setWithFiles] = useState<{ exam: Exam; count: number } | null>(null);
 
   // Từ kết quả tìm kiếm: `?thi=<id>` mở buổi thi đó (kể cả buổi đã qua) — feature 003 FR-042.
   const [params, setParams] = useSearchParams();
@@ -36,7 +39,9 @@ export function ExamsScreen() {
     const found = exams.data.find((e) => e.id === wantedExam);
     if (found) {
       setDialog(found);
-      setParams({}, { replace: true });
+      setParams(params.get('attachment') ? { attachment: params.get('attachment')! } : {}, {
+        replace: true,
+      });
     } else if (!showPast) {
       setShowPast(true);
     }
@@ -109,8 +114,35 @@ export function ExamsScreen() {
         message={t('exams.deleteConfirm', { name: deleting?.course_name ?? '' })}
         onCancel={() => setDeleting(null)}
         onConfirm={() => {
-          if (deleting) remove.mutate(deleting.id);
+          if (deleting) {
+            const exam = deleting;
+            remove.mutate(
+              { id: exam.id },
+              {
+                onError: (err) => {
+                  // Có file đính kèm: hỏi lại và nêu số file trước khi xoá (feature 005, FR-024).
+                  if (err instanceof ApiError && err.code === 'confirm_required')
+                    setWithFiles({
+                      exam,
+                      count: (err.details as { attachment_count: number }).attachment_count,
+                    });
+                },
+              },
+            );
+          }
           setDeleting(null);
+        }}
+      />
+      <ConfirmDialog
+        open={withFiles !== null}
+        message={t('attachments.deleteWithFiles', {
+          name: withFiles?.exam.course_name ?? '',
+          count: withFiles?.count ?? 0,
+        })}
+        onCancel={() => setWithFiles(null)}
+        onConfirm={() => {
+          if (withFiles) remove.mutate({ id: withFiles.exam.id, confirm: true });
+          setWithFiles(null);
         }}
       />
     </Screen>
@@ -139,6 +171,7 @@ function ExamRow({
           {exam.course_name}
           {exam.attempt > 1 && <Badge>{t('exams.attempt', { n: exam.attempt })}</Badge>}
           {exam.is_past && <Badge>{t('exams.past')}</Badge>}
+          <AttachmentBadge count={exam.attachment_count} />
           {exam.conflicts.length > 0 && (
             <Badge tone="warning">
               <span title={exam.conflicts.map((c) => c.title).join(', ')}>

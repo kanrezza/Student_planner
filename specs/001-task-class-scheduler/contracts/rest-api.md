@@ -171,3 +171,6 @@ Chỉ được có một trong hai: `shift` hoặc cặp `start_time`/`end_time`
 | GET | `/reminders/upcoming?hours=24` | `[{sync_key, kind: "session"\|"task"\|"exam"\|"digest", title, body, fire_at, important}]`. Mục có nhiều mốc (buổi thi, mục quan trọng) có một phần tử cho mỗi mốc (`sync_key` dạng `exam:7:1440`, `task:45:180`, `session:123:15`); bản tóm tắt có `sync_key = "digest:YYYY-MM-DD"`, `body` = các dòng chi tiết. Chỉ dùng cho nhắc bằng trình duyệt; trả `[]` khi `calendar_sync_enabled = true` (FR-021, FR-066) |
 | GET | `/digest?date=YYYY-MM-DD` | Xem trước bản tóm tắt của một ngày (mặc định hôm nay): `{date, fire_at, title, lines[], is_important}` hoặc `{date, empty: true}` khi ngày trống (FR-065). Dùng ở Cài đặt và để kiểm thử |
 | GET | `/sync/status` | `agent_status` cộng `{revision, sync_enabled}`, để giao diện hiện cảnh báo |
+
+
+> **Feature 005**: `GET /tasks/board`, `PATCH /tasks/{id}/board`, các trường `status`, `board_rank`, `subject_id` của Task và API `/attachments`: xem [contract 005](../../005-kanban-attachments/contracts/rest-api.md).

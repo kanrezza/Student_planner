@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "attachments",
+  "description": "Trang giao diện tải từ http://127.0.0.1:8080 chỉ được gọi bốn lệnh của file đính kèm: mở bằng ứng dụng mặc định, lưu vào Tải về, đọc file đang chép trong Finder và gắn file theo đường dẫn. Mọi lệnh chỉ nói chuyện với http://127.0.0.1:8080; không có quyền plugin nào khác.",
+  "windows": ["main"],
+  "remote": { "urls": ["http://127.0.0.1:8080/*"] },
+  "permissions": [
+    "allow-open-attachment",
+    "allow-save-attachment",
+    "allow-clipboard-file-paths",
+    "allow-upload-paths"
+  ]
+}

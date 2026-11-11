@@ -57,11 +57,13 @@ def purge_trash_on_startup(app: Flask) -> None:
     if app.config.get("TESTING"):
         return
     from app.lib import timeutil
+    from app.services import attachments
     from app.services.tasks import purge_expired_trash
 
     with app.app_context():
         try:
             purge_expired_trash(timeutil.now())
+            attachments.sweep_orphans()
         except Exception as err:  # noqa: BLE001 — không được chặn việc khởi động
             log.warning("Bỏ qua dọn Thùng rác lúc khởi động: %s", err)
             db.session.rollback()
@@ -72,7 +74,9 @@ def purge_trash_on_startup(app: Flask) -> None:
 def register_blueprints(app: Flask) -> None:
     """Mọi API nằm dưới /api. Blueprint của từng user story được thêm vào danh sách này."""
     from app.api import (
+        attachments,
         backup,
+        board,
         calendar,
         canonical_names,
         exams,
@@ -98,6 +102,8 @@ def register_blueprints(app: Flask) -> None:
         *modules,
         exams,
         imports,
+        attachments,
+        board,
         timetable_import,
         periods,
         canonical_names,

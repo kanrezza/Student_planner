@@ -4,6 +4,7 @@ import { t } from '../../i18n/vi';
 import { cx } from '../../ui/cx';
 import { Screen } from '../../ui/layout';
 import { AutoDeadlineSettings } from './AutoDeadlineSettings';
+import { AttachmentsSettings } from './AttachmentsSettings';
 import { BackupSettings } from './BackupSettings';
 import { CanonicalNamesSettings } from './CanonicalNamesSettings';
 import { ListsSettings } from './ListsSettings';
@@ -25,6 +26,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { slug: 'danh-sach', labelKey: 'settings.lists', component: ListsSettings },
   { slug: 'tu-tao-deadline', labelKey: 'settings.autoDeadline', component: AutoDeadlineSettings },
   { slug: 'ten-mon-chuan', labelKey: 'settings.canonicalNames', component: CanonicalNamesSettings },
+  { slug: 'file-dinh-kem', labelKey: 'settings.attachments', component: AttachmentsSettings },
   { slug: 'sao-luu', labelKey: 'settings.backup', component: BackupSettings },
 ];
 

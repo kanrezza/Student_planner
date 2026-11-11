@@ -8,7 +8,7 @@ from app.api.errors import ApiError, not_found
 from app.extensions import db
 from app.lib import timeutil
 from app.lib.timeutil import combine
-from app.models import ClassSession, Task, TaskList, TaskTag
+from app.models import ClassSession, Subject, Task, TaskList, TaskTag
 from app.services import task_series
 from app.services.revision import bump_revision
 from app.services.tag_links import replace_tag_links
@@ -171,11 +171,20 @@ def _check_work_window(task) -> None:
         raise ApiError(400, "validation_error", "Dữ liệu chưa hợp lệ", fields)
 
 
+def _check_subject(subject_id: int | None) -> None:
+    if subject_id is not None and db.session.get(Subject, subject_id) is None:
+        raise ApiError(
+            400, "validation_error", "Dữ liệu chưa hợp lệ", {"subject_id": "Môn học không tồn tại"}
+        )
+
+
 def create_task(data: dict) -> Task:
     tag_ids = data.pop("tag_ids", [])
     tag_names = data.pop("tag_names", [])
     recurrence = data.pop("recurrence", None)
+    data["in_progress"] = data.pop("status", "todo") == "doing"
     _check_list(data["list_id"])
+    _check_subject(data.get("subject_id"))
     task = Task(**data)
     _check_work_window(task)
     db.session.add(task)
@@ -207,6 +216,15 @@ def update_task(task_id: int, changes: dict, scope: str | None = None) -> Task:
     riêng `recurrence` áp dụng cho cả chuỗi và không cần `scope`.
     """
     task = get_task(task_id)
+    status = changes.pop("status", None)
+    if status is not None:
+        from app.services import board  # import muộn: board gọi lại module này
+
+        task = board.set_status(task_id, status)
+        if not changes:
+            return task
+    if "subject_id" in changes:
+        _check_subject(changes["subject_id"])
     has_recurrence = "recurrence" in changes
     recurrence = changes.pop("recurrence", None)
     live = task_series.is_live(task)
@@ -258,7 +276,11 @@ def complete_task(task_id: int) -> tuple[Task, Task | None]:
     next_task = None
     if task.completed_at is None:
         now = timeutil.now()
+        from app.services import board  # import muộn: board gọi lại module này
+
         task.completed_at = now
+        task.in_progress = False
+        task.board_rank = board.top_rank("done", exclude_id=task.id)  # vừa xong → đầu cột Xong
         db.session.flush()
         next_task = task_series.on_complete(task, now)
         bump_revision(db.session)
@@ -354,28 +376,46 @@ def delete_permanently(task_id: int) -> None:
     task = get_task(task_id, include_trashed=True)
     if task.deleted_at is None:
         raise ApiError(409, "conflict", "Chỉ xoá vĩnh viễn được công việc đang ở Thùng rác")
+    from app.services import attachments  # import muộn: attachments không phụ thuộc tasks
+
+    shas = attachments.shas_for("task", [task_id])
     db.session.delete(task)
     db.session.flush()
     task_series.prune_orphan_series()
     db.session.commit()
+    attachments.collect_garbage(shas)  # file của task bị xoá hẳn (nếu không còn nơi nào dùng)
 
 
 def empty_trash() -> int:
+    from app.services import attachments
+
+    trashed = list(db.session.scalars(select(Task.id).where(Task.deleted_at.is_not(None))))
+    shas = attachments.shas_for("task", trashed)
     deleted = db.session.execute(delete(Task).where(Task.deleted_at.is_not(None))).rowcount
     task_series.prune_orphan_series()
     db.session.commit()
+    attachments.collect_garbage(shas)
     return deleted
 
 
 def purge_expired_trash(now: datetime) -> int:
     """Xoá hẳn task ở Thùng rác quá 30 ngày (research R6). Task này đã không còn trong feed."""
+    from app.services import attachments
+
     cutoff = now - timedelta(days=TRASH_KEEP_DAYS)
+    expired = list(
+        db.session.scalars(
+            select(Task.id).where(Task.deleted_at.is_not(None), Task.deleted_at < cutoff)
+        )
+    )
+    shas = attachments.shas_for("task", expired)
     deleted = db.session.execute(
         delete(Task).where(Task.deleted_at.is_not(None), Task.deleted_at < cutoff)
     ).rowcount
     if deleted:
         task_series.prune_orphan_series()
         db.session.commit()
+        attachments.collect_garbage(shas)
     return deleted
 
 
@@ -388,6 +428,9 @@ def purge_expired_trash_throttled(now: datetime) -> int:
     if last is not None and now - last < PURGE_EVERY:
         return 0
     _last_purge["at"] = now
+    from app.services import attachments  # import muộn: attachments không phụ thuộc tasks
+
+    attachments.sweep_orphans()  # file đính kèm mồ côi (feature 005)
     return purge_expired_trash(now)
 
 

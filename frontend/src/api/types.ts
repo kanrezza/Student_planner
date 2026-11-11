@@ -28,6 +28,8 @@ export type ProjectedTask = {
   color: string;
 };
 
+export type TaskStatus = 'todo' | 'doing' | 'done';
+
 export type Task = {
   id: number;
   title: string;
@@ -40,6 +42,12 @@ export type Task = {
   list_name: string;
   completed: boolean;
   completed_at: string | null;
+  /** Bảng Kanban (feature 005): trạng thái, thứ tự trong cột, môn gắn tay / môn hiệu lực, số file. */
+  status?: TaskStatus;
+  board_rank?: number;
+  subject_id?: number | null;
+  effective_subject_id?: number | null;
+  attachment_count?: number;
   is_overdue: boolean;
   is_auto: boolean;
   source_session_id: number | null;
@@ -83,6 +91,9 @@ export type TaskInput = {
   list_id: number;
   reminder_minutes?: number | null;
   is_important?: boolean;
+  /** Môn gắn tay và trạng thái todo/doing (feature 005). */
+  subject_id?: number | null;
+  status?: 'todo' | 'doing';
   work_date?: string | null;
   work_start?: string | null;
   work_end?: string | null;
@@ -149,6 +160,7 @@ export type ScheduleInput = {
 
 export type Subject = {
   id: number;
+  attachment_count?: number;
   semester_id: number;
   name: string;
   class_code: string | null;
@@ -242,6 +254,7 @@ export type ExamConflict = {
 /** Buổi thi (feature 001 US11). */
 export type Exam = {
   id: number;
+  attachment_count?: number;
   course_code: string | null;
   course_name: string;
   attempt: number;

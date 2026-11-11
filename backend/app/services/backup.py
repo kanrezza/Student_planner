@@ -1,7 +1,8 @@
 """Tạo và khôi phục bản sao lưu toàn bộ dữ liệu bằng pg_dump / pg_restore (feature 003).
 
-Định dạng `.lhbackup` (research R3): file ZIP không nén gồm `manifest.json` và `data.dump`
-(`pg_dump -Fc`). Khôi phục (research R8) chạy ở chế độ bảo trì, `pg_restore --single-transaction`
+Định dạng `.lhbackup` (research R3): file ZIP không nén gồm `manifest.json`, `data.dump`
+(`pg_dump -Fc`) và, từ format 2 (feature 005), `attachments/<sha256>` cho mỗi file đính kèm.
+Khôi phục (research R8) chạy ở chế độ bảo trì, `pg_restore --single-transaction`
 nên hoặc thành công hoàn toàn hoặc dữ liệu hiện tại giữ nguyên; nâng cấp schema của bản cũ lỗi thì
 tự đưa dữ liệu về lúc trước khi khôi phục. Chỉ chạm vào localhost (constitution IV).
 """
@@ -15,6 +16,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import uuid
 import zipfile
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -30,11 +32,13 @@ from app.api.errors import ApiError
 from app.config import APP_VERSION
 from app.extensions import db
 from app.lib import timeutil
+from app.services import attachments_store
 
 log = logging.getLogger(__name__)
 
 KINDS = ("tu-dong", "thu-cong", "truoc-khoi-phuc")
-MANIFEST_FORMAT = 1
+MANIFEST_FORMAT = 2  # 2: thêm attachments/<sha256> (feature 005); vẫn đọc được format 1
+SUPPORTED_FORMATS = (1, 2)
 MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / "migrations"
 DEFAULT_FLAG_PATH = "/tmp/lichhoc-restoring"  # noqa: S108 — cờ nội bộ trong container
 
@@ -198,6 +202,20 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _attachment_blobs() -> list[tuple[str, int]]:
+    """Mọi nội dung file đính kèm đang có (kể cả của task trong Thùng rác) kèm dung lượng."""
+    if db.session.scalar(sa.text("SELECT to_regclass('public.attachment_blobs')")) is None:
+        return []  # database ở revision cũ (trước migration 0012) chưa có bảng này
+    rows = db.session.execute(sa.text("SELECT sha256, size FROM attachment_blobs ORDER BY sha256"))
+    present = []
+    for sha, size in rows:
+        if attachments_store.blob_path(sha).is_file():
+            present.append((sha, size))
+        else:
+            log.warning("File đính kèm %s thiếu trong kho, bỏ qua khi sao lưu", sha[:8])
+    return present
+
+
 def build_backup(kind: str, now: datetime | None = None) -> BuiltBackup:
     if kind not in KINDS:
         raise BackupError(400, "invalid_kind", "Loại bản sao lưu không hợp lệ")
@@ -218,9 +236,13 @@ def build_backup(kind: str, now: datetime | None = None) -> BuiltBackup:
         }
         name = backup_name(now, kind)
         archive = workdir / name
+        blobs = _attachment_blobs()
+        manifest["attachments"] = {"count": len(blobs), "bytes": sum(size for _, size in blobs)}
         with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as zf:
             zf.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
             zf.write(dump_path, "data.dump")
+            for sha, _size in blobs:
+                zf.write(attachments_store.blob_path(sha), f"attachments/{sha}")
         dump_path.unlink()
         return BuiltBackup(archive, name, _file_sha256(archive), archive.stat().st_size, workdir)
     except Exception:
@@ -234,7 +256,10 @@ _CORRUPT = BackupError(400, "backup_corrupt", "Bản sao lưu bị hỏng, khôn
 
 
 def _open_backup(archive: Path, workdir: Path) -> tuple[dict, Path]:
-    """Kiểm tra file `.lhbackup`, giải nén dump ra `workdir`; trả (manifest, đường dẫn dump)."""
+    """Kiểm tra file `.lhbackup`, giải nén dump ra `workdir`; trả (manifest, đường dẫn dump).
+
+    File đính kèm (format 2) được kiểm tra và giải nén riêng bởi `_stage_attachments`.
+    """
     try:
         with zipfile.ZipFile(archive) as zf:
             manifest = json.loads(zf.read("manifest.json"))
@@ -246,7 +271,7 @@ def _open_backup(archive: Path, workdir: Path) -> tuple[dict, Path]:
         raise _CORRUPT from error
     if (
         not isinstance(manifest, dict)
-        or manifest.get("format") != MANIFEST_FORMAT
+        or manifest.get("format") not in SUPPORTED_FORMATS
         or manifest.get("dump_sha256") != _file_sha256(dump_path)
         or manifest.get("dump_size") != dump_path.stat().st_size
     ):
@@ -255,6 +280,36 @@ def _open_backup(archive: Path, workdir: Path) -> tuple[dict, Path]:
     if _run(["pg_restore", "--list", str(dump_path)], env).returncode != 0:
         raise _CORRUPT
     return manifest, dump_path
+
+
+def _stage_attachments(archive: Path, manifest: dict, staging: Path) -> dict[str, Path]:
+    """Giải nén `attachments/<sha256>` vào `staging` (cùng ổ đĩa với kho để đổi tên nhanh) và kiểm
+    tra SHA-256 từng file trước khi đụng tới dữ liệu hiện tại. Bản format 1 không có file."""
+    expected = manifest.get("attachments") or {"count": 0, "bytes": 0}
+    staged: dict[str, Path] = {}
+    try:
+        with zipfile.ZipFile(archive) as zf:
+            names = [n for n in zf.namelist() if n.startswith("attachments/")]
+            for name in names:
+                sha = name.removeprefix("attachments/")
+                if not attachments_store.SHA_RE.match(sha):
+                    raise _CORRUPT
+                target = staging / sha
+                digest = hashlib.sha256()
+                with zf.open(name) as src, target.open("wb") as dst:
+                    for block in iter(lambda: src.read(1 << 20), b""):
+                        digest.update(block)
+                        dst.write(block)
+                if digest.hexdigest() != sha:
+                    raise _CORRUPT
+                staged[sha] = target
+    except (zipfile.BadZipFile, OSError) as error:
+        log.warning("File đính kèm trong bản sao lưu không đọc được: %s", error)
+        raise _CORRUPT from error
+    total = sum(path.stat().st_size for path in staged.values())
+    if expected.get("count") != len(staged) or expected.get("bytes") != total:
+        raise _CORRUPT
+    return staged
 
 
 def _known_revision(revision: str) -> bool:
@@ -310,8 +365,11 @@ def _sync_revision() -> int:
 def restore_backup(archive: Path) -> dict:
     """Khôi phục từ file `.lhbackup` đã nằm trên đĩa của container (research R8)."""
     workdir = Path(tempfile.mkdtemp(prefix="lichhoc-restore-"))
+    staging = attachments_store.root() / attachments_store.RESTORE / uuid.uuid4().hex
     try:
         manifest, dump_path = _open_backup(archive, workdir)
+        staging.mkdir(parents=True)
+        staged = _stage_attachments(archive, manifest, staging)
         revision = manifest.get("schema_revision")
         if not isinstance(revision, str) or not _known_revision(revision):
             raise BackupError(
@@ -320,12 +378,15 @@ def restore_backup(archive: Path) -> dict:
                 "Bản sao lưu được tạo bởi phiên bản app mới hơn. Hãy cập nhật app rồi thử lại.",
             )
         with maintenance_mode():
-            return _restore_in_maintenance(workdir, dump_path, revision)
+            return _restore_in_maintenance(workdir, dump_path, revision, staged)
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
+        shutil.rmtree(staging, ignore_errors=True)
 
 
-def _restore_in_maintenance(workdir: Path, dump_path: Path, revision: str) -> dict:
+def _restore_in_maintenance(
+    workdir: Path, dump_path: Path, revision: str, staged: dict[str, Path]
+) -> dict:
     safety = workdir / "safety.dump"
     _dump_to(safety)  # lưới an toàn nội bộ, ngoài bản "Trước khi khôi phục" của agent
     preserved = _read_preserved()
@@ -339,6 +400,11 @@ def _restore_in_maintenance(workdir: Path, dump_path: Path, revision: str) -> di
         if upgraded:
             _upgrade_database()
         _write_preserved(preserved, previous_revision)
+        for (
+            sha,
+            path,
+        ) in staged.items():  # chuyển file vào kho; blob cũ chưa bị xoá nên lỗi vẫn an toàn
+            attachments_store.ensure_blob_from(path, sha)
     except Exception as error:  # noqa: BLE001 — mọi lỗi sau khi đã thay dữ liệu đều phải hoàn tác
         log.exception("Khôi phục lỗi sau khi nạp dữ liệu, đang đưa về như cũ")
         db.session.remove()

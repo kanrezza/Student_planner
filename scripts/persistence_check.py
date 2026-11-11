@@ -10,6 +10,7 @@ Dữ liệu test có tiền tố "__persist_test__" và học kỳ ở năm 2099
 Chỉ dùng thư viện chuẩn của Python.
 """
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -31,6 +32,39 @@ def call(method: str, path: str, body: dict | None = None):
             return json.loads(raw) if raw else None
     except urllib.error.HTTPError as e:
         raise SystemExit(f"{method} {path} → HTTP {e.code}: {e.read().decode()}") from None
+
+
+def upload_attachment(owner_type: str, owner_id: int, name: str, content: bytes) -> dict:
+    """Gắn file đính kèm bằng multipart (chỉ dùng thư viện chuẩn)."""
+    boundary = "----persist" + hashlib.sha256(content).hexdigest()[:16]
+    parts = [
+        f'--{boundary}\r\nContent-Disposition: form-data; name="owner_type"\r\n\r\n'
+        f"{owner_type}\r\n",
+        f'--{boundary}\r\nContent-Disposition: form-data; name="owner_id"\r\n\r\n{owner_id}\r\n',
+        f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{name}"\r\n'
+        "Content-Type: application/octet-stream\r\n\r\n",
+    ]
+    body = "".join(parts).encode() + content + f"\r\n--{boundary}--\r\n".encode()
+    request = urllib.request.Request(
+        f"{API}/attachments",
+        data=body,
+        method="POST",
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return json.loads(response.read())["attachments"][0]
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"POST /attachments → HTTP {e.code}: {e.read().decode()}") from None
+
+
+def fetch_bytes(path: str) -> bytes:
+    with urllib.request.urlopen(f"http://127.0.0.1:8080{path}", timeout=60) as response:
+        return response.read()
+
+
+ATTACHMENT_NAME = f"{PREFIX} Đề cương.bin"
+ATTACHMENT_CONTENT = (PREFIX.encode() + b" noi dung file dinh kem ") * 2000
 
 
 def sql(statement: str) -> None:
@@ -84,6 +118,13 @@ def setup(snapshot_path: str) -> None:
         },
     )
     trashed = call("DELETE", f"/tasks/{trashed['id']}")
+    # Bảng Kanban (feature 005): task "Đang làm" có thứ tự trên bảng, kèm một file đính kèm.
+    doing = call(
+        "POST",
+        "/tasks",
+        {"title": f"{PREFIX} Đang làm", "list_id": task_list["id"], "status": "doing"},
+    )
+    attachment = upload_attachment("task", doing["id"], ATTACHMENT_NAME, ATTACHMENT_CONTENT)
     semester = call(
         "POST",
         "/semesters",
@@ -117,14 +158,21 @@ def setup(snapshot_path: str) -> None:
         "list": task_list,
         "task": task,
         "trashed": trashed,
+        "doing": call("GET", f"/tasks/{doing['id']}"),
+        "attachment": {
+            "id": attachment["id"],
+            "name": attachment["display_name"],
+            "size": attachment["size"],
+            "sha256": hashlib.sha256(ATTACHMENT_CONTENT).hexdigest(),
+        },
         "semester": semester,
         "subject": call("GET", f"/subjects/{subject_id}"),
         "extra_task": None,
     }
     write(snapshot_path, snapshot)
     print(
-        f"Đã tạo: 1 danh sách, 1 task, 1 task trong Thùng rác, 1 học kỳ, 1 môn ({len(sessions)} "
-        "buổi; 1 huỷ, 1 đổi phòng)"
+        "Đã tạo: 1 danh sách, 1 task, 1 task trong Thùng rác, 1 task Đang làm kèm 1 file, "
+        f"1 học kỳ, 1 môn ({len(sessions)} buổi; 1 huỷ, 1 đổi phòng)"
     )
 
 
@@ -163,6 +211,23 @@ def verify(snapshot_path: str) -> None:
     checks["task trong Thùng rác"] = (
         {k: expected_trashed[k] for k in kept},
         {k: got_trashed.get(k) for k in kept},
+    )
+    doing = snapshot["doing"]
+    got_doing = call("GET", f"/tasks/{doing['id']}")
+    checks["task Đang làm (trạng thái, thứ tự trên bảng)"] = (
+        (doing["status"], doing["board_rank"], doing["attachment_count"]),
+        (got_doing["status"], got_doing["board_rank"], got_doing["attachment_count"]),
+    )
+    saved_file = snapshot["attachment"]
+    listed = call("GET", f"/attachments?owner_type=task&owner_id={doing['id']}")
+    content = fetch_bytes(f"/api/attachments/{saved_file['id']}/download")
+    checks["file đính kèm (tên, dung lượng, nội dung SHA-256)"] = (
+        (saved_file["name"], saved_file["size"], saved_file["sha256"]),
+        (
+            listed[0]["display_name"] if listed else None,
+            listed[0]["size"] if listed else None,
+            hashlib.sha256(content).hexdigest(),
+        ),
     )
     semesters = {s["id"]: s for s in call("GET", "/semesters")}
     saved_sem = dict(snapshot["semester"])
@@ -230,6 +295,13 @@ def backup_check() -> None:
     if hashlib.sha256(dump).hexdigest() != manifest["dump_sha256"]:
         raise SystemExit("Dump trong bản sao lưu không khớp manifest")
     counts_now = {"task_lists": len(call("GET", "/lists"))}
+    # File đính kèm (feature 005): bản sao lưu format 2 chứa nội dung từng file, tên theo SHA-256.
+    expected_blob = hashlib.sha256(ATTACHMENT_CONTENT).hexdigest()
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        if manifest.get("format") != 2 or f"attachments/{expected_blob}" not in zf.namelist():
+            raise SystemExit("Bản sao lưu thiếu file đính kèm của dữ liệu thử")
+        if hashlib.sha256(zf.read(f"attachments/{expected_blob}")).hexdigest() != expected_blob:
+            raise SystemExit("File đính kèm trong bản sao lưu không khớp SHA-256")
     if manifest["counts"]["task_lists"] != counts_now["task_lists"]:
         raise SystemExit("Số danh sách trong bản sao lưu khác dữ liệu hiện tại")
 

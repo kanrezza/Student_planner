@@ -41,7 +41,7 @@ def update_exam(exam_id: int):
 
 @bp.delete("/exams/<int:exam_id>")
 def delete_exam(exam_id: int):
-    service.delete_exam(exam_id)
+    service.delete_exam(exam_id, bool_arg("confirm", False))
     return "", 204
 
 

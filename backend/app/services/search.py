@@ -16,11 +16,11 @@ from app.extensions import db
 from app.lib import timeutil
 from app.lib.text import fold_key, fold_with_map
 from app.lib.timeutil import iso
-from app.models import ClassSession, Exam, Subject, Tag, Task, TaskList, TaskTag
+from app.models import Attachment, ClassSession, Exam, Subject, Tag, Task, TaskList, TaskTag
 from app.schemas.tasks import serialize_task
 from app.services.tasks import active_tasks
 
-GROUPS = ("tasks", "lists", "tags", "subjects", "sessions", "exams")
+GROUPS = ("tasks", "lists", "tags", "subjects", "sessions", "exams", "files")
 DEFAULT_LIMIT = 20
 MAX_LIMIT = 200
 SNIPPET_BEFORE, SNIPPET_AFTER = 30, 50
@@ -188,6 +188,42 @@ def _exams(words: list[str], limit: int, now: datetime) -> Page:
     return Page(page.total, items)
 
 
+def _semester_of(attachment) -> int | None:
+    """Học kỳ của môn/buổi học chứa file (để mở đúng trang Môn học)."""
+    if attachment.subject_id is not None:
+        return db.session.get(Subject, attachment.subject_id).semester_id
+    if attachment.session_id is not None:
+        return db.session.get(ClassSession, attachment.session_id).subject.semester_id
+    return None
+
+
+def _files(words: list[str], limit: int) -> Page:
+    """Tên file đính kèm (không đọc nội dung file, FR-029); bỏ file của task trong Thùng rác."""
+    from app.services import attachments as attachment_service  # import muộn
+
+    query = (
+        attachment_service.visible_query()
+        .where(_like(words, Attachment.display_name))
+        .order_by(Attachment.id.desc())
+    )
+    page = _page(query, limit)
+    items = [
+        {
+            "id": a.id,
+            "attachment_id": a.id,
+            "name": a.display_name,
+            "owner": {
+                "type": attachment_service.owner_of(a)[0],
+                "id": attachment_service.owner_of(a)[1],
+                "title": attachment_service.owner_title(a),
+                **({"semester_id": semester_id} if (semester_id := _semester_of(a)) else {}),
+            },
+        }
+        for (a,) in page.items
+    ]
+    return Page(page.total, items)
+
+
 def search(query: str, include_done: bool, group: str | None, limit: int) -> dict:
     if group is not None and group not in GROUPS:
         raise ApiError(
@@ -204,6 +240,7 @@ def search(query: str, include_done: bool, group: str | None, limit: int) -> dic
         "subjects": lambda: _subjects(words, limit),
         "sessions": lambda: _sessions(words, limit, now),
         "exams": lambda: _exams(words, limit, now),
+        "files": lambda: _files(words, limit),
     }
     groups = {}
     for name in GROUPS:

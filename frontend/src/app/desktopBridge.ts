@@ -47,3 +47,18 @@ export const pickBackupFile = () => tauriInvoke<string>('pick_backup_file');
 
 /** Hiện thư mục hoặc file sao lưu trong Finder. */
 export const revealInFinder = (path: string) => tauriInvoke<void>('reveal_in_finder', { path });
+
+/** File đính kèm (feature 005): mở bằng ứng dụng mặc định của macOS. Lỗi trả chuỗi tiếng Việt. */
+export const openAttachmentNative = (id: number) => tauriInvoke<void>('open_attachment', { id });
+
+/** Lưu file đính kèm vào thư mục Tải về; trả đường dẫn đã lưu. */
+export const saveAttachmentNative = (id: number) => tauriInvoke<string>('save_attachment', { id });
+
+/** Đường dẫn các file đang chép trong Finder (rỗng nếu không có hoặc không chạy trong app macOS). */
+export const clipboardFilePaths = () => tauriInvoke<string[]>('clipboard_file_paths');
+
+export type UploadPathsResult = { uploaded: number; errors: { name: string; message: string }[] };
+
+/** Gắn các file theo đường dẫn vào một nơi, do app macOS tự đọc file và gửi lên backend. */
+export const uploadPaths = (ownerType: string, ownerId: number, paths: string[]) =>
+  tauriInvoke<UploadPathsResult>('upload_paths', { ownerType, ownerId, paths });

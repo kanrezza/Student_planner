@@ -13,6 +13,7 @@ from app.lib.timeutil import iso
 from app.models import Task
 from app.schemas.common import HHMM, ApiModel, OptionalText, VietnameseText
 from app.services import tasks as task_rules
+from app.services.board_rank import task_status
 from app.services.colors import display_color
 from app.services.tag_links import serialize_tags
 from app.services.task_series import rule_dict
@@ -52,6 +53,9 @@ class TaskIn(ApiModel):
     # None = theo mặc định; -1 = tắt nhắc; ≥ 0 = số phút trước hạn (chỉ với task có giờ).
     reminder_minutes: int | None = Field(default=None, ge=-1)
     is_important: bool = False
+    # Bảng Kanban (feature 005): môn gắn tay; trạng thái ban đầu "todo" hoặc "doing".
+    subject_id: int | None = None
+    status: Literal["todo", "doing"] = "todo"
     # Khung giờ làm (feature 002 FR-018): kiểm tra "đủ ba trường" và "kết thúc sau bắt đầu" ở
     # service, sau khi gộp với giá trị đang có (PATCH chỉ gửi một phần).
     work_date: date | None = None
@@ -79,6 +83,9 @@ class TaskPatch(ApiModel):
     tag_ids: list[int] | None = None
     reminder_minutes: int | None = Field(default=None, ge=-1)
     is_important: bool | None = None
+    subject_id: int | None = None
+    # Chuyển sang "done" qua /complete hoặc /board; ở đây chỉ nhận todo/doing.
+    status: Literal["todo", "doing"] | None = None
     work_date: date | None = None
     work_start: HHMM | None = None
     work_end: HHMM | None = None
@@ -212,6 +219,17 @@ def _series_fields(task) -> dict:
     }
 
 
+def effective_subject_id(task) -> int | None:
+    """Môn gắn tay, hoặc môn của buổi học nguồn (deadline tự tạo) — dùng để lọc bảng."""
+    if task.subject_id is not None:
+        return task.subject_id
+    return task.source_session.subject_id if task.source_session is not None else None
+
+
+def attachment_count(task) -> int:
+    return task.attachment_total
+
+
 def serialize_task(task, now) -> dict:
     due = task_rules.due_at(task)
     tags = task.tags
@@ -235,6 +253,11 @@ def serialize_task(task, now) -> dict:
         "display_color": display_color([t.color for t in tags], task.list.color),
         "reminder_minutes": task.reminder_minutes,
         "is_important": task.is_important,
+        "status": task_status(task.completed_at, task.in_progress),
+        "board_rank": task.board_rank,
+        "subject_id": task.subject_id,
+        "effective_subject_id": effective_subject_id(task),
+        "attachment_count": attachment_count(task),
         "work_date": task.work_date.isoformat() if task.work_date else None,
         "work_start": _hhmm(task.work_start),
         "work_end": _hhmm(task.work_end),

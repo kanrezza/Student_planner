@@ -139,6 +139,10 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
 
 ## tasks — Công việc (FR-001 đến FR-006, FR-047 đến FR-050)
 
+> **Feature 005**: `tasks` thêm `in_progress` (trạng thái "Đang làm"), `board_rank` (thứ tự thẻ trên bảng Kanban) và
+> `subject_id` (môn gắn tay); bảng `attachment_blobs`, `attachments` lưu file đính kèm. Xem
+> [data-model 005](../005-kanban-attachments/data-model.md).
+
 | Cột | Kiểu | Ràng buộc |
 |-----|------|-----------|
 | list_id | bigint FK → task_lists | bắt buộc |

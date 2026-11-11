@@ -19,6 +19,9 @@ export type AppSettings = {
   daily_digest_enabled: boolean;
   daily_digest_time: string;
   daily_digest_overdue_only: boolean;
+  /** File đính kèm (feature 005). */
+  attachment_max_mb: number;
+  backup_attachments_warn_mb: number;
 };
 
 export type DigestPreview =
