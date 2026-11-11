@@ -5,7 +5,7 @@ Capability mới `attachments` (`desktop/src-tauri/capabilities/attachments.json
 
 | Lệnh | Tham số | Trả | Ghi chú |
 |------|---------|-----|---------|
-| `open_attachment` | `id: number` | `()` | Lấy metadata; `is_executable` → lỗi "Không mở trực tiếp file có thể chạy chương trình". Tải về `~/Library/Caches/<bundle-id>/attachments/<sha256>/<tên>` (dùng lại nếu đã có, kiểm tra kích thước) rồi `/usr/bin/open` |
+| `open_attachment` | `id: number` | `()` | Lấy metadata; `is_executable` → lỗi "Không mở trực tiếp file có thể chạy chương trình". Tải về `~/Library/Caches/vn.lichhoc.desktop/attachments/<id>/<tên>` (dùng lại nếu đúng kích thước) (dùng lại nếu đã có, kiểm tra kích thước) rồi `/usr/bin/open` |
 | `save_attachment` | `id: number` | `path: string` | Lưu vào `~/Downloads/<tên>`, trùng tên thêm " (2)"…; dùng `reveal_in_finder` có sẵn để hiện |
 | `clipboard_file_paths` | — | `string[]` | Đường dẫn file đang chép trong Finder (NSPasteboard `public.file-url`); rỗng nếu không có |
 | `upload_paths` | `owner_type, owner_id, paths: string[]` | `{uploaded: number, errors: [{name, message}]}` | Gọi `POST /api/attachments` từng file; thư mục → lỗi "Chỉ gắn được file, không gắn thư mục" |

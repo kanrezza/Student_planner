@@ -346,7 +346,7 @@ mất khỏi danh sách, tổng dung lượng giảm.
 
 ### Tests for User Story 5
 
-- [ ] T035 [P] [US5] Test API trong `backend/tests/integration/test_attachments_content.py`:
+- [X] T035 [P] [US5] Test API trong `backend/tests/integration/test_attachments_content.py`:
   - `GET /content`:
     - PNG/PDF → `inline`, đúng `Content-Type`, `X-Content-Type-Options: nosniff`, CSP sandbox;
     - SVG, HTML giả PNG (`gia-mao.png`), `.docx`, `.command` → `attachment`;
@@ -357,7 +357,7 @@ mất khỏi danh sách, tổng dung lượng giảm.
     - 204; blob còn khi nơi khác dùng;
     - xoá nơi cuối thì file biến khỏi thư mục và dòng blob mất;
     - `stats.total_bytes` giảm.
-- [ ] T036 [P] [US5] Test Vitest `frontend/tests/attachmentPreview.test.tsx`:
+- [X] T036 [P] [US5] Test Vitest `frontend/tests/attachmentPreview.test.tsx`:
   - ảnh mở khung xem có +/−/1:1, Esc đóng;
   - "‹ ›" chuyển file cùng nơi gắn;
   - PDF dùng `<iframe>` trỏ `content_url`;
@@ -366,7 +366,7 @@ mất khỏi danh sách, tổng dung lượng giảm.
   - file thực thi không có "Mở", có cảnh báo;
   - "Tải về" trong app gọi `save_attachment` và hiện "Đã lưu vào Tải về" + "Hiện trong Finder";
   - Xoá hỏi xác nhận rồi gọi DELETE.
-- [ ] T037 [P] [US5] Test `cargo test` trong `desktop/src-tauri/src/attachments.rs`:
+- [X] T037 [P] [US5] Test `cargo test` trong `desktop/src-tauri/src/attachments.rs`:
   - `unique_download_path` thêm " (2)", " (3)";
   - `cache_path(sha, name)` không thoát khỏi thư mục cache (tên có `../` bị làm sạch);
   - `refuse_executable` theo metadata;
@@ -374,7 +374,7 @@ mất khỏi danh sách, tổng dung lượng giảm.
 
 ### Implementation for User Story 5
 
-- [ ] T038 [US5] API trong `backend/app/api/attachments.py`:
+- [X] T038 [US5] API trong `backend/app/api/attachments.py`:
   - `GET /attachments/{id}/content` và `GET /attachments/{id}/download`: `send_file` từ volume với `conditional=True`,
     header R8, `inline` chỉ cho MIME an toàn.
   - `DELETE /attachments/{id}`.
@@ -382,7 +382,7 @@ mất khỏi danh sách, tổng dung lượng giảm.
 
   Thêm `collect_garbage(shas)` vào `backend/app/services/attachments.py`: sau commit, xoá blob không còn mục nào (kể cả
   mục của task trong Thùng rác), rồi xoá file; lỗi xoá file chỉ ghi log.
-- [ ] T039 [US5] Tạo lệnh Tauri trong `desktop/src-tauri/src/attachments.rs` theo [contracts/desktop-commands.md](contracts/desktop-commands.md): `open_attachment`, `save_attachment`, `clipboard_file_paths`, `upload_paths`. Cách làm:
+- [X] T039 [US5] Tạo lệnh Tauri trong `desktop/src-tauri/src/attachments.rs` theo [contracts/desktop-commands.md](contracts/desktop-commands.md): `open_attachment`, `save_attachment`, `clipboard_file_paths`, `upload_paths`. Cách làm:
   - dùng `/usr/bin/curl --fail`, `/usr/bin/open`, `osascript`; chỉ gọi `http://127.0.0.1:8080`;
   - cache `~/Library/Caches/<bundle-id>/attachments/`, dọn mục > 7 ngày khi khởi động;
   - lỗi trả chuỗi tiếng Việt.
@@ -390,14 +390,14 @@ mất khỏi danh sách, tổng dung lượng giảm.
   Đăng ký lệnh trong `desktop/src-tauri/src/main.rs` (hoặc `lib.rs`). Tạo `desktop/src-tauri/capabilities/attachments.json`
   (chỉ `remote.urls: ["http://127.0.0.1:8080/*"]`, cửa sổ `main`, 4 quyền `allow-…`) và file quyền tương ứng như cách
   làm của capability `backup`.
-- [ ] T040 [US5] Tạo `frontend/src/features/attachments/AttachmentPreview.tsx` (Dialog lớn: ảnh có phóng to/kéo, PDF `<iframe>`, "‹ ›", Tải về, Mở bằng ứng dụng khác, Esc) và `frontend/src/features/attachments/desktop.ts`:
+- [X] T040 [US5] Tạo `frontend/src/features/attachments/AttachmentPreview.tsx` (Dialog lớn: ảnh có phóng to/kéo, PDF `<iframe>`, "‹ ›", Tải về, Mở bằng ứng dụng khác, Esc) và `frontend/src/features/attachments/desktop.ts`:
   - phát hiện app macOS qua `window.__TAURI__`;
   - bọc `invoke` cho 4 lệnh;
   - dự phòng trên trình duyệt bằng `<a download>`.
 
   Menu ⋯ của `AttachmentRow.tsx` có Xem/Mở, Tải về, Đổi tên, Xoá (ConfirmDialog "Xoá file “…” khỏi …?"). Với file thực
   thi: ẩn Mở, hiện biểu tượng cảnh báo + tooltip.
-- [ ] T041 [US5] ⌘V file chép từ Finder trong app macOS:
+- [X] T041 [US5] ⌘V file chép từ Finder trong app macOS:
   - trong `useAttachmentDrop.ts`, nếu clipboard không có `File` thật thì gọi `clipboard_file_paths` rồi `upload_paths`,
     hiện lỗi theo từng file.
   - Spike R10: thử dán file thật trong WKWebView. Nếu WebView đã đưa `File` thì dùng luôn, ghi kết quả vào

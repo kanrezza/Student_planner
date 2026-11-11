@@ -8,6 +8,10 @@ fn main() {
                 "pick_backup_folder",
                 "pick_backup_file",
                 "reveal_in_finder",
+                "open_attachment",
+                "save_attachment",
+                "clipboard_file_paths",
+                "upload_paths",
             ])),
     )
     .expect("không build được app Tauri");

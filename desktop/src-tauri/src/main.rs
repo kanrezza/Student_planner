@@ -3,6 +3,7 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod attachments;
 mod backup_cmds;
 mod deep_link;
 mod health;
@@ -155,7 +156,11 @@ fn main() {
             retry_now,
             backup_cmds::pick_backup_folder,
             backup_cmds::pick_backup_file,
-            backup_cmds::reveal_in_finder
+            backup_cmds::reveal_in_finder,
+            attachments::open_attachment,
+            attachments::save_attachment,
+            attachments::clipboard_file_paths,
+            attachments::upload_paths
         ])
         .menu(|app| menu::build(app))
         .on_menu_event(|app, event| menu::handle_event(app, event.id().as_ref()))
@@ -167,6 +172,7 @@ fn main() {
             }
         })
         .setup(move |app| {
+            attachments::clean_cache(); // dọn file đã tải để mở bằng ứng dụng khác (cũ hơn 7 ngày)
             let handle = app.handle().clone();
             app.deep_link().on_open_url(move |event| {
                 for url in event.urls() {
