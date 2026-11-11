@@ -538,18 +538,18 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T058 [P] Mở rộng test lưu trữ:
+- [X] T058 [P] Mở rộng test lưu trữ:
   - `scripts/persistence_check.py` và `scripts/test-persistence.sh`: tạo task "Đang làm" có `board_rank` và một file
     đính kèm có tiền tố `__persist_test__`;
   - kiểm tra sau `docker compose down/up` và sau `kill` vẫn còn trạng thái, thứ tự, file (SHA-256 khớp);
   - dọn khi xong (constitution V, SC-003).
-- [ ] T059 [P] Cập nhật `README.md`:
+- [X] T059 [P] Cập nhật `README.md`:
   - mục "Công việc" thêm dạng Bảng và phím tắt;
   - mục "File đính kèm": cách gắn/xem/mở/tải, giới hạn, file thực thi;
   - mục "Dữ liệu nằm ở đâu": volume `lichhoc_attachments`, cách xem dung lượng (`docker system df -v`), không xoá bằng
     `docker compose down -v`, sao lưu gồm cả file;
   - bảng xử lý sự cố: "Ổ đĩa không đủ chỗ", "Không xem trước được PDF".
-- [ ] T060 [P] Cập nhật `specs/001-task-class-scheduler/data-model.md` (ghi chú cột mới của `tasks`) và `specs/003-backup-nl-recurring-search/` contract sao lưu (ghi chú format 2 trỏ tới data-model 005)
+- [X] T060 [P] Cập nhật `specs/001-task-class-scheduler/data-model.md` (ghi chú cột mới của `tasks`) và `specs/003-backup-nl-recurring-search/` contract sao lưu (ghi chú format 2 trỏ tới data-model 005)
 - [ ] T061 Chạy `./scripts/test.sh --ocr` toàn bộ; sửa mọi lỗi (lưu ý: fixture mới không được đặt tên `*.expected.json` trong `backend/tests/fixtures/timetables/`)
 - [ ] T062 Kiểm tra tay theo `specs/005-kanban-attachments/quickstart.md` trên app macOS, gồm:
   - ⌘V file từ Finder;

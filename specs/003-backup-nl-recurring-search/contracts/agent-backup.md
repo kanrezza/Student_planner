@@ -69,3 +69,8 @@ xoá bản cũ, thư mục đích, dung lượng, lý do lỗi. Không ghi nội
 
 Tiêu đề "Lịch Học Cá Nhân", nội dung "Đã 3 ngày chưa sao lưu được dữ liệu. Mở Cài đặt → Sao lưu để kiểm
 tra."; bấm → `open lichhoc://cai-dat/sao-luu`. Xin quyền thông báo lần đầu khi cần gửi.
+
+
+> **Feature 005**: file `.lhbackup` lên **format 2** — thêm `attachments/<sha256>` cho mỗi file đính kèm và `attachments` trong
+> `manifest.json`; `GET /backup/status` thêm `attachments_bytes`, `estimated_backup_bytes`, `attachments_warning`. Agent đọc
+> được cả format 1 và 2 (chỉ chép nguyên file). Xem [data-model 005](../../005-kanban-attachments/data-model.md#bản-sao-lưu-lhbackup-format-2-r7).

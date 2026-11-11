@@ -75,8 +75,21 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
   | `từ 6/11 đến 11/11`, `6/11 - 11/11`, `đến hết 20/11` | khoảng ngày: có cụm lặp thì lần đầu là ngày bắt đầu và lặp kết thúc vào ngày cuối; không có thì hạn là ngày cuối, ghi chú "Bắt đầu: …" |
 
   Ví dụ: `Nộp bài QTDA thứ 6 9h #Gấp * !cao`, `Họp lớp thứ 2 hàng tuần 7h`.
-- **Tìm kiếm** (⌘F): task, danh sách, nhãn, môn học, buổi học, buổi thi; không phân biệt dấu và hoa thường,
+- **Tìm kiếm** (⌘F): task, danh sách, nhãn, môn học, buổi học, buổi thi, tên file đính kèm; không phân biệt dấu và hoa thường,
   tô sáng chỗ khớp, có công tắc *Gồm cả đã hoàn thành*. Esc để thoát và quay lại màn hình trước.
+- **Bảng Kanban**: ở trang Công việc bấm *Danh sách | Bảng* (nhớ lựa chọn). Bảng có 3 cột *Chưa làm / Đang làm /
+  Xong*; kéo thẻ giữa các cột để đổi trạng thái, kéo lên xuống để sắp thứ tự (lưu ngay). Kéo sang *Xong* giống
+  tick hoàn thành (task lặp vẫn sinh lần kế tiếp ở *Chưa làm*; có nút *Hoàn tác*). Cột *Xong* mặc định chỉ hiện 7
+  ngày gần nhất (*Hiện tất cả* để xem hết). Lọc theo danh sách, nhãn, môn học. Thẻ hiện hạn chót, nhãn màu, ★,
+  biểu tượng lặp và số file đính kèm. Bàn phím: mũi tên chọn thẻ, **⌘←/⌘→** đổi cột, **⌘↑/⌘↓** đổi chỗ, **↩** mở
+  chi tiết, **X** Xong/bỏ Xong, **Space** nhấc/thả thẻ (xem bảng phím tắt ⌘/).
+- **File đính kèm**: gắn file (PDF, ảnh, Word, PowerPoint, Excel…) vào **task, môn học, buổi học, buổi thi** bằng
+  kéo thả vào mục *File đính kèm*, nút *Thêm file* hoặc **⌘V** (ảnh chụp màn hình, file chép trong Finder).
+  Mỗi file tối đa **50 MB** (đổi 1–500 MB ở Cài đặt → File đính kèm). Ảnh và PDF xem ngay trong app; loại khác
+  *Mở* bằng ứng dụng mặc định của macOS; *Tải về* lưu vào thư mục Tải về. File có thể chạy chương trình
+  (.app, .command, .sh, .pkg…) chỉ cho tải về, app không mở trực tiếp. File trùng nội dung chỉ lưu một bản. Xoá
+  task vào Thùng rác thì file đi theo và khôi phục được; xoá hẳn thì file bị xoá nếu không còn nơi nào dùng. Xoá
+  môn, buổi thi hoặc học kỳ có file sẽ hỏi lại và nêu số file. Tên file tìm được bằng ⌘F.
 - **Task lặp lại**: trong bảng chi tiết chọn *Lặp lại* (hằng ngày, mỗi N ngày, hằng tuần chọn nhiều thứ, hằng
   tháng vào ngày D; kết thúc không/vào ngày/sau N lần). Hoàn thành một lần thì lần kế tiếp xuất hiện; sửa hoặc
   xoá sẽ hỏi *Chỉ lần này* hay *Lần này và các lần sau*. Lịch và bản tóm tắt hằng ngày hiện các lần dự kiến;
@@ -124,10 +137,14 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 ## Dữ liệu nằm ở đâu, sao lưu
 
 - CSDL ở volume Docker **`lichhoc_pgdata`**; trong OrbStack: `~/OrbStack/docker/volumes/lichhoc_pgdata`.
+- File đính kèm ở volume Docker **`lichhoc_attachments`** (`~/OrbStack/docker/volumes/lichhoc_attachments`), mỗi file
+  đặt tên theo SHA-256 nội dung. Nằm trên ổ trong của Mac, **không** phụ thuộc thư mục dự án hay ổ SSD rời. Xem dung
+  lượng ở Cài đặt → File đính kèm (hoặc `docker system df -v`).
 - Trạng thái cửa sổ app: `~/Library/Application Support/vn.lichhoc.desktop`. Agent:
   `~/Library/Application Support/LichHocAgent`, log `~/Library/Logs/LichHocAgent/agent.log`.
 
-> ⚠️ **`docker compose down -v` xoá toàn bộ dữ liệu.** Dùng `docker compose down` (không `-v`) để dừng.
+> ⚠️ **`docker compose down -v` xoá toàn bộ dữ liệu**, gồm cả `lichhoc_pgdata` và `lichhoc_attachments`. Dùng
+> `docker compose down` (không `-v`) để dừng.
 
 ### Sao lưu tự động (Cài đặt → Sao lưu)
 
@@ -142,7 +159,11 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
 - Lần đầu macOS hỏi quyền cho LichHocAgent ghi vào iCloud Drive / ổ rời và gửi thông báo: bấm "Cho phép".
   Nếu bị từ chối: Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Tệp và thư mục.
 - Log của sao lưu nằm cùng file log của agent: `~/Library/Logs/LichHocAgent/agent.log`.
-- Script `backup.sh`/`restore.sh` ở trên vẫn dùng được để sao lưu thủ công.
+- Bản sao lưu `.lhbackup` (định dạng 2) gồm **cả database lẫn file đính kèm**; khôi phục đưa file trở lại. Khi tổng
+  file đính kèm vượt ngưỡng (mặc định 1 GB) có cảnh báo nhẹ trong Cài đặt → Sao lưu và thông báo macOS (tối đa 1
+  lần/ngày) kèm dung lượng ước tính mỗi bản.
+- Script `backup.sh`/`restore.sh` ở dưới **chỉ sao lưu database**, không gồm file đính kèm — hãy dùng sao lưu tự
+  động/`.lhbackup` (Cài đặt → Sao lưu → Sao lưu ngay) khi cần giữ cả file.
 
 ```bash
 ./scripts/backup.sh     # → ~/Library/Application Support/LichHocAgent/backups/lichhoc-YYYYmmdd-HHMM.dump
@@ -176,6 +197,8 @@ Kịch bản kiểm chứng thủ công: `specs/001-task-class-scheduler/quickst
 | Nhận diện ảnh quá lâu (> 1 phút) | Ảnh quá lớn/mờ: chụp lại ở cỡ màn hình thường; backend dùng CPU nên mất 25–60 giây là bình thường |
 | PDF báo "không có chữ" | File là ảnh quét: dùng Nhập lịch bằng ảnh chụp màn hình thay cho PDF |
 | PDF báo "có mật khẩu" | Mở khoá file rồi xuất lại PDF không mật khẩu |
+| "Ổ đĩa không đủ chỗ" khi gắn file | Giải phóng dung lượng trên Mac (volume Docker nằm trên ổ trong); xoá bớt file ở Cài đặt → File đính kèm |
+| "Không xem trước được file này" (PDF/ảnh) | File hỏng hoặc có mật khẩu: vẫn *Tải về* hoặc *Mở bằng ứng dụng khác* được |
 | Nhận diện sai dấu | Sửa trực tiếp ở bảng xem trước (ô vàng là chưa chắc chắn) |
 
 ## Cấu trúc thư mục
