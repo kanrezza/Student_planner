@@ -30,7 +30,14 @@ Sao lưu tự động (feature 003) chép toàn bộ dữ liệu ra thư mục n
 ổ trong của Mac, không phụ thuộc ổ SSD chứa mã nguồn.
 
 Feature này thêm hai thứ độc lập với nhau: (1) chế độ xem bảng Kanban cho task, kèm trạng thái "Đang làm" và thứ tự
-thủ công; (2) đính kèm file vào task, môn học và buổi học.
+thủ công; (2) đính kèm file vào task, môn học, buổi học và buổi thi.
+
+## Clarifications
+
+### Session 2026-11-11
+
+- Q: Buổi thi có gắn được file đính kèm không? → A: Có — buổi thi gắn được file (đề cương, đề cũ) giống môn học;
+  các giả định khác giữ nguyên.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -109,14 +116,15 @@ tự trong cột; kết quả giống kéo thả.
 
 ---
 
-### User Story 4 - Đính kèm file vào task, môn học, buổi học (Priority: P1)
+### User Story 4 - Đính kèm file vào task, môn học, buổi học, buổi thi (Priority: P1)
 
 Người dùng kéo file "De_cuong_NLP.pdf" vào bảng chi tiết của môn "Xử lý ngôn ngữ tự nhiên", kéo slide bài 3 vào buổi
-học thứ Ba, và dán (⌘V) ảnh chụp đề bài vào task "Làm bài tập tuần 5". Mỗi nơi hiện danh sách file đã gắn.
+học thứ Ba, kéo đề cương ôn tập và đề thi năm trước vào buổi thi cuối kỳ của môn đó, và dán (⌘V) ảnh chụp đề bài
+vào task "Làm bài tập tuần 5". Mỗi nơi hiện danh sách file đã gắn.
 
 **Why this priority**: Giá trị cốt lõi của phần đính kèm: tài liệu nằm cạnh việc cần làm.
 
-**Independent Test**: Gắn 1 file vào mỗi loại (task, môn, buổi) bằng 3 cách (kéo thả, chọn file, ⌘V); tải lại app →
+**Independent Test**: Gắn 1 file vào mỗi loại (task, môn, buổi học, buổi thi) bằng 3 cách (kéo thả, chọn file, ⌘V); tải lại app →
 file vẫn còn, đúng tên, đúng dung lượng, mở ra đúng nội dung.
 
 **Acceptance Scenarios**:
@@ -132,7 +140,10 @@ file vẫn còn, đúng tên, đúng dung lượng, mở ra đúng nội dung.
    chỉ được tính và lưu một lần, nhưng hiện ở cả hai nơi.
 6. **Given** gắn file trùng tên khác nội dung vào cùng một task, **When** lưu, **Then** cả hai đều được giữ, tên hiển
    thị phân biệt bằng hậu tố "(2)".
-7. **Given** đang gắn file lớn, **When** chờ, **Then** có thanh tiến trình; lỗi giữa chừng thì báo lỗi và không để lại
+7. **Given** bảng chi tiết buổi thi "Xử lý ngôn ngữ tự nhiên – lần 1", **When** kéo vào "De_cuong_on_tap.pdf" và
+   "De_thi_2025.pdf", **Then** cả hai hiện trong mục "File đính kèm" của buổi thi; dòng buổi thi ở trang Lịch thi hiện
+   biểu tượng kẹp giấy kèm số 2.
+8. **Given** đang gắn file lớn, **When** chờ, **Then** có thanh tiến trình; lỗi giữa chừng thì báo lỗi và không để lại
    file dở.
 
 ---
@@ -182,11 +193,13 @@ lượng; sao lưu rồi khôi phục vào máy khác (hoặc sau khi xoá dữ 
    trừ file cùng nội dung đang được nơi khác dùng.
 3. **Given** môn học có file, **When** xoá môn học (cùng các buổi học của nó), **Then** file của môn và các buổi bị xoá
    theo quy tắc trên; hộp xác nhận xoá môn ghi rõ số file sẽ bị xoá.
-4. **Given** sao lưu tự động đang bật, **When** đến lần sao lưu, **Then** bản sao lưu chứa cả file đính kèm; khôi phục
+4. **Given** buổi thi có file, **When** xoá buổi thi, **Then** hộp xác nhận ghi rõ số file sẽ bị xoá; xác nhận thì file
+   bị xoá theo quy tắc trên (buổi thi không có Thùng rác).
+5. **Given** sao lưu tự động đang bật, **When** đến lần sao lưu, **Then** bản sao lưu chứa cả file đính kèm; khôi phục
    bản đó thì mọi file trở lại, mở được.
-5. **Given** tổng dung lượng file đính kèm vượt ngưỡng cảnh báo (mặc định 1 GB), **When** sao lưu chạy hoặc mở Cài
+6. **Given** tổng dung lượng file đính kèm vượt ngưỡng cảnh báo (mặc định 1 GB), **When** sao lưu chạy hoặc mở Cài
    đặt → Sao lưu, **Then** có cảnh báo nhẹ kèm dung lượng ước tính của mỗi bản sao lưu; sao lưu vẫn chạy.
-6. **Given** file "Đề cương NLP.pdf" gắn vào môn học, **When** nhấn ⌘F và gõ "de cuong", **Then** kết quả có nhóm
+7. **Given** file "Đề cương NLP.pdf" gắn vào môn học, **When** nhấn ⌘F và gõ "de cuong", **Then** kết quả có nhóm
    "File" hiện tên file, nơi gắn (môn "Xử lý ngôn ngữ tự nhiên"); chọn kết quả thì mở chi tiết môn đó và tô sáng file.
 
 ---
@@ -277,7 +290,7 @@ chối.
 
 **Đính kèm file**
 
-- **FR-016**: Người dùng PHẢI gắn được file vào task, môn học và buổi học bằng kéo thả vào bảng chi tiết, nút "Thêm
+- **FR-016**: Người dùng PHẢI gắn được file vào task, môn học, buổi học và buổi thi bằng kéo thả vào bảng chi tiết, nút "Thêm
   file" (chọn nhiều file), và ⌘V (file đã chép trong Finder hoặc ảnh trong clipboard) khi bảng chi tiết đang mở.
 - **FR-017**: Mọi loại file PHẢI gắn được; giới hạn mỗi file mặc định 50 MB, chỉnh được trong Cài đặt trong khoảng
   1–500 MB; vượt giới hạn thì từ chối với thông báo nêu giới hạn và chỗ đổi.
@@ -293,7 +306,9 @@ chối.
 - **FR-023**: Xoá một file đính kèm PHẢI hỏi xác nhận; xoá task vào Thùng rác giữ file và khôi phục task thì file trở
   lại; xoá hẳn task (bằng tay hay tự xoá sau 30 ngày) xoá các mục đính kèm của nó theo FR-020.
 - **FR-024**: Xoá môn học PHẢI xoá mục đính kèm của môn và của các buổi học của môn (theo FR-020), hộp xác nhận nêu số
-  file; buổi học bị xoá do sửa lịch môn PHẢI chuyển file của buổi sang môn học, kèm thông báo.
+  file; buổi học bị xoá do sửa lịch môn PHẢI chuyển file của buổi sang môn học, kèm thông báo. Xoá buổi thi PHẢI
+  xoá mục đính kèm của buổi thi (theo FR-020), hộp xác nhận nêu số file. Nhập lại lịch thi từ ảnh mà buổi thi đã có
+  (trùng) thì giữ nguyên file của buổi thi đó.
 - **FR-025**: Sao lưu tự động và sao lưu tay PHẢI chứa cả nội dung file đính kèm; khôi phục PHẢI đưa file trở lại; bản
   sao lưu cũ không có file vẫn khôi phục được.
 - **FR-026**: Khi tổng dung lượng file đính kèm vượt ngưỡng (mặc định 1 GB, chỉnh được), Cài đặt → Sao lưu và thông báo
@@ -304,14 +319,14 @@ chối.
   lớn nhất kèm nơi gắn, ô giới hạn mỗi file, ô ngưỡng cảnh báo sao lưu.
 - **FR-029**: Nội dung file KHÔNG được gửi ra ngoài máy; xem trước và tìm kiếm chạy hoàn toàn trên máy; tìm kiếm chỉ
   theo tên file, không đọc nội dung file.
-- **FR-030**: Bảng chi tiết task, môn học, buổi học PHẢI có mục "File đính kèm" (danh sách, nút Thêm file, vùng thả);
-  thẻ Kanban, dòng task ở dạng Danh sách và dòng môn học PHẢI hiện số file khi > 0.
+- **FR-030**: Bảng chi tiết task, môn học, buổi học, buổi thi PHẢI có mục "File đính kèm" (danh sách, nút Thêm file,
+  vùng thả); thẻ Kanban, dòng task ở dạng Danh sách, dòng môn học và dòng buổi thi PHẢI hiện số file khi > 0.
 
 ### Key Entities
 
 - **Task (mở rộng)**: thêm trạng thái (Chưa làm / Đang làm / Xong) và vị trí trên bảng trong cột của trạng thái.
 - **Nội dung file**: một bản nội dung duy nhất trên máy, nhận biết theo dấu vân tay nội dung; có dung lượng, loại.
-- **Mục đính kèm**: liên kết một nội dung file với đúng một nơi gắn (task, môn học hoặc buổi học); có tên hiển thị,
+- **Mục đính kèm**: liên kết một nội dung file với đúng một nơi gắn (task, môn học, buổi học hoặc buổi thi); có tên hiển thị,
   thời điểm thêm; theo task vào/ra Thùng rác.
 - **Cài đặt đính kèm**: giới hạn mỗi file, ngưỡng cảnh báo dung lượng sao lưu.
 - **Tuỳ chọn xem (trên máy)**: dạng xem Danh sách/Bảng, bộ lọc bảng, trạng thái "Hiện tất cả" của cột Xong.
@@ -342,9 +357,10 @@ chối.
   môn trong chi tiết task (thêm ô chọn môn tuỳ chọn trong bảng chi tiết task).
 - Trạng thái "Đang làm" không có nhắc riêng và không đồng bộ sang Lời nhắc (Lời nhắc chỉ có hoàn thành / chưa).
 - Phím tắt cụ thể có thể điều chỉnh khi lập kế hoạch nếu trùng phím tắt hiện có; yêu cầu là có đủ thao tác bằng phím.
-- File đính kèm chỉ cho task, môn học, buổi học; lịch thi, danh sách, học kỳ không có đính kèm trong feature này.
+- File đính kèm cho task, môn học, buổi học và buổi thi; danh sách, học kỳ không có đính kèm trong feature này.
 - Không có xem trước cho Word/PowerPoint/Excel trong app (dùng ứng dụng mặc định); không đọc nội dung file để tìm kiếm.
 - Không giới hạn tổng dung lượng; chỉ giới hạn mỗi file và cảnh báo khi lớn (dung lượng ổ là giới hạn thực tế).
 - Mở bằng ứng dụng mặc định chỉ có trong app macOS; trên trình duyệt thì tải về.
-- Khôi phục từ Thùng rác áp dụng cho task (môn học và buổi học hiện không có Thùng rác; xoá môn là xoá hẳn có xác nhận).
+- Khôi phục từ Thùng rác áp dụng cho task (môn học, buổi học và buổi thi hiện không có Thùng rác; xoá môn hoặc buổi thi
+  là xoá hẳn có xác nhận).
 - Ngưỡng cảnh báo sao lưu mặc định 1 GB tổng dung lượng file đính kèm.
