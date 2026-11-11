@@ -23,13 +23,21 @@ import {
 } from '../../../api/board';
 import type { Task, TaskStatus } from '../../../api/types';
 import { useNow } from '../../../app/useNow';
+import { isTypingTarget, useHotkeys } from '../../../app/useHotkeys';
 import { useStoredState } from '../../../lib/storage';
 import { t } from '../../../i18n/vi';
 import { Button } from '../../../ui/Button';
 import { useToast } from '../../../ui/Toast';
 import { CardBody } from './BoardCard';
 import { BoardColumn } from './BoardColumn';
-import { STATUS_ORDER, applyMove, locate, neighbours, emptyColumns } from './boardState';
+import {
+  STATUS_ORDER,
+  adjacentStatus,
+  applyMove,
+  emptyColumns,
+  locate,
+  neighbours,
+} from './boardState';
 
 /** Bảng Kanban của trang Công việc (feature 005 US1): 3 cột, kéo thả, Xong = tick, Hoàn tác. */
 export function BoardView({
@@ -168,6 +176,109 @@ export function BoardView({
     if (task) onSelect(task.id);
   }
 
+  // ---- Bàn phím (FR-013): chọn thẻ, đổi cột, đổi chỗ, mở chi tiết, X = Xong/bỏ Xong ----
+  const [announcement, setAnnouncement] = useState('');
+  const current = selectedId === null ? null : locate(columns, selectedId);
+
+  function announceMove(status: TaskStatus, index: number, nextColumns = columns) {
+    const task = nextColumns[status][index];
+    setAnnouncement(
+      t('board.moved', {
+        title: task?.title ?? '',
+        column: t(`board.columns.${status}`),
+        position: index + 1,
+        total: nextColumns[status].length,
+      }),
+    );
+  }
+
+  function moveSelection(dx: number, dy: number) {
+    if (!current) {
+      const first = STATUS_ORDER.map((s) => columns[s][0]).find(Boolean);
+      if (first) onSelect(first.id);
+      return;
+    }
+    if (dy) {
+      const target = columns[current.status][current.index + dy];
+      if (target) onSelect(target.id);
+      return;
+    }
+    let status: TaskStatus | null = current.status;
+    for (;;) {
+      status = adjacentStatus(status, dx as 1 | -1);
+      if (!status) return;
+      const column = columns[status];
+      if (column.length) {
+        onSelect(column[Math.min(current.index, column.length - 1)].id);
+        return;
+      }
+    }
+  }
+
+  function keyboardMove(to: TaskStatus, index: number) {
+    if (!current || selectedId === null) return;
+    placeCard(selectedId, to, index);
+    announceMove(to, index, applyMove(columns, selectedId, to, index));
+  }
+
+  function guarded(action: () => void) {
+    return (event: KeyboardEvent): void | false => {
+      if (isTypingTarget(event.target) || document.querySelector('[role="dialog"]')) return false;
+      action();
+    };
+  }
+
+  useHotkeys([
+    { key: 'ArrowLeft', handler: guarded(() => moveSelection(-1, 0)) },
+    { key: 'ArrowRight', handler: guarded(() => moveSelection(1, 0)) },
+    { key: 'ArrowUp', handler: guarded(() => moveSelection(0, -1)) },
+    { key: 'ArrowDown', handler: guarded(() => moveSelection(0, 1)) },
+    {
+      key: 'ArrowRight',
+      meta: true,
+      handler: guarded(() => {
+        const to = current && adjacentStatus(current.status, 1);
+        if (current && to) keyboardMove(to, Math.min(current.index, columns[to].length));
+      }),
+    },
+    {
+      key: 'ArrowLeft',
+      meta: true,
+      handler: guarded(() => {
+        const to = current && adjacentStatus(current.status, -1);
+        if (current && to) keyboardMove(to, Math.min(current.index, columns[to].length));
+      }),
+    },
+    {
+      key: 'ArrowUp',
+      meta: true,
+      handler: guarded(() => {
+        if (current && current.index > 0) keyboardMove(current.status, current.index - 1);
+      }),
+    },
+    {
+      key: 'ArrowDown',
+      meta: true,
+      handler: guarded(() => {
+        if (current && current.index < columns[current.status].length - 1)
+          keyboardMove(current.status, current.index + 1);
+      }),
+    },
+    {
+      key: 'Enter',
+      handler: guarded(() => {
+        const task = current && columns[current.status][current.index];
+        if (task) onOpen(task);
+      }),
+    },
+    {
+      key: 'x',
+      handler: guarded(() => {
+        if (current) keyboardMove(current.status === 'done' ? 'todo' : 'done', 0);
+      }),
+    },
+  ]);
+
   const hidden = query.data?.done_hidden_count ?? 0;
   const doneFooter =
     doneAll || hidden > 0 ? (
@@ -212,6 +323,9 @@ export function BoardView({
                 footer={status === 'done' ? doneFooter : null}
               />
             ))}
+          </div>
+          <div role="status" aria-live="polite" className="sr-only">
+            {announcement}
           </div>
           <DragOverlay>
             {dragged ? (

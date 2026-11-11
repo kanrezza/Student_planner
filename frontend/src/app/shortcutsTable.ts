@@ -44,6 +44,17 @@ export function shortcutGroups(): ShortcutGroup[] {
       ],
     },
     {
+      title: t('shortcuts.groupBoard'),
+      rows: [
+        { keys: '← → ↑ ↓', label: t('shortcuts.boardSelect') },
+        { keys: '⌘← ⌘→', label: t('shortcuts.boardColumn') },
+        { keys: '⌘↑ ⌘↓', label: t('shortcuts.boardOrder') },
+        { keys: '↩', label: t('shortcuts.boardOpen') },
+        { keys: 'X', label: t('shortcuts.boardDone') },
+        { keys: 'Space', label: t('shortcuts.boardLift') },
+      ],
+    },
+    {
       title: t('shortcuts.groupCalendar'),
       rows: [
         { keys: '←', label: t('shortcuts.calPrev') },

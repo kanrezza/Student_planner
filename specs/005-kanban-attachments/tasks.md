@@ -416,7 +416,7 @@ mất khỏi danh sách, tổng dung lượng giảm.
 
 ### Tests for User Story 3
 
-- [ ] T042 [P] [US3] Test Vitest `frontend/tests/boardKeys.test.tsx`:
+- [X] T042 [P] [US3] Test Vitest `frontend/tests/boardKeys.test.tsx`:
   - mũi tên di chuyển vùng chọn: trái/phải đổi cột, giữ vị trí gần nhất; lên/xuống trong cột;
   - ⌘←/⌘→ gọi PATCH đổi cột, thẻ vẫn được chọn;
   - ⌘↑/⌘↓ đổi chỗ (PATCH với `before_id`/`after_id` đúng); không đi quá đầu/cuối cột;
@@ -427,7 +427,7 @@ mất khỏi danh sách, tổng dung lượng giảm.
 
 ### Implementation for User Story 3
 
-- [ ] T043 [US3] Tạo `frontend/src/features/tasks/board/useBoardKeys.ts` (vùng chọn, phím tắt, dùng `isTypingTarget` của `frontend/src/app/useHotkeys.ts`, kiểm tra không trùng phím tắt toàn cục), dùng trong `BoardView.tsx`. Thêm `announcements` + `screenReaderInstructions` tiếng Việt cho `DndContext`. Thêm mục "Bảng công việc" vào danh sách phím tắt hiện có (nơi định nghĩa bảng `?`) và chuỗi trong `frontend/src/i18n/vi.ts`
+- [X] T043 [US3] Tạo `frontend/src/features/tasks/board/useBoardKeys.ts` (vùng chọn, phím tắt, dùng `isTypingTarget` của `frontend/src/app/useHotkeys.ts`, kiểm tra không trùng phím tắt toàn cục), dùng trong `BoardView.tsx`. Thêm `announcements` + `screenReaderInstructions` tiếng Việt cho `DndContext`. Thêm mục "Bảng công việc" vào danh sách phím tắt hiện có (nơi định nghĩa bảng `?`) và chuỗi trong `frontend/src/i18n/vi.ts`
 
 **Checkpoint**: Kiểm tra tay bước 2. Commit.
 
