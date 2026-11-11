@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-11
 
-**Status**: Draft
+**Status**: Implemented (chờ kiểm tra tay trên app macOS)
 
 **Input**: User description: "Thêm bảng Kanban và đính kèm file.
 (1) Bảng Kanban: thêm chế độ xem dạng bảng ở trang Công việc (chuyển qua lại với dạng danh sách), mặc định 3 cột

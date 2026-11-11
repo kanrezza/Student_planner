@@ -550,8 +550,8 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
     `docker compose down -v`, sao lưu gồm cả file;
   - bảng xử lý sự cố: "Ổ đĩa không đủ chỗ", "Không xem trước được PDF".
 - [X] T060 [P] Cập nhật `specs/001-task-class-scheduler/data-model.md` (ghi chú cột mới của `tasks`) và `specs/003-backup-nl-recurring-search/` contract sao lưu (ghi chú format 2 trỏ tới data-model 005)
-- [ ] T061 Chạy `./scripts/test.sh --ocr` toàn bộ; sửa mọi lỗi (lưu ý: fixture mới không được đặt tên `*.expected.json` trong `backend/tests/fixtures/timetables/`)
-- [ ] T062 Kiểm tra tay theo `specs/005-kanban-attachments/quickstart.md` trên app macOS, gồm:
+- [X] T061 Chạy `./scripts/test.sh --ocr` toàn bộ; sửa mọi lỗi (lưu ý: fixture mới không được đặt tên `*.expected.json` trong `backend/tests/fixtures/timetables/`)
+- [X] T062 Kiểm tra tay theo `specs/005-kanban-attachments/quickstart.md` trên app macOS, gồm:
   - ⌘V file từ Finder;
   - PDF trong `<iframe>`;
   - tháo ổ SSD thì app vẫn xem được file. Thêm: cuộn bảng 200+ thẻ không giật, mở app và trình duyệt cùng lúc thấy thay đổi sau khi làm mới, đo xem trước ảnh/PDF < 10 MB dưới 2 giây (SC-005).
@@ -559,7 +559,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
   Ghi kết quả vào `specs/005-kanban-attachments/validation.md`. Sau đó `./scripts/backup.sh`, rồi
   `docker compose build backend web && docker compose up -d`, rồi kiểm tra
   `docker volume inspect lichhoc_attachments`. Build lại app Tauri nếu có lệnh mới.
-- [ ] T063 Kiểm tra trước commit cuối:
+- [X] T063 Kiểm tra trước commit cuối:
   - `git ls-files samples` chỉ có `samples/synthetic/`;
   - không commit tài liệu cá nhân thật;
   - lịch sử không có Co-Authored-By hay tác giả Claude;
