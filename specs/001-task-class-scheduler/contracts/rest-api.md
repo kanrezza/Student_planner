@@ -107,6 +107,10 @@ chính máy (constitution IV).
 
 Chỉ được có một trong hai: `shift` hoặc cặp `start_time`/`end_time` (giờ tuỳ chỉnh).
 
+> **Feature 004**: lịch của môn nay là danh sách `schedules` (mỗi quy tắc có `weekdays`, `start_date`,
+> `end_date`, `shift` hoặc giờ, `room`) và môn có thêm `course_code`, `credits`. Dạng phẳng ở trên vẫn được
+> nhận như một quy tắc duy nhất. Xem [contract 004](../../004-pdf-semester-import/contracts/rest-api.md).
+
 ---
 
 ## Nhãn

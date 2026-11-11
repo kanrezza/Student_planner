@@ -83,12 +83,25 @@ quyền. Sau khi cập nhật backend, chạy lại `install.sh` để agent dù
   Lời nhắc/iPhone luôn theo lần hiện tại.
 - **Lịch**: ngày/tuần/tháng; kéo thả task, kéo dãn khung giờ làm, kéo chọn vùng trống để tạo task, kéo
   buổi học sang giờ/ngày khác (có xác nhận).
-- **Môn học**: học kỳ, thêm một hoặc nhiều môn, ca học; **Nhập từ ảnh** cho thời khoá biểu.
+- **Môn học**: học kỳ, thêm một hoặc nhiều môn, ca học; mỗi môn có một hoặc nhiều lịch lặp hằng tuần
+  (thứ, khoảng ngày, ca/giờ, phòng); **Nhập lịch** từ ảnh hoặc file PDF thời khoá biểu.
 - **Lịch thi**: thêm tay hoặc nhập từ ảnh "Lịch thi cá nhân"; cảnh báo trùng giờ; nhắc theo mức *Quan trọng*.
-- **Nhập từ ảnh**: kéo thả ảnh PNG/JPEG/HEIC (≤ 20 MB), chờ tới ~1 phút, kiểm tra bảng xem trước (ô vàng là
-  chưa chắc chắn), rồi Lưu. Ảnh không được lưu; cột họ tên/MSSV của bảng lịch thi bị bỏ qua.
-- **Cài đặt**: nhắc lịch và đồng bộ, bản tóm tắt hằng ngày, mốc *Quan trọng*, học kỳ, ca học, nhãn, danh
-  sách, tự tạo deadline. Giao diện sáng/tối theo macOS.
+- **Nhập lịch**: dán (⌘V), kéo thả hoặc chọn ảnh PNG/JPEG/HEIC hoặc file PDF (≤ 20 MB).
+  - *Ảnh*: chờ tới ~1 phút, kiểm tra bảng xem trước (ô vàng là chưa chắc chắn), rồi Lưu. Cột họ tên/MSSV
+    của bảng lịch thi bị bỏ qua.
+  - *PDF thời khoá biểu chính thức* (file có chữ, không phải ảnh quét): đọc cả học kỳ trong vài giây, không
+    cần OCR. Bản xem trước hiện học kỳ đề xuất, từng môn và các lịch lặp (đổi tiết sang giờ theo **bảng
+    tiết**); bỏ chọn hoặc sửa được từng ô, rồi Lưu. Nhập lại file mới thì môn đã có được nhận ra và chỉ
+    cập nhật phần từ hôm nay trở đi (buổi đã qua, đã huỷ hoặc sửa riêng giữ nguyên). Phòng trực tuyến
+    được đề xuất nhãn E-Learning.
+  - File chỉ được xử lý trong bộ nhớ, không được lưu; họ tên, mã sinh viên, lớp trong PDF bị bỏ ngay
+    khi đọc. Không đưa file thật vào git: thư mục `samples/` bị chặn trừ `samples/synthetic/` (file giả lập).
+- **Bảng tiết** (Cài đặt → Ca học): giờ từng tiết suy từ 4 ca (50 phút, nghỉ 5 phút), tiết 16–18 mặc
+  định 21:05–22:00; sửa tay được, thêm tiết 13–30. Dùng để đổi "Tiết 4–6" trong PDF sang giờ.
+- **Tên môn chuẩn** (Cài đặt → Tên môn chuẩn): tên lấy từ PDF, giúp tự sửa tên môn khi nhập từ ảnh; xoá
+  được toàn bộ danh sách.
+- **Cài đặt**: nhắc lịch và đồng bộ, bản tóm tắt hằng ngày, mốc *Quan trọng*, học kỳ, ca học (kèm bảng
+  tiết), nhãn, danh sách, tự tạo deadline, tên môn chuẩn, sao lưu. Giao diện sáng/tối theo macOS.
 
 ### Phím tắt
 
@@ -161,10 +174,12 @@ Kịch bản kiểm chứng thủ công: `specs/001-task-class-scheduler/quickst
 | macOS từ chối quyền Lịch/Lời nhắc | Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Lịch / Lời nhắc → bật `LichHocAgent`, rồi cài lại agent |
 | Không thấy Lịch trên iPhone | Bật iCloud cho Lịch và Lời nhắc; nếu Mac chỉ có nguồn "Trên máy Mac" thì iPhone không nhận |
 | Nhận diện ảnh quá lâu (> 1 phút) | Ảnh quá lớn/mờ: chụp lại ở cỡ màn hình thường; backend dùng CPU nên mất 25–60 giây là bình thường |
+| PDF báo "không có chữ" | File là ảnh quét: dùng Nhập lịch bằng ảnh chụp màn hình thay cho PDF |
+| PDF báo "có mật khẩu" | Mở khoá file rồi xuất lại PDF không mật khẩu |
 | Nhận diện sai dấu | Sửa trực tiếp ở bảng xem trước (ô vàng là chưa chắc chắn) |
 
 ## Cấu trúc thư mục
 
 `backend/` (Flask, OCR, migration) · `frontend/` (React) · `desktop/` (app Tauri) · `mac-agent/` (agent nhắc
 lịch) · `scripts/` (test, sao lưu, kiểm chứng) · `samples/` (ảnh giả lập) · `specs/` (đặc tả, kế hoạch,
-nhiệm vụ của feature 001 và 002).
+nhiệm vụ của các feature 001–004).

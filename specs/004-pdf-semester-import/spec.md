@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-10
 
-**Status**: Draft
+**Status**: Implemented (chờ kiểm tra tay trên giao diện)
 
 **Input**: User description: "Nhập học kỳ từ file PDF \"Thời khóa biểu chính thức\" của cổng sinh viên
 Phenikaa (file mẫu: samples/tkb-hk2-2026.pdf).

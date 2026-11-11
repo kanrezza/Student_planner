@@ -32,7 +32,7 @@ def _preview():
 
 
 def test_khop_dap_an():
-    expected = json.loads((FIXTURES / "tkb-synthetic-01.expected.json").read_text("utf-8"))
+    expected = json.loads((FIXTURES / "tkb-synthetic-01.answer.json").read_text("utf-8"))
     preview = _preview()
     assert preview["semester"]["suggested_name"] == expected["semester_name"]
     assert len(preview["subjects"]) == expected["subject_count"]

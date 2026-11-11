@@ -37,7 +37,7 @@ File thật để thử tay: `samples/tkb-hk2-2026.pdf` (bị `.gitignore` chặ
 
 ## Kiểm tra tay trên app
 
-1. Mở trang Môn học, kéo `samples/tkb-hk2-2026.pdf` vào → màn "Nhập lịch" hiện 8 môn, học kỳ đề xuất "HK2 2026–2027".
+1. Mở trang Môn học → **Nhập lịch**, kéo `samples/tkb-hk2-2026.pdf` vào (hoặc bấm "chọn file") → bản xem trước hiện 8 môn, 17 lịch, học kỳ đề xuất "HK2 2026–2027".
 2. Mở Finder, chọn file PDF, ⌘C; quay lại trang Môn học, ⌘V → cũng mở màn "Nhập lịch". Nếu WKWebView không cho
    dán file, ghi lại trong `validation.md` (kéo thả và chọn file vẫn phải chạy).
 3. Bấm Lưu → lịch tuần 30/11–06/12/2026 hiện đúng các buổi; tuần 01/02/2027 trống; môn "Tích hợp… (COUR01)" có nhãn

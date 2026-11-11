@@ -10,7 +10,7 @@ from sqlalchemy import text
 from tests.integration.test_timetable_import_api import COMMIT, payload, upload
 from tests.ocr_helpers import FIXTURES, load_pdf
 
-SECRETS = json.loads((FIXTURES / "tkb-synthetic-01.expected.json").read_text("utf-8"))[
+SECRETS = json.loads((FIXTURES / "tkb-synthetic-01.answer.json").read_text("utf-8"))[
     "must_not_appear"
 ]
 

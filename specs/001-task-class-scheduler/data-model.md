@@ -64,6 +64,12 @@ settings (1 dòng)        sync_state (1 dòng)        agent_status (1 dòng)
 
 ## subjects — Môn học (FR-007 đến FR-015, FR-039, FR-043)
 
+> **Feature 004**: các cột lịch của bảng này (`weekdays`, `start_time`, `end_time`, `start_date`,
+> `end_date`, `start_shift_id`, `end_shift_id`, `room`) đã chuyển sang bảng `subject_schedules` (một môn có
+> ≥ 1 quy tắc lặp); `subjects` thêm `course_code`, `credits`; `class_sessions` thêm `schedule_id`. Mô tả đầy
+> đủ ở [data-model 004](../004-pdf-semester-import/data-model.md). Các mục "Đổi giờ ca" và "Xoá ca" ở trên
+> áp dụng cho quy tắc của môn thay vì cột của `subjects`.
+
 | Cột | Kiểu | Ràng buộc |
 |-----|------|-----------|
 | semester_id | bigint FK → semesters | bắt buộc, `ON DELETE CASCADE` |

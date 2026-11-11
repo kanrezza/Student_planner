@@ -231,3 +231,15 @@ def test_khong_co_nhan_thi_khong_gan(client, db_session):
         select(Subject).where(Subject.class_code == online["class_code"])
     ).one()
     assert subject.tags == []
+
+
+def test_hieu_nang_preview_hai_trang_duoi_3_giay(client):
+    """SC-002: đọc và dựng bản xem trước PDF dưới 3 giây."""
+    import time
+
+    data = load_pdf("tkb-synthetic-2pages.pdf")
+    start = time.perf_counter()
+    response = upload(client, data)
+    elapsed = time.perf_counter() - start
+    assert response.status_code == 200
+    assert elapsed < 3.0, f"{elapsed:.2f} giây"

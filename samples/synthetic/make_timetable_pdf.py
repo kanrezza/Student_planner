@@ -11,7 +11,7 @@ Chạy (trong container backend, cần reportlab và phông DejaVu):
 
 Đầu ra (mặc định backend/tests/fixtures/timetables/):
   tkb-synthetic-01.pdf         bảng 1 trang, 16 dòng, 8 môn, 17 quy tắc
-  tkb-synthetic-01.expected.json  đáp án viết tay, độc lập với bộ đọc PDF
+  tkb-synthetic-01.answer.json  đáp án viết tay, độc lập với bộ đọc PDF
   tkb-synthetic-2pages.pdf     cùng nội dung, bảng tràn sang trang 2 (không lặp tiêu đề)
   tkb-no-text.pdf              chỉ có ảnh, không có chữ
   tkb-encrypted.pdf            có mật khẩu
@@ -379,7 +379,7 @@ def main() -> None:
         (out / name).write_bytes(data)
         print(f"{name}: {len(data):,} byte")
     expected = expected_json()
-    (out / "tkb-synthetic-01.expected.json").write_text(
+    (out / "tkb-synthetic-01.answer.json").write_text(
         json.dumps(expected, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     print(f"{expected['subject_count']} môn, {expected['rule_count']} quy tắc")
