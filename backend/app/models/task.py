@@ -6,6 +6,7 @@ from sqlalchemy import (
     CheckConstraint,
     Date,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -13,12 +14,24 @@ from sqlalchemy import (
     Text,
     Time,
     false,
+    func,
+    select,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.extensions import db
 from app.models.base import IdMixin, TimestampMixin
+
+
+def _top_rank(context) -> float:
+    """Thứ tự cho task mới: đầu cột Chưa làm (feature 005, FR-006); chạy ở mọi đường tạo task."""
+    lowest = context.connection.scalar(
+        select(func.min(Task.board_rank)).where(
+            Task.completed_at.is_(None), Task.in_progress.is_(false()), Task.deleted_at.is_(None)
+        )
+    )
+    return (lowest if lowest is not None else 1.0) - 1
 
 
 class Task(IdMixin, TimestampMixin, db.Model):
@@ -43,6 +56,7 @@ class Task(IdMixin, TimestampMixin, db.Model):
             "work_end IS NULL OR work_end > work_start", name="ck_tasks_work_window_order"
         ),
         Index("ix_tasks_deleted_at", "deleted_at", postgresql_where=text("deleted_at IS NOT NULL")),
+        Index("ix_tasks_board", text("(completed_at IS NULL)"), "in_progress", "board_rank"),
         # Task lặp (feature 003): CHECK khớp migration 0008.
         CheckConstraint("series_id IS NULL OR is_auto = false", name="ck_tasks_series_not_auto"),
         CheckConstraint(
@@ -92,6 +106,14 @@ class Task(IdMixin, TimestampMixin, db.Model):
     # (constraint phụ thuộc tasks_pkey mà bản cũ không biết). id không bao giờ được dùng lại.
     spawned_from_task_id: Mapped[int | None] = mapped_column(BigInteger)
     trash_scope: Mapped[str | None] = mapped_column(Text)
+    # Bảng Kanban (feature 005): "Đang làm" khi chưa hoàn thành; thứ tự thẻ trong cột (nhỏ = trên).
+    in_progress: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
+    board_rank: Mapped[float] = mapped_column(
+        Float, nullable=False, default=_top_rank, server_default=text("0")
+    )
+    subject_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("subjects.id", ondelete="SET NULL"), index=True
+    )
 
     list = relationship("TaskList", back_populates="tasks")
     source_session = relationship("ClassSession", back_populates="auto_task")

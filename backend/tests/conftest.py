@@ -87,3 +87,12 @@ def isolated_app(tmp_path_factory):
     with admin.connect() as conn:
         conn.execute(sa.text(f"DROP DATABASE IF EXISTS {name} WITH (FORCE)"))
     admin.dispose()
+
+
+@pytest.fixture(autouse=True)
+def attachments_dir(app, tmp_path):
+    """Mỗi test dùng thư mục file đính kèm riêng (không đụng volume thật `lichhoc_attachments`)."""
+    previous = app.config.get("ATTACHMENTS_DIR")
+    app.config["ATTACHMENTS_DIR"] = str(tmp_path / "attachments")
+    yield tmp_path / "attachments"
+    app.config["ATTACHMENTS_DIR"] = previous

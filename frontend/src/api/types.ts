@@ -28,6 +28,8 @@ export type ProjectedTask = {
   color: string;
 };
 
+export type TaskStatus = 'todo' | 'doing' | 'done';
+
 export type Task = {
   id: number;
   title: string;
@@ -40,6 +42,12 @@ export type Task = {
   list_name: string;
   completed: boolean;
   completed_at: string | null;
+  /** Bảng Kanban (feature 005): trạng thái, thứ tự trong cột, môn gắn tay / môn hiệu lực, số file. */
+  status?: TaskStatus;
+  board_rank?: number;
+  subject_id?: number | null;
+  effective_subject_id?: number | null;
+  attachment_count?: number;
   is_overdue: boolean;
   is_auto: boolean;
   source_session_id: number | null;

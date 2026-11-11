@@ -62,14 +62,14 @@ phase này.
 
 ### Tests (viết trước)
 
-- [ ] T005 [P] Test hàm thuần trong `backend/tests/unit/test_board_rank.py`:
+- [X] T005 [P] Test hàm thuần trong `backend/tests/unit/test_board_rank.py`:
   - `task_status(completed_at, in_progress)` cho cả 3 trạng thái.
   - `rank_between(before, after)`: hai đầu `None` → 0; chỉ có trên → `before + 1`; chỉ có dưới → `after − 1`; ở giữa →
     trung bình.
   - `needs_rebalance` khi khoảng `< 1e-6`.
   - `rebalance(ranks)` → 1, 2, 3… giữ thứ tự.
   - `done_window_start(now)` = 00:00 ngày (hôm nay − 6) giờ Việt Nam, kể cả quanh nửa đêm.
-- [ ] T006 [P] Test kho file trong `backend/tests/unit/test_attachments_store.py` (dùng `tmp_path` làm gốc):
+- [X] T006 [P] Test kho file trong `backend/tests/unit/test_attachments_store.py` (dùng `tmp_path` làm gốc):
   - `blob_path(sha)` = `<sha[0:2]>/<sha>`.
   - `store_stream(stream, max_bytes)`:
     - trả `(sha256, size)` đúng;
@@ -85,7 +85,7 @@ phase này.
     - `"a.pdf"` khi chưa có;
     - `"a (2).pdf"` khi đã có `"A.pdf"`;
     - `"a (3).pdf"` khi đã có cả `"a (2).pdf"`.
-- [ ] T007 [P] Test migration trong `backend/tests/integration/test_migration_0012.py`:
+- [X] T007 [P] Test migration trong `backend/tests/integration/test_migration_0012.py`:
   - Dựng dữ liệu ở revision `0011_periods_canonical_names`: 3 task chưa xong ở 2 danh sách, 2 task đã xong, 1 task trong
     Thùng rác.
   - `upgrade` → `in_progress = false` mọi dòng; `board_rank` tăng dần theo `sort_key` cũ trong mỗi nhóm trạng thái;
@@ -95,7 +95,7 @@ phase này.
 
 ### Implementation
 
-- [ ] T008 Sửa `backend/app/models/task.py` theo [data-model](data-model.md#đổi-tasks):
+- [X] T008 Sửa `backend/app/models/task.py` theo [data-model](data-model.md#đổi-tasks):
   - `in_progress` boolean NOT NULL `server_default false`
   - `board_rank` double precision NOT NULL
   - `subject_id` bigint FK `subjects.id` `ON DELETE SET NULL`
@@ -105,7 +105,7 @@ phase này.
   Sửa `backend/app/models/settings.py`:
   - `attachment_max_mb` smallint NOT NULL mặc định 50, CHECK "`BETWEEN 1 AND 500`"
   - `backup_attachments_warn_mb` integer NOT NULL mặc định 1024, CHECK "`BETWEEN 100 AND 1000000`"
-- [ ] T009 Tạo `backend/app/models/attachment.py`, đăng ký trong `backend/app/models/__init__.py`. Hai model:
+- [X] T009 Tạo `backend/app/models/attachment.py`, đăng ký trong `backend/app/models/__init__.py`. Hai model:
   - `AttachmentBlob`:
     - `sha256` char(64) PK chữ thường hex
     - `size` bigint NOT NULL `>= 0`
@@ -119,22 +119,22 @@ phase này.
     - `display_name` text NOT NULL "1–255 ký tự, NFC, không chứa `/` hay ký tự điều khiển"
     - `created_at`
     - index từng cột nơi gắn và index biểu thức `vn_fold(display_name)`
-- [ ] T010 Viết migration `backend/migrations/versions/0012_kanban_attachments.py` (down_revision `0011_periods_canonical_names`): thêm cột/bảng/index của T008–T009; đặt `board_rank` bằng `row_number()` theo thứ tự `sort_key` hiện có (hạn chót, giờ, ưu tiên, id) trong từng nhóm `completed_at IS NULL`; `downgrade` xoá theo thứ tự ngược
-- [ ] T011 [P] Tạo `backend/app/services/board_rank.py` (hàm thuần của T005): `task_status`, `rank_between`, `needs_rebalance`, `rebalance`, `done_window_start`
-- [ ] T012 [P] Tạo `backend/app/services/attachments_store.py` (hàm của T006):
+- [X] T010 Viết migration `backend/migrations/versions/0012_kanban_attachments.py` (down_revision `0011_periods_canonical_names`): thêm cột/bảng/index của T008–T009; đặt `board_rank` bằng `row_number()` theo thứ tự `sort_key` hiện có (hạn chót, giờ, ưu tiên, id) trong từng nhóm `completed_at IS NULL`; `downgrade` xoá theo thứ tự ngược
+- [X] T011 [P] Tạo `backend/app/services/board_rank.py` (hàm thuần của T005): `task_status`, `rank_between`, `needs_rebalance`, `rebalance`, `done_window_start`
+- [X] T012 [P] Tạo `backend/app/services/attachments_store.py` (hàm của T006):
   - gốc thư mục lấy từ `config.ATTACHMENTS_DIR`;
   - `store_stream` đọc từng 1 MiB, cập nhật `hashlib.sha256`, `fsync` file rồi `fsync` thư mục, `os.replace`;
   - `open_blob(sha)`, `delete_blob(sha)`, `sweep(known_shas, now)`, `detect_mime`, `is_executable`, `unique_display_name`;
   - `ENOSPC` ném `DiskFull`;
   - không log nội dung file.
-- [ ] T013 Sửa `backend/app/services/tasks.py`:
+- [X] T013 Sửa `backend/app/services/tasks.py`:
   - `create_task` (và mọi đường tạo: thêm nhanh, deadline tự tạo trong `backend/app/services/auto_deadlines.py`, lần kế
     tiếp của task lặp trong `backend/app/services/task_series.py`) đặt `board_rank = min(cột Chưa làm) − 1`.
   - `complete_task` đặt `in_progress = False`.
   - `update_task` nhận `subject_id` (kiểm tra môn tồn tại) và `status` ∈ `todo`/`doing` (không nhận `done`).
   - `serialize_task` trong `backend/app/schemas/tasks.py` thêm `status`, `board_rank`, `subject_id`,
     `effective_subject_id`, `attachment_count`. Mục đính kèm tạm trả 0 cho tới US4.
-- [ ] T014 Gọi `attachments_store.sweep` khi backend khởi động (`backend/app/__init__.py`, cạnh dọn cờ bảo trì) và mỗi ngày một lần theo kiểu `purge_expired_trash_throttled`. Chưa có bảng blob thì bỏ qua
+- [X] T014 Gọi `attachments_store.sweep` khi backend khởi động (`backend/app/__init__.py`, cạnh dọn cờ bảo trì) và mỗi ngày một lần theo kiểu `purge_expired_trash_throttled`. Chưa có bảng blob thì bỏ qua
 
 **Checkpoint**: `./scripts/test.sh` xanh (kể cả test cũ của task, lặp, deadline tự tạo, Hôm nay); migration chạy trên DB thật sau khi `./scripts/backup.sh`. Commit.
 

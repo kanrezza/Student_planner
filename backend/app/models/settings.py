@@ -42,6 +42,10 @@ class Settings(_SingleRow, db.Model):
             name="ck_settings_exam_extra_offsets",
         ),
         CheckConstraint("exam_reminder_minutes >= 0", name="ck_settings_exam_reminder_minutes"),
+        CheckConstraint("attachment_max_mb BETWEEN 1 AND 500", name="ck_settings_attachment_max"),
+        CheckConstraint(
+            "backup_attachments_warn_mb BETWEEN 100 AND 1000000", name="ck_settings_attachment_warn"
+        ),
     )
 
     session_reminder_minutes: Mapped[int] = mapped_column(
@@ -81,6 +85,13 @@ class Settings(_SingleRow, db.Model):
     )
     exam_reminder_minutes: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("60")
+    )
+    # File đính kèm (feature 005): giới hạn mỗi file và ngưỡng cảnh báo dung lượng sao lưu.
+    attachment_max_mb: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, server_default=text("50")
+    )
+    backup_attachments_warn_mb: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("1024")
     )
     # Thông báo tổng hợp hằng ngày (FR-065, FR-066).
     daily_digest_enabled: Mapped[bool] = mapped_column(
