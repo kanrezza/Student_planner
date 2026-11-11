@@ -282,7 +282,7 @@ chối.
 - **FR-012**: Thẻ PHẢI hiện tiêu đề, hạn chót (định dạng Việt Nam, tô màu khi quá hạn hoặc hôm nay), nhãn màu, dấu
   Quan trọng, biểu tượng lặp nếu là task lặp, và số file đính kèm khi > 0; bấm thẻ mở bảng chi tiết task hiện có.
 - **FR-013**: Bảng PHẢI dùng được hoàn toàn bằng bàn phím: mũi tên để di chuyển vùng chọn; ⌘← / ⌘→ chuyển thẻ sang cột
-  kề; ⌘↑ / ⌘↓ đổi thứ tự; Enter mở chi tiết; Space đánh dấu Xong/bỏ Xong. Các phím này PHẢI có trong bảng phím tắt
+  kề; ⌘↑ / ⌘↓ đổi thứ tự; Enter mở chi tiết; phím X đánh dấu Xong/bỏ Xong (Space dành cho nhấc/thả thẻ khi kéo bằng bàn phím). Các phím này PHẢI có trong bảng phím tắt
   của app và có thông báo cho trình đọc màn hình.
 - **FR-014**: Sau khi chuyển một thẻ sang Xong PHẢI có thông báo kèm nút "Hoàn tác" trong vài giây.
 - **FR-015**: Bảng không hiện task trong Thùng rác; tạo task nhanh ngay trên đầu cột Chưa làm (và Đang làm) bằng ô
