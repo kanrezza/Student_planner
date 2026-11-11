@@ -8,7 +8,7 @@ describe('bảng phím tắt', () => {
       '← → ↑ ↓',
       '⌘← ⌘→',
       '⌘↑ ⌘↓',
-      '↩',
+      '↩ trong bảng',
       'X',
       'Space',
     ]);

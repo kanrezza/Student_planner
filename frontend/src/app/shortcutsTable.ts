@@ -49,7 +49,7 @@ export function shortcutGroups(): ShortcutGroup[] {
         { keys: '← → ↑ ↓', label: t('shortcuts.boardSelect') },
         { keys: '⌘← ⌘→', label: t('shortcuts.boardColumn') },
         { keys: '⌘↑ ⌘↓', label: t('shortcuts.boardOrder') },
-        { keys: '↩', label: t('shortcuts.boardOpen') },
+        { keys: '↩ trong bảng', label: t('shortcuts.boardOpen') },
         { keys: 'X', label: t('shortcuts.boardDone') },
         { keys: 'Space', label: t('shortcuts.boardLift') },
       ],
