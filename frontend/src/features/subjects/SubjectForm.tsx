@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react';
-import { DateInput } from '../../components/DateInput';
 import { useSettings } from '../../api/settings';
 import { minutesLabel, ReminderSelect } from '../../components/ReminderSelect';
 import { ApiError } from '../../api/client';
@@ -10,12 +9,11 @@ import { formatDate } from '../../lib/dates';
 import { blankToNull } from '../../lib/format';
 import { ColorPicker } from '../../components/ColorPicker';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { FormField, FormRow, fieldError } from '../../components/FormField';
+import { FormField, FormRow } from '../../components/FormField';
 import { ImportantToggle } from '../../components/ImportantToggle';
-import { ShiftPicker, timeChoiceToInput, type TimeChoice } from './ShiftPicker';
+import { blankRow, rowToInput, ScheduleRows, type ScheduleRow } from './ScheduleRows';
 import { TagPicker } from '../../components/TagPicker';
 import { FormActions } from '../../components/FormActions';
-import { WeekdayPicker } from './WeekdayPicker';
 
 type ExceptionConflict = { id: number; date: string };
 
@@ -40,17 +38,24 @@ export function SubjectForm({
     name: subject?.name ?? '',
     class_code: subject?.class_code ?? '',
     lecturer: subject?.lecturer ?? '',
-    room: subject?.room ?? '',
-    start_date: subject?.start_date ?? semester?.start_date ?? '',
-    end_date: subject?.end_date ?? semester?.end_date ?? '',
+    course_code: subject?.course_code ?? '',
+    credits: subject?.credits == null ? '' : String(subject.credits),
   });
-  const [weekdays, setWeekdays] = useState<number[]>(subject?.weekdays ?? []);
+  const [rows, setRows] = useState<ScheduleRow[]>(() =>
+    subject
+      ? subject.schedules.map((rule) => ({
+          id: rule.id,
+          weekdays: rule.weekdays,
+          start_date: rule.start_date,
+          end_date: rule.end_date,
+          time: { shift: rule.shift, start_time: rule.start_time, end_time: rule.end_time },
+          period_from: rule.period_from,
+          period_to: rule.period_to,
+          room: rule.room ?? '',
+        }))
+      : [blankRow(semester?.start_date ?? '', semester?.end_date ?? '')],
+  );
   const [color, setColor] = useState<string | null>(subject?.color ?? null);
-  const [timeChoice, setTimeChoice] = useState<TimeChoice>({
-    shift: subject?.shift ?? null,
-    start_time: subject?.start_time ?? '',
-    end_time: subject?.end_time ?? '',
-  });
   const [tagIds, setTagIds] = useState<number[]>(subject?.tags.map((tag) => tag.id) ?? []);
   const [reminder, setReminder] = useState<number | null>(subject?.reminder_minutes ?? null);
   const [important, setImportant] = useState(subject?.is_important ?? false);
@@ -64,8 +69,10 @@ export function SubjectForm({
   function changeSemester(id: number) {
     const next = semesters.find((s) => s.id === id);
     setSemesterId(id);
-    if (next)
-      setForm((prev) => ({ ...prev, start_date: next.start_date, end_date: next.end_date }));
+    if (next && !subject)
+      setRows((prev) =>
+        prev.map((row) => ({ ...row, start_date: next.start_date, end_date: next.end_date })),
+      );
   }
 
   function send(confirm = false) {
@@ -73,14 +80,12 @@ export function SubjectForm({
       name: form.name.trim(),
       class_code: blankToNull(form.class_code),
       lecturer: blankToNull(form.lecturer),
-      room: blankToNull(form.room),
-      weekdays,
-      ...timeChoiceToInput(timeChoice),
+      course_code: blankToNull(form.course_code),
+      credits: form.credits.trim() === '' ? null : Number(form.credits),
+      schedules: rows.map(rowToInput),
       tag_ids: tagIds,
       reminder_minutes: reminder,
       is_important: important,
-      start_date: form.start_date || null,
-      end_date: form.end_date || null,
       ...(color ? { color } : {}),
       ...(subject ? {} : { semester_id: semesterId }),
     };
@@ -120,34 +125,26 @@ export function SubjectForm({
           </select>
         </FormField>
       )}
-      <FormField label={t('subjects.fieldWeekdays')} name="weekdays" error={error}>
-        <WeekdayPicker value={weekdays} onChange={setWeekdays} />
-      </FormField>
-      <FormField label={t('shifts.pick')} name="shift" error={error}>
-        <ShiftPicker value={timeChoice} onChange={setTimeChoice} />
-        {(['start_time', 'end_time'] as const).map((field) => {
-          const message = fieldError(error, field);
-          return message ? (
-            <span key={field} className="text-[12px] text-danger" role="alert">
-              {message}
-            </span>
-          ) : null;
-        })}
-      </FormField>
+      <ScheduleRows
+        rows={rows}
+        onChange={setRows}
+        errors={error instanceof ApiError ? error.fields : {}}
+      />
       <FormRow>
-        <FormField label={t('subjects.fieldStartDate')} name="start_date" error={error}>
-          <DateInput value={form.start_date} onChange={set('start_date')} />
-        </FormField>
-        <FormField label={t('subjects.fieldEndDate')} name="end_date" error={error}>
-          <DateInput value={form.end_date} onChange={set('end_date')} />
-        </FormField>
-      </FormRow>
-      <FormRow>
-        <FormField label={t('subjects.fieldRoom')} name="room" error={error}>
-          <input value={form.room} onChange={(e) => set('room')(e.target.value)} />
+        <FormField label={t('subjects.fieldCourseCode')} name="course_code" error={error}>
+          <input value={form.course_code} onChange={(e) => set('course_code')(e.target.value)} />
         </FormField>
         <FormField label={t('subjects.fieldClassCode')} name="class_code" error={error}>
           <input value={form.class_code} onChange={(e) => set('class_code')(e.target.value)} />
+        </FormField>
+        <FormField label={t('subjects.fieldCredits')} name="credits" error={error}>
+          <input
+            type="number"
+            min={0}
+            max={30}
+            value={form.credits}
+            onChange={(e) => set('credits')(e.target.value)}
+          />
         </FormField>
       </FormRow>
       <FormField label={t('subjects.fieldLecturer')} name="lecturer" error={error}>

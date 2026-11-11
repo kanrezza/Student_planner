@@ -117,11 +117,44 @@ export type Semester = {
   is_current: boolean;
 };
 
+/** Một quy tắc lặp hằng tuần của môn (feature 004). */
+export type Schedule = {
+  id: number;
+  position: number;
+  weekdays: number[];
+  start_date: string;
+  end_date: string;
+  shift: { start_shift_id: number; end_shift_id: number } | null;
+  shift_label: string | null;
+  start_time: string;
+  end_time: string;
+  period_from: number | null;
+  period_to: number | null;
+  room: string | null;
+};
+
+/** Quy tắc gửi API: `id` có khi sửa quy tắc đã lưu; ngày null = theo học kỳ. */
+export type ScheduleInput = {
+  id?: number;
+  weekdays: number[];
+  start_date: string | null;
+  end_date: string | null;
+  shift: ShiftRef | null;
+  start_time: string | null;
+  end_time: string | null;
+  period_from?: number | null;
+  period_to?: number | null;
+  room: string | null;
+};
+
 export type Subject = {
   id: number;
   semester_id: number;
   name: string;
   class_code: string | null;
+  course_code: string | null;
+  credits: number | null;
+  schedules: Schedule[];
   lecturer: string | null;
   room: string | null;
   color: string;
@@ -149,15 +182,13 @@ export type Shift = {
 };
 
 export type SubjectInput = {
-  shift?: ShiftRef | null;
   tag_ids?: number[];
   name: string;
   class_code: string | null;
+  course_code?: string | null;
+  credits?: number | null;
   lecturer: string | null;
-  room: string | null;
-  weekdays: number[];
-  start_time: string | null;
-  end_time: string | null;
+  schedules: ScheduleInput[];
   color?: string | null;
   reminder_minutes?: number | null;
   is_important?: boolean;
