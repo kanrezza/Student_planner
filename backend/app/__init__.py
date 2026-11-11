@@ -78,6 +78,7 @@ def register_blueprints(app: Flask) -> None:
         health,
         imports,
         lists,
+        periods,
         search,
         semesters,
         sessions,
@@ -92,5 +93,16 @@ def register_blueprints(app: Flask) -> None:
     )
 
     modules = (health, settings, tasks, lists, semesters, subjects, today, sessions, calendar)
-    for module in (*modules, exams, imports, timetable_import, shifts, tags, sync, backup, search):
+    for module in (
+        *modules,
+        exams,
+        imports,
+        timetable_import,
+        periods,
+        shifts,
+        tags,
+        sync,
+        backup,
+        search,
+    ):
         app.register_blueprint(module.bp, url_prefix="/api")

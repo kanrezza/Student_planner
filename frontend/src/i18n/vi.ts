@@ -322,6 +322,8 @@ export const vi = {
     colTime: 'Ca / Giờ',
     colSessions: 'Số buổi',
     ruleError: 'Lịch {n}: {message}',
+    missingPeriods: 'Chưa có giờ cho tiết {periods}',
+    savePeriods: 'Lưu giờ này vào bảng tiết',
     status: { new: 'Mới', unchanged: 'Đã có', changed: 'Thay đổi' },
   },
   weekdaysShort: {
@@ -408,6 +410,17 @@ export const vi = {
     confirmDelete:
       'Xoá ca “{name}”? {count} môn học đang dùng ca này sẽ chuyển sang giờ tuỳ chỉnh.',
     deleteConfirm: 'Xoá ca “{name}”?',
+  },
+  periods: {
+    title: 'Bảng tiết',
+    note: 'Dùng để đổi tiết trong file PDF sang giờ.',
+    number: 'Tiết',
+    shift: 'Thuộc ca',
+    manual: 'đã chỉnh',
+    reset: 'Về mặc định',
+    add: '+ Thêm tiết',
+    new: 'tiết mới',
+    newNumber: 'Số tiết mới (13–30)',
   },
   reminders: {
     title: 'Nhắc lịch',

@@ -20,6 +20,11 @@ export function initialState(preview: TimetablePdfPreview): TimetableState {
     semesterName: preview.semester.suggested_name,
     subjects: preview.subjects.map((s) => ({
       ...s,
+      schedules: s.schedules.map((r) => ({
+        ...r,
+        needsPeriods: r.shift === null && r.start_time === null && r.period_from !== null,
+        savePeriods: r.shift === null && r.start_time === null && r.period_from !== null,
+      })),
       eLearning: s.suggested_tags.includes('e_learning'),
     })),
   };
@@ -207,7 +212,7 @@ export function buildCommitPayload(
           period_from: r.period_from,
           period_to: r.period_to,
           room: r.room,
-          save_periods: false,
+          save_periods: !!r.needsPeriods && !!r.savePeriods && !r.shift,
         })),
       })),
   };

@@ -54,6 +54,16 @@ def _apply_semester(choice) -> Semester:
     return semester
 
 
+def _save_periods(rules) -> None:
+    """Quy tắc có giờ nhập tay cho khoảng tiết chưa có giờ → ghi vào bảng tiết (FR-015)."""
+    for rule in rules:
+        if rule.save_periods and rule.period_from and rule.period_to and not rule.shift:
+            if rule.start_time and rule.end_time:
+                periods_service.save_manual_periods(
+                    rule.period_from, rule.period_to, rule.start_time, rule.end_time
+                )
+
+
 def commit(payload: TimetableCommitIn) -> dict:
     """Lưu phần đã chọn. Lỗi ở bất kỳ môn/quy tắc nào → không lưu gì (FR-025)."""
     try:
@@ -65,6 +75,7 @@ def commit(payload: TimetableCommitIn) -> dict:
             item["schedules"] = [
                 {k: v for k, v in rule.items() if k != "save_periods"} for rule in item["schedules"]
             ]
+            _save_periods(subject.schedules)
             items.append(item)
         created, warnings = subject_service.create_many(items, row_name="subjects")
         created_sessions = db.session.scalar(

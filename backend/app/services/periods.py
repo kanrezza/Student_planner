@@ -36,24 +36,30 @@ def _minutes_between(start: time, end: time) -> int:
     )
 
 
+def split_range(start: time, end: time, count: int) -> list[TimeRange]:
+    """Chia [start, end] thành `count` tiết bằng nhau, nghỉ 5 phút giữa hai tiết liền nhau; tiết
+    cuối kết thúc đúng `end`. Không đủ chỗ (mỗi tiết < 10 phút) → danh sách rỗng."""
+    total = _minutes_between(start, end)
+    each = (total - (count - 1) * BREAK_MINUTES) // count
+    if each < MIN_PERIOD_MINUTES:
+        return []
+    result: list[TimeRange] = []
+    cursor = datetime.combine(date.min, start)
+    for index in range(count):
+        last = index == count - 1
+        finish = datetime.combine(date.min, end) if last else cursor + timedelta(minutes=each)
+        result.append((cursor.time(), finish.time()))
+        cursor = finish + timedelta(minutes=BREAK_MINUTES)
+    return result
+
+
 def default_period_times(start: time, end: time) -> list[TimeRange]:
     """3 tiết của một ca: mỗi tiết như nhau, nghỉ 5 phút giữa các tiết; tiết cuối kết thúc đúng giờ
     ca.
 
     Ca 160 phút (mặc định) → tiết 50 phút. Ca quá ngắn (không đủ chia) → danh sách rỗng.
     """
-    total = _minutes_between(start, end)
-    each = (total - (PERIODS_PER_SHIFT - 1) * BREAK_MINUTES) // PERIODS_PER_SHIFT
-    if each < MIN_PERIOD_MINUTES:
-        return []
-    result: list[TimeRange] = []
-    cursor = datetime.combine(date.min, start)
-    for index in range(PERIODS_PER_SHIFT):
-        last = index == PERIODS_PER_SHIFT - 1
-        finish = datetime.combine(date.min, end) if last else cursor + timedelta(minutes=each)
-        result.append((cursor.time(), finish.time()))
-        cursor = finish + timedelta(minutes=BREAK_MINUTES)
-    return result
+    return split_range(start, end, PERIODS_PER_SHIFT)
 
 
 def shift_period_numbers(shift_index: int) -> range:
@@ -159,7 +165,7 @@ def _invalid(field: str, message: str) -> ApiError:
 
 def _check_number(number: int) -> None:
     if not MIN_PERIOD <= number <= MAX_PERIOD:
-        raise not_found(f"Tiết phải từ {MIN_PERIOD} đến {MAX_PERIOD}")
+        raise _invalid("number", f"Tiết phải từ {MIN_PERIOD} đến {MAX_PERIOD}")
 
 
 def put_period(number: int, start: time, end: time) -> tuple[Period, list[dict]]:
@@ -228,3 +234,18 @@ def delete_period(number: int) -> None:
         raise not_found("Không tìm thấy tiết")
     db.session.delete(period)
     db.session.commit()
+
+
+def save_manual_periods(first: int, last: int, start: time, end: time) -> None:
+    """Ghi các tiết [first, last] CHƯA có giờ theo giờ người dùng nhập cho cả khoảng (FR-015).
+
+    Chia đều khoảng giờ cho các tiết (luật FR-012), đặt `is_manual = true`. Không commit: chạy
+    trong transaction của lần lưu nhập PDF.
+    """
+    times = split_range(start, end, last - first + 1)
+    if not times:
+        raise _invalid("start_time", f"Giờ quá ngắn để chia cho {describe_periods(first, last)}")
+    for number, (a, b) in zip(range(first, last + 1), times, strict=True):
+        if db.session.get(Period, number) is None:
+            db.session.add(Period(number=number, start_time=a, end_time=b, is_manual=True))
+    db.session.flush()

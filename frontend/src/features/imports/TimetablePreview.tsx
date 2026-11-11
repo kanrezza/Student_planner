@@ -251,6 +251,16 @@ export function TimetablePreview({
                             : `${rule.period_from}–${rule.period_to}`}
                       </td>
                       <td title={time.title} className={cx('rounded', time.cls)}>
+                        {rule.needsPeriods && (
+                          <div className="text-[11px] text-warning">
+                            {t('timetable.missingPeriods', {
+                              periods:
+                                rule.period_from === rule.period_to
+                                  ? String(rule.period_from)
+                                  : `${rule.period_from}–${rule.period_to}`,
+                            })}
+                          </div>
+                        )}
                         <ShiftPicker
                           compact
                           label={t('timetable.colTime')}
@@ -267,6 +277,16 @@ export function TimetablePreview({
                             })
                           }
                         />
+                        {rule.needsPeriods && (
+                          <label className="mt-1 flex items-center gap-1 text-[11px]">
+                            <input
+                              type="checkbox"
+                              checked={!!rule.savePeriods}
+                              onChange={(e) => patch({ savePeriods: e.target.checked })}
+                            />
+                            {t('timetable.savePeriods')}
+                          </label>
+                        )}
                       </td>
                       <td title={room.title}>
                         <input

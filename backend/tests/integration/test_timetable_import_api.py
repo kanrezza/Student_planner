@@ -175,3 +175,28 @@ def test_hai_mon_trung_gio_co_canh_bao(client):
     response = client.post(COMMIT, json=body)
     assert response.status_code == 200
     assert response.get_json()["warnings"]
+
+
+def test_save_periods_tao_tiet_13_15(client, db_session):
+    """Tiết 13–15 chưa có giờ: preview báo lỗi; commit kèm giờ tay + save_periods ghi vào bảng tiết."""
+    prev = preview(client)
+    body = payload(prev, only=[0])
+    rule = body["subjects"][0]["schedules"][0]
+    rule.update(
+        shift=None, start_time="18:30", end_time="21:00", period_from=13, period_to=15, room="B1"
+    )
+    rule["save_periods"] = True
+    body["subjects"][0]["schedules"] = [rule]
+    response = client.post(COMMIT, json=body)
+    assert response.status_code == 200, response.get_json()
+    periods = {p["number"]: p for p in client.get("/api/periods").get_json()}
+    assert [periods[n]["start_time"] for n in (13, 14, 15)] == ["18:30", "19:21", "20:12"]
+    assert periods[15]["end_time"] == "21:00"
+    assert all(periods[n]["is_manual"] for n in (13, 14, 15))
+    # Không có save_periods thì không ghi tiết.
+    body2 = payload(prev, only=[1])
+    body2["semester"] = {"choice": "use", "semester_id": response.get_json()["semester_id"]}
+    rule2 = body2["subjects"][0]["schedules"][0]
+    rule2.update(shift=None, start_time="22:00", end_time="23:00", period_from=20, period_to=21)
+    assert client.post(COMMIT, json=body2).status_code == 200
+    assert 20 not in {p["number"] for p in client.get("/api/periods").get_json()}

@@ -98,6 +98,49 @@ function renderPreview() {
   );
 }
 
+describe('Tiết chưa có giờ (US2)', () => {
+  const missing = () => {
+    const preview = structuredClone(SAMPLE_PREVIEW);
+    Object.assign(preview.subjects[1].schedules[0], {
+      period_from: 13,
+      period_to: 15,
+      shift: null,
+      start_time: null,
+      end_time: null,
+    });
+    return preview;
+  };
+
+  it('chặn Lưu tới khi nhập giờ, rồi gửi save_periods', () => {
+    let state = initialState(missing());
+    expect(canSaveTimetable(state)).toBe(false);
+    expect(state.subjects[1].schedules[0].problems).toEqual([]); // vấn đề tính khi sửa
+    state = patchSchedule(state, 1, 0, { start_time: '18:30', end_time: '21:00' });
+    expect(canSaveTimetable(state)).toBe(true);
+    const rule = buildCommitPayload(state, null).subjects[1].schedules[0];
+    expect(rule).toMatchObject({
+      start_time: '18:30',
+      end_time: '21:00',
+      period_from: 13,
+      save_periods: true,
+    });
+    state = patchSchedule(state, 1, 0, { savePeriods: false });
+    expect(buildCommitPayload(state, null).subjects[1].schedules[0].save_periods).toBe(false);
+  });
+
+  it('ô thiếu giờ hiện "Chưa có giờ cho tiết 13–15" và ô chọn lưu vào bảng tiết', () => {
+    mockApi({ 'GET /semesters': [], 'GET /shifts': [] });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <TimetablePreview state={initialState(missing())} onChange={() => undefined} />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText('Chưa có giờ cho tiết 13–15')).toBeTruthy();
+    expect(screen.getByLabelText('Lưu giờ này vào bảng tiết')).toBeTruthy();
+  });
+});
+
 describe('TimetablePreview', () => {
   it('hiện học kỳ đề xuất và mọi môn', () => {
     renderPreview();

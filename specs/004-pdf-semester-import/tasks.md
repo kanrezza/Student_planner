@@ -113,16 +113,16 @@ số buổi đúng, không buổi nào trong 25/01–14/02/2027; không có giá
 
 ### Tests for User Story 2
 
-- [ ] T039 [P] [US2] Test API trong `backend/tests/integration/test_periods_api.py`: GET thứ tự theo `number` kèm `shift_id`; PUT tạo/sửa đặt `is_manual = true`, 400 khi `end_time ≤ start_time` hoặc `number` ngoài 1–30, cảnh báo khi chồng tiết kề; POST reset (tiết thuộc ca về giờ suy từ ca; 16–18 về mặc định; tiết khác bị xoá); DELETE chỉ cho tiết không thuộc ca; PATCH `/shifts/{id}` tính lại tiết chưa sửa tay
-- [ ] T040 [P] [US2] Test commit có `save_periods` trong `backend/tests/integration/test_timetable_import_api.py`: quy tắc tiết 13–15 thiếu giờ → preview có lỗi; commit kèm giờ nhập tay và `schedules[j].save_periods: true` → tạo tiết 13–15 trong `periods` (chia theo luật FR-012) và quy tắc dùng giờ đó
+- [X] T039 [P] [US2] Test API trong `backend/tests/integration/test_periods_api.py`: GET thứ tự theo `number` kèm `shift_id`; PUT tạo/sửa đặt `is_manual = true`, 400 khi `end_time ≤ start_time` hoặc `number` ngoài 1–30, cảnh báo khi chồng tiết kề; POST reset (tiết thuộc ca về giờ suy từ ca; 16–18 về mặc định; tiết khác bị xoá); DELETE chỉ cho tiết không thuộc ca; PATCH `/shifts/{id}` tính lại tiết chưa sửa tay
+- [X] T040 [P] [US2] Test commit có `save_periods` trong `backend/tests/integration/test_timetable_import_api.py`: quy tắc tiết 13–15 thiếu giờ → preview có lỗi; commit kèm giờ nhập tay và `schedules[j].save_periods: true` → tạo tiết 13–15 trong `periods` (chia theo luật FR-012) và quy tắc dùng giờ đó
 
 ### Implementation for User Story 2
 
-- [ ] T041 [US2] API `backend/app/api/periods.py` (`GET /periods`, `PUT /periods/{number}`, `POST /periods/{number}/reset`, `DELETE /periods/{number}`) + schema `backend/app/schemas/periods.py`; đăng ký blueprint; dùng `backend/app/services/periods.py`
-- [ ] T042 [US2] Commit nhập PDF nhận cờ `schedules[j].save_periods` (contract REST) cho quy tắc có giờ nhập tay ứng với khoảng tiết chưa có giờ: ghi tiết vào `periods` (`is_manual = true`) trong cùng transaction, trong `backend/app/services/timetable_import.py` và `backend/app/schemas/timetable_import.py`
-- [ ] T043 [P] [US2] Frontend `frontend/src/api/periods.ts` và `frontend/src/features/settings/PeriodsTable.tsx` (Tiết · Bắt đầu · Kết thúc · Thuộc ca; dấu "đã chỉnh" + "Về mặc định"; "Thêm tiết" cho 13–30; ghi chú "Dùng để đổi tiết trong file PDF sang giờ."), gắn dưới bảng ca trong `frontend/src/features/settings/ShiftsSettings.tsx`; chuỗi trong `frontend/src/i18n/vi.ts`
-- [ ] T044 [US2] Trong `frontend/src/features/imports/TimetablePreview.tsx`: quy tắc thiếu giờ hiện ô vàng "Chưa có giờ cho tiết 13–15", ô nhập giờ và ô chọn "Lưu giờ này vào bảng tiết"; gửi `save_periods`
-- [ ] T045 [P] [US2] Test Vitest `frontend/tests/periodsTable.test.tsx` (hiện bảng, sửa giờ gọi PUT, về mặc định gọi reset, lỗi giờ kết thúc trước giờ bắt đầu) và bổ sung `frontend/tests/timetablePreview.test.tsx` cho ô thiếu giờ
+- [X] T041 [US2] API `backend/app/api/periods.py` (`GET /periods`, `PUT /periods/{number}`, `POST /periods/{number}/reset`, `DELETE /periods/{number}`) + schema `backend/app/schemas/periods.py`; đăng ký blueprint; dùng `backend/app/services/periods.py`
+- [X] T042 [US2] Commit nhập PDF nhận cờ `schedules[j].save_periods` (contract REST) cho quy tắc có giờ nhập tay ứng với khoảng tiết chưa có giờ: ghi tiết vào `periods` (`is_manual = true`) trong cùng transaction, trong `backend/app/services/timetable_import.py` và `backend/app/schemas/timetable_import.py`
+- [X] T043 [P] [US2] Frontend `frontend/src/api/periods.ts` và `frontend/src/features/settings/PeriodsTable.tsx` (Tiết · Bắt đầu · Kết thúc · Thuộc ca; dấu "đã chỉnh" + "Về mặc định"; "Thêm tiết" cho 13–30; ghi chú "Dùng để đổi tiết trong file PDF sang giờ."), gắn dưới bảng ca trong `frontend/src/features/settings/ShiftsSettings.tsx`; chuỗi trong `frontend/src/i18n/vi.ts`
+- [X] T044 [US2] Trong `frontend/src/features/imports/TimetablePreview.tsx`: quy tắc thiếu giờ hiện ô vàng "Chưa có giờ cho tiết 13–15", ô nhập giờ và ô chọn "Lưu giờ này vào bảng tiết"; gửi `save_periods`
+- [X] T045 [P] [US2] Test Vitest `frontend/tests/periodsTable.test.tsx` (hiện bảng, sửa giờ gọi PUT, về mặc định gọi reset, lỗi giờ kết thúc trước giờ bắt đầu) và bổ sung `frontend/tests/timetablePreview.test.tsx` cho ô thiếu giờ
 
 **Checkpoint**: Quickstart A5, A6 và kiểm tra tay bước 5. Commit.
 

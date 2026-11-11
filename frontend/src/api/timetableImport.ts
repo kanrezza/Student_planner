@@ -18,6 +18,10 @@ export type PreviewSchedule = {
   session_count: number;
   problems: PreviewProblem[];
   selected: boolean;
+  /** Chỉ có ở phía giao diện: tiết chưa có giờ trong bảng tiết, người dùng nhập giờ tay. */
+  needsPeriods?: boolean;
+  /** Chỉ có ở phía giao diện: lưu giờ vừa nhập vào bảng tiết (FR-015). */
+  savePeriods?: boolean;
 };
 
 export type PreviewSubject = {
