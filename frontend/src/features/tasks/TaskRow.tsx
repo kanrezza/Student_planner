@@ -6,6 +6,7 @@ import { toIsoDate } from '../../lib/dates';
 import { Checkbox } from '../../ui/Checkbox';
 import { cx } from '../../ui/cx';
 import { IconClock, IconRepeat, IconStarFilled } from '../../ui/icons';
+import { AttachmentBadge } from '../attachments/AttachmentBadge';
 import { Highlighted } from '../search/Highlighted';
 import { isOverdue } from './groupTasks';
 import { describeRule } from './recurrence/describeRule';
@@ -86,6 +87,7 @@ export const TaskRow = forwardRef<
           <IconRepeat size={14} />
         </span>
       )}
+      <AttachmentBadge count={task.attachment_count} />
       {task.tags.length > 0 && (
         <span
           aria-label={`${t('tags.title')}: ${task.tags.map((tag) => tag.name).join(', ')}`}

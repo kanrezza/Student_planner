@@ -16,6 +16,7 @@ import { IconExam, IconPlus, IconStarFilled } from '../../ui/icons';
 import { ItemList, ItemRow, Screen, SubHeading } from '../../ui/layout';
 import { Switch } from '../../ui/Switch';
 import { useToast } from '../../ui/Toast';
+import { AttachmentBadge } from '../attachments/AttachmentBadge';
 import { usePasteToImport } from '../imports/usePasteFile';
 import { ExamForm } from './ExamForm';
 
@@ -139,6 +140,7 @@ function ExamRow({
           {exam.course_name}
           {exam.attempt > 1 && <Badge>{t('exams.attempt', { n: exam.attempt })}</Badge>}
           {exam.is_past && <Badge>{t('exams.past')}</Badge>}
+          <AttachmentBadge count={exam.attachment_count} />
           {exam.conflicts.length > 0 && (
             <Badge tone="warning">
               <span title={exam.conflicts.map((c) => c.title).join(', ')}>

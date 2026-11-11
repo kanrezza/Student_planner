@@ -273,7 +273,7 @@ gắn 2 nơi chỉ tính dung lượng một lần.
 
 ### Tests for User Story 4
 
-- [ ] T028 [P] [US4] Test API trong `backend/tests/integration/test_attachments_api.py` (đặt `ATTACHMENTS_DIR` sang `tmp_path` bằng fixture):
+- [X] T028 [P] [US4] Test API trong `backend/tests/integration/test_attachments_api.py` (đặt `ATTACHMENTS_DIR` sang `tmp_path` bằng fixture):
   - `POST /attachments` với từng `owner_type` (`task`, `subject`, `session`, `exam`) và nhiều `file` một lần → 201,
     file trong thư mục tên = sha256.
   - Cùng nội dung gắn 5 nơi → 1 blob, 5 mục, `stats.total_bytes` tăng một lần (SC-006).
@@ -286,7 +286,7 @@ gắn 2 nơi chỉ tính dung lượng một lần.
   - `GET /attachments?owner_type=…`.
   - `PATCH` đổi tên (rỗng, có `/` → 400).
   - `attachment_count` có trong Task / Subject / ClassSession / Exam. Thêm hai test: (1) chạy chồng, `collect_garbage` của một nội dung trong khi upload cùng nội dung vẫn cho kết quả nhất quán (blob còn file, mục trỏ đúng); (2) upload 50 MB < 5 giây (SC-005).
-- [ ] T029 [P] [US4] Test Vitest `frontend/tests/attachmentsSection.test.tsx` và `frontend/tests/attachmentUpload.test.ts`:
+- [X] T029 [P] [US4] Test Vitest `frontend/tests/attachmentsSection.test.tsx` và `frontend/tests/attachmentUpload.test.ts`:
   - mục "File đính kèm · n" hiện danh sách (biểu tượng theo loại, "2,4 MB · 11/11/2026");
   - "Thêm file" chọn nhiều file;
   - thả file lên vùng thả hiện lớp phủ và gọi upload;
@@ -298,14 +298,14 @@ gắn 2 nơi chỉ tính dung lượng một lần.
 
 ### Implementation for User Story 4
 
-- [ ] T030 [US4] Tạo `backend/app/services/attachments.py`:
+- [X] T030 [US4] Tạo `backend/app/services/attachments.py`:
   - `create(owner_type, owner_id, files, max_bytes)`: với mỗi file gọi `attachments_store.store_stream`, upsert
     `AttachmentBlob` (mime, `is_executable` từ 4 KB đầu), tạo `Attachment` với `unique_display_name` (NFC).
   - `list_for(owner)`, `rename`, `count_for(...)` (bỏ mục của task trong Thùng rác), `stats()`.
   - `owner_title(attachment)`. Chèn blob bằng `INSERT … ON CONFLICT DO NOTHING`, khoá dòng blob (`FOR UPDATE`) và đặt lại file nếu đang thiếu, để chạy chồng với `collect_garbage` không để mục trỏ tới blob đã bị xoá.
 
   Mỗi file một transaction để file lỗi không chặn file khác.
-- [ ] T031 [US4] Tạo schema `backend/app/schemas/attachments.py` và API `backend/app/api/attachments.py`:
+- [X] T031 [US4] Tạo schema `backend/app/schemas/attachments.py` và API `backend/app/api/attachments.py`:
   - `GET /attachments`, `GET /attachments/{id}`, `POST /attachments`, `PATCH /attachments/{id}`.
   - `POST` đặt `request.max_content_length` theo `settings.attachment_max_mb` × số file + phần đầu, đọc
     `request.files.getlist("file")` bằng `stream`, không `save()`.
@@ -313,11 +313,11 @@ gắn 2 nơi chỉ tính dung lượng một lần.
   Đăng ký blueprint. Thêm `attachment_count` vào serializer của `backend/app/schemas/subjects.py`
   (`serialize_subject`, serializer buổi học), `backend/app/schemas/tasks.py` và serializer lịch thi trong
   `backend/app/services/exams.py`/`backend/app/api/exams.py` (đếm bằng một truy vấn gộp, không N+1)
-- [ ] T032 [P] [US4] Frontend (giao diện gửi mỗi file một yêu cầu riêng để có tiến trình và lỗi riêng từng file):
+- [X] T032 [P] [US4] Frontend (giao diện gửi mỗi file một yêu cầu riêng để có tiến trình và lỗi riêng từng file):
   - `frontend/src/api/attachments.ts`: kiểu `Attachment`, `useAttachments(owner)`, `useRenameAttachment`.
   - `frontend/src/features/attachments/upload.ts`: XHR, tiến trình, huỷ, kiểm tra giới hạn từ `useSettings`.
   - `frontend/src/features/attachments/attachmentFormat.ts`: biểu tượng theo MIME/phần mở rộng, dùng lại `formatSize`.
-- [ ] T033 [US4] Tạo `frontend/src/features/attachments/AttachmentsSection.tsx`, `AttachmentRow.tsx`, `useAttachmentDrop.ts`:
+- [X] T033 [US4] Tạo `frontend/src/features/attachments/AttachmentsSection.tsx`, `AttachmentRow.tsx`, `useAttachmentDrop.ts`:
   - vùng thả phủ cả bảng chi tiết, lớp phủ "Thả để đính kèm vào …";
   - nút "Thêm file" (`input type=file multiple`);
   - ⌘V dùng `fileFromClipboard` của `frontend/src/features/imports/usePasteFile.ts` mở rộng cho nhiều file, chỉ khi
@@ -325,7 +325,7 @@ gắn 2 nơi chỉ tính dung lượng một lần.
   - dòng tạm khi đang tải;
   - đổi tên tại chỗ;
   - chuỗi trong khối `attachments` của `frontend/src/i18n/vi.ts`.
-- [ ] T034 [US4] Gắn `AttachmentsSection` vào:
+- [X] T034 [US4] Gắn `AttachmentsSection` vào:
   - `frontend/src/features/tasks/TaskDetailPanel.tsx` (dưới Ghi chú);
   - `frontend/src/features/subjects/SubjectForm.tsx` (chỉ khi sửa môn đã lưu);
   - `frontend/src/components/SessionDetail.tsx`;
@@ -516,7 +516,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
 
 ### Tests for User Story 7
 
-- [ ] T054 [P] [US7] Test trong `backend/tests/integration/test_attachments_settings.py`:
+- [X] T054 [P] [US7] Test trong `backend/tests/integration/test_attachments_settings.py`:
   - `PATCH /settings` với `attachment_max_mb` 0, 501 → 400 theo trường; 10 → upload 20 MB bị từ chối, file đã gắn
     không đổi;
   - `backup_attachments_warn_mb` 99 → 400;
@@ -529,7 +529,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
 
 ### Implementation for User Story 7
 
-- [ ] T056 [US7] Thêm `attachment_max_mb` (1–500) và `backup_attachments_warn_mb` (100–1000000) vào schema/serializer settings trong `backend/app/schemas/settings.py` và `backend/app/api/settings.py`
+- [X] T056 [US7] Thêm `attachment_max_mb` (1–500) và `backup_attachments_warn_mb` (100–1000000) vào schema/serializer settings trong `backend/app/schemas/settings.py` và `backend/app/api/settings.py`
 - [ ] T057 [US7] Tạo `frontend/src/features/settings/AttachmentsSettings.tsx` theo [contracts/ui.md](contracts/ui.md), đăng ký mục `{slug: 'file-dinh-kem'}` trong `frontend/src/features/settings/SettingsScreen.tsx`, kiểu settings trong `frontend/src/api/settings.ts`, chuỗi trong `frontend/src/i18n/vi.ts`
 
 **Checkpoint**: Quickstart kiểm tra tay bước 7. Commit.

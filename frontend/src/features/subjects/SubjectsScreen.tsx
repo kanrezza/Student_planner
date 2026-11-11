@@ -19,6 +19,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { IconBook, IconPlus } from '../../ui/icons';
 import { Card, ItemList, ItemRow, Notice, Screen } from '../../ui/layout';
 import { useToast } from '../../ui/Toast';
+import { AttachmentBadge } from '../attachments/AttachmentBadge';
 import { usePasteToImport } from '../imports/usePasteFile';
 
 /**
@@ -127,6 +128,7 @@ export function SubjectsScreen() {
                   <span className="tabular-nums">{describeSchedules(s)}</span>
                   {s.lecturer && <span>{s.lecturer}</span>}
                   {s.class_code && <span>{s.class_code}</span>}
+                  <AttachmentBadge count={s.attachment_count} />
                   <span>
                     {formatDate(s.start_date)} – {formatDate(s.end_date)} ·{' '}
                     {t('subjects.sessions', { count: s.session_count ?? 0 })}

@@ -227,7 +227,7 @@ def effective_subject_id(task) -> int | None:
 
 
 def attachment_count(task) -> int:
-    return 0  # nối với bảng đính kèm ở phase User Story 4
+    return task.attachment_total
 
 
 def serialize_task(task, now) -> dict:

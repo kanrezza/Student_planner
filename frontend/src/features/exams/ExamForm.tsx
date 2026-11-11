@@ -4,6 +4,7 @@ import type { ApiWarning } from '../../api/client';
 import { useSaveExam } from '../../api/exams';
 import type { Exam } from '../../api/types';
 import { FormActions } from '../../components/FormActions';
+import { AttachmentsSection } from '../attachments/AttachmentsSection';
 import { FormField, FormRow } from '../../components/FormField';
 import { ImportantToggle } from '../../components/ImportantToggle';
 import { minutesLabel } from '../../components/ReminderSelect';
@@ -77,80 +78,85 @@ export function ExamForm({
 
   const error = save.error;
   return (
-    <form onSubmit={submit} noValidate>
-      <FormField label={t('exams.fieldName')} name="course_name" error={error}>
-        <input
-          autoFocus
-          value={form.course_name}
-          onChange={(e) => set('course_name')(e.target.value)}
-        />
-      </FormField>
-      <FormRow>
-        <FormField label={t('exams.fieldCode')} name="course_code" error={error}>
-          <input value={form.course_code} onChange={(e) => set('course_code')(e.target.value)} />
-        </FormField>
-        <FormField label={t('exams.fieldAttempt')} name="attempt" error={error}>
+    <>
+      <form onSubmit={submit} noValidate>
+        <FormField label={t('exams.fieldName')} name="course_name" error={error}>
           <input
-            type="number"
-            min={1}
-            value={form.attempt}
-            onChange={(e) => set('attempt')(e.target.value)}
+            autoFocus
+            value={form.course_name}
+            onChange={(e) => set('course_name')(e.target.value)}
           />
         </FormField>
-      </FormRow>
-      <FormRow>
-        <FormField label={t('exams.fieldDate')} name="date" error={error}>
-          <DateInput value={form.date} onChange={set('date')} />
+        <FormRow>
+          <FormField label={t('exams.fieldCode')} name="course_code" error={error}>
+            <input value={form.course_code} onChange={(e) => set('course_code')(e.target.value)} />
+          </FormField>
+          <FormField label={t('exams.fieldAttempt')} name="attempt" error={error}>
+            <input
+              type="number"
+              min={1}
+              value={form.attempt}
+              onChange={(e) => set('attempt')(e.target.value)}
+            />
+          </FormField>
+        </FormRow>
+        <FormRow>
+          <FormField label={t('exams.fieldDate')} name="date" error={error}>
+            <DateInput value={form.date} onChange={set('date')} />
+          </FormField>
+          <FormField label={t('exams.fieldStart')} name="start_time" error={error}>
+            <input
+              type="time"
+              value={form.start_time}
+              onChange={(e) => set('start_time')(e.target.value)}
+            />
+          </FormField>
+          <FormField label={t('exams.fieldEnd')} name="end_time" error={error}>
+            <input
+              type="time"
+              value={form.end_time}
+              onChange={(e) => set('end_time')(e.target.value)}
+            />
+          </FormField>
+        </FormRow>
+        <FormField label={t('exams.fieldFormat')} name="exam_format" error={error}>
+          <input value={form.exam_format} onChange={(e) => set('exam_format')(e.target.value)} />
         </FormField>
-        <FormField label={t('exams.fieldStart')} name="start_time" error={error}>
-          <input
-            type="time"
-            value={form.start_time}
-            onChange={(e) => set('start_time')(e.target.value)}
-          />
+        <FormRow>
+          <FormField label={t('exams.fieldRoom')} name="room" error={error}>
+            <input value={form.room} onChange={(e) => set('room')(e.target.value)} />
+          </FormField>
+          <FormField label={t('exams.fieldCandidate')} name="candidate_number" error={error}>
+            <input
+              value={form.candidate_number}
+              onChange={(e) => set('candidate_number')(e.target.value)}
+            />
+          </FormField>
+        </FormRow>
+        <div className="mb-3">
+          <ImportantToggle value={important} onChange={setImportant} />
+        </div>
+        <FormField label={t('reminders.field')} name="reminder_offsets" error={error}>
+          <select value={reminder} onChange={(e) => setReminder(e.target.value)}>
+            <option value="default">{t('exams.reminderDefault')}</option>
+            <option value="off">{t('exams.reminderOff')}</option>
+            {REMINDER_CHOICES.map((minutes) => (
+              <option key={minutes} value={minutes}>
+                {reminderLabel(minutes)}
+              </option>
+            ))}
+          </select>
         </FormField>
-        <FormField label={t('exams.fieldEnd')} name="end_time" error={error}>
-          <input
-            type="time"
-            value={form.end_time}
-            onChange={(e) => set('end_time')(e.target.value)}
-          />
-        </FormField>
-      </FormRow>
-      <FormField label={t('exams.fieldFormat')} name="exam_format" error={error}>
-        <input value={form.exam_format} onChange={(e) => set('exam_format')(e.target.value)} />
-      </FormField>
-      <FormRow>
-        <FormField label={t('exams.fieldRoom')} name="room" error={error}>
-          <input value={form.room} onChange={(e) => set('room')(e.target.value)} />
-        </FormField>
-        <FormField label={t('exams.fieldCandidate')} name="candidate_number" error={error}>
-          <input
-            value={form.candidate_number}
-            onChange={(e) => set('candidate_number')(e.target.value)}
-          />
-        </FormField>
-      </FormRow>
-      <div className="mb-3">
-        <ImportantToggle value={important} onChange={setImportant} />
-      </div>
-      <FormField label={t('reminders.field')} name="reminder_offsets" error={error}>
-        <select value={reminder} onChange={(e) => setReminder(e.target.value)}>
-          <option value="default">{t('exams.reminderDefault')}</option>
-          <option value="off">{t('exams.reminderOff')}</option>
-          {REMINDER_CHOICES.map((minutes) => (
-            <option key={minutes} value={minutes}>
-              {reminderLabel(minutes)}
-            </option>
-          ))}
-        </select>
-      </FormField>
-      {!exam && (
-        <FormField label={t('tags.pick')} name="tag_ids" error={error}>
-          <TagPicker value={tagIds} onChange={setTagIds} />
-        </FormField>
+        {!exam && (
+          <FormField label={t('tags.pick')} name="tag_ids" error={error}>
+            <TagPicker value={tagIds} onChange={setTagIds} />
+          </FormField>
+        )}
+        <FormActions saving={save.isPending} onCancel={() => onDone()} />
+      </form>
+      {exam && (
+        <AttachmentsSection owner={{ type: 'exam', id: exam.id }} ownerTitle={exam.course_name} />
       )}
-      <FormActions saving={save.isPending} onCancel={() => onDone()} />
-    </form>
+    </>
   );
 }

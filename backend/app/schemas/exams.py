@@ -63,6 +63,7 @@ def serialize_exam(exam, now, conflicts: list[dict] | None = None) -> dict:
         "id": exam.id,
         "course_code": exam.course_code,
         "course_name": exam.course_name,
+        "attachment_count": exam.attachment_total,
         "attempt": exam.attempt,
         "date": exam.date.isoformat(),
         "start_at": iso(exam.start_at),

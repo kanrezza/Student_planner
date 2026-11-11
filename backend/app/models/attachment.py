@@ -10,9 +10,10 @@ from sqlalchemy import (
     Text,
     false,
     func,
+    select,
     text,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from app.extensions import db
 
@@ -78,3 +79,31 @@ class Attachment(db.Model):
     )
 
     blob = relationship("AttachmentBlob")
+
+
+def _count_for(owner_column, owner_id_column):
+    return (
+        select(func.count(Attachment.id))
+        .where(owner_column == owner_id_column)
+        .correlate_except(Attachment)
+        .scalar_subquery()
+    )
+
+
+def register_attachment_counts() -> None:
+    """Số mục đính kèm của task/môn/buổi học/buổi thi, nạp cùng truy vấn chính (không N+1).
+
+    Gọi sau khi mọi model đã định nghĩa (cuối `app/models/__init__.py`).
+    """
+    from app.models.class_session import ClassSession
+    from app.models.exam import Exam
+    from app.models.subject import Subject
+    from app.models.task import Task
+
+    for model, column in (
+        (Task, Attachment.task_id),
+        (Subject, Attachment.subject_id),
+        (ClassSession, Attachment.session_id),
+        (Exam, Attachment.exam_id),
+    ):
+        model.attachment_total = column_property(_count_for(column, model.id), deferred=False)

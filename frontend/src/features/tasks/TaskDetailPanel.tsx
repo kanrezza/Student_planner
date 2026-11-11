@@ -30,6 +30,7 @@ import { IconAlert, IconClose, IconRepeat, IconTrash } from '../../ui/icons';
 import { SidePanel } from '../../ui/SidePanel';
 import { Switch } from '../../ui/Switch';
 import { useToast } from '../../ui/Toast';
+import { AttachmentsSection } from '../attachments/AttachmentsSection';
 import { RecurrenceEditor } from './recurrence/RecurrenceEditor';
 import { useAskScope } from './recurrence/ScopeDialog';
 import { useTaskActions } from './useTaskActions';
@@ -626,6 +627,7 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
             </Row>
           )}
         </dl>
+        <AttachmentsSection owner={{ type: 'task', id: task.id }} ownerTitle={task.title} />
       </div>
 
       <div className="flex shrink-0 justify-end border-t border-border px-3 py-2">

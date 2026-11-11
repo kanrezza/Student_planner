@@ -20,6 +20,8 @@ class SettingsOut(ApiModel):
     daily_digest_enabled: bool
     daily_digest_time: HHMM
     daily_digest_overdue_only: bool
+    attachment_max_mb: int
+    backup_attachments_warn_mb: int
 
 
 def _offsets(value: list[int] | None, low: int, high: int, label: str) -> list[int] | None:
@@ -55,6 +57,9 @@ class SettingsPatch(ApiModel):
     daily_digest_enabled: bool | None = None
     daily_digest_time: HHMM | None = None
     daily_digest_overdue_only: bool | None = None
+    # File đính kèm (feature 005): giới hạn mỗi file và ngưỡng cảnh báo dung lượng sao lưu.
+    attachment_max_mb: int | None = Field(default=None, ge=1, le=500)
+    backup_attachments_warn_mb: int | None = Field(default=None, ge=100, le=1_000_000)
 
     @field_validator("important_reminder_offsets")
     @classmethod

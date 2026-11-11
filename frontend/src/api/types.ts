@@ -160,6 +160,7 @@ export type ScheduleInput = {
 
 export type Subject = {
   id: number;
+  attachment_count?: number;
   semester_id: number;
   name: string;
   class_code: string | null;
@@ -253,6 +254,7 @@ export type ExamConflict = {
 /** Buổi thi (feature 001 US11). */
 export type Exam = {
   id: number;
+  attachment_count?: number;
   course_code: string | null;
   course_name: string;
   attempt: number;

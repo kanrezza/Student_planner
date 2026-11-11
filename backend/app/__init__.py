@@ -74,6 +74,7 @@ def purge_trash_on_startup(app: Flask) -> None:
 def register_blueprints(app: Flask) -> None:
     """Mọi API nằm dưới /api. Blueprint của từng user story được thêm vào danh sách này."""
     from app.api import (
+        attachments,
         backup,
         board,
         calendar,
@@ -101,6 +102,7 @@ def register_blueprints(app: Flask) -> None:
         *modules,
         exams,
         imports,
+        attachments,
         board,
         timetable_import,
         periods,

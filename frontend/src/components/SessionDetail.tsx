@@ -5,6 +5,7 @@ import type { ClassSession } from '../api/types';
 import { t } from '../i18n/vi';
 import { formatDayAbbr, formatDayLong, formatTime } from '../lib/dates';
 import { blankToNull, sessionTimeRange } from '../lib/format';
+import { AttachmentsSection } from '../features/attachments/AttachmentsSection';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { useToast } from '../ui/Toast';
@@ -149,6 +150,10 @@ export function SessionDetail({
         </FormField>
         <FormActions saving={update.isPending || setTags.isPending} onCancel={onClose} />
       </form>
+      <AttachmentsSection
+        owner={{ type: 'session', id: session.id }}
+        ownerTitle={`${session.subject_name} · ${formatDayLong(session.date)}`}
+      />
     </Modal>
   );
 }

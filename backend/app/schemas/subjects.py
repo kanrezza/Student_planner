@@ -214,6 +214,7 @@ def serialize_subject(subject, session_count: int | None = None) -> dict:
         "reminder_minutes": subject.reminder_minutes,
         "is_important": subject.is_important,
         "tags": serialize_tags(tags),
+        "attachment_count": subject.attachment_total,
     }
     if session_count is not None:
         data["session_count"] = session_count
@@ -259,6 +260,7 @@ def serialize_session(session) -> dict:
         "display_color": display_color([t.color for t in tags], subject.color),
         "shift_label": session_shift_label(session),
         "auto_task_id": _active_auto_task_id(session),
+        "attachment_count": session.attachment_total,
         "is_important": session.is_important,
         "important_override": session.important_override,
         "subject_is_important": subject.is_important,
