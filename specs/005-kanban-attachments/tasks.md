@@ -522,7 +522,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
   - `backup_attachments_warn_mb` 99 → 400;
   - `GET /attachments/stats`: `total_bytes` gộp bản trùng, `blob_count`, `attachment_count`, `largest` 10 mục giảm dần
     kèm `owner`.
-- [ ] T055 [P] [US7] Test Vitest `frontend/tests/attachmentsSettings.test.tsx`:
+- [X] T055 [P] [US7] Test Vitest `frontend/tests/attachmentsSettings.test.tsx`:
   - hiện "Tổng dung lượng: 1,2 GB · 86 file" và bảng 10 file lớn nhất (bấm mở nơi gắn);
   - sửa giới hạn gọi `PATCH /settings`;
   - lỗi ngoài khoảng hiện dưới ô.
@@ -530,7 +530,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
 ### Implementation for User Story 7
 
 - [X] T056 [US7] Thêm `attachment_max_mb` (1–500) và `backup_attachments_warn_mb` (100–1000000) vào schema/serializer settings trong `backend/app/schemas/settings.py` và `backend/app/api/settings.py`
-- [ ] T057 [US7] Tạo `frontend/src/features/settings/AttachmentsSettings.tsx` theo [contracts/ui.md](contracts/ui.md), đăng ký mục `{slug: 'file-dinh-kem'}` trong `frontend/src/features/settings/SettingsScreen.tsx`, kiểu settings trong `frontend/src/api/settings.ts`, chuỗi trong `frontend/src/i18n/vi.ts`
+- [X] T057 [US7] Tạo `frontend/src/features/settings/AttachmentsSettings.tsx` theo [contracts/ui.md](contracts/ui.md), đăng ký mục `{slug: 'file-dinh-kem'}` trong `frontend/src/features/settings/SettingsScreen.tsx`, kiểu settings trong `frontend/src/api/settings.ts`, chuỗi trong `frontend/src/i18n/vi.ts`
 
 **Checkpoint**: Quickstart kiểm tra tay bước 7. Commit.
 
