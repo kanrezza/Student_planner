@@ -29,6 +29,10 @@ services:
       DATABASE_URL: postgresql+psycopg://lichhoc:lichhoc@db:5432/lichhoc
       TEST_DATABASE_URL: postgresql+psycopg://lichhoc:lichhoc@db:5432/lichhoc_test
       TZ: Asia/Ho_Chi_Minh
+      ATTACHMENTS_DIR: /var/lib/lichhoc/attachments
+    volumes:
+      # File đính kèm (feature 005): named volume riêng trên ổ trong của Mac, không bind mount vào thư mục dự án.
+      - lichhoc_attachments:/var/lib/lichhoc/attachments
     depends_on:
       db:
         condition: service_healthy
@@ -55,3 +59,6 @@ volumes:
   lichhoc_pgdata:
     # Tên cố định để dễ tìm và sao lưu (README). `docker compose down -v` sẽ XOÁ volume này.
     name: lichhoc_pgdata
+  lichhoc_attachments:
+    # File đính kèm đặt tên theo SHA-256 nội dung. Cũng bị XOÁ bởi `docker compose down -v`; bản sao lưu (.lhbackup) có cả file.
+    name: lichhoc_attachments

@@ -307,12 +307,13 @@ chối.
   lại; xoá hẳn task (bằng tay hay tự xoá sau 30 ngày) xoá các mục đính kèm của nó theo FR-020.
 - **FR-024**: Xoá môn học PHẢI xoá mục đính kèm của môn và của các buổi học của môn (theo FR-020), hộp xác nhận nêu số
   file; buổi học bị xoá do sửa lịch môn PHẢI chuyển file của buổi sang môn học, kèm thông báo. Xoá buổi thi PHẢI
-  xoá mục đính kèm của buổi thi (theo FR-020), hộp xác nhận nêu số file. Nhập lại lịch thi từ ảnh mà buổi thi đã có
+  xoá mục đính kèm của buổi thi (theo FR-020), hộp xác nhận nêu số file. Xoá học kỳ, hoặc thu hẹp học kỳ làm môn bị xoá,
+  mà có file đính kèm PHẢI hỏi xác nhận nêu số file trước khi xoá. Nhập lại lịch thi từ ảnh mà buổi thi đã có
   (trùng) thì giữ nguyên file của buổi thi đó.
 - **FR-025**: Sao lưu tự động và sao lưu tay PHẢI chứa cả nội dung file đính kèm; khôi phục PHẢI đưa file trở lại; bản
   sao lưu cũ không có file vẫn khôi phục được.
 - **FR-026**: Khi tổng dung lượng file đính kèm vượt ngưỡng (mặc định 1 GB, chỉnh được), Cài đặt → Sao lưu và thông báo
-  sau mỗi lần sao lưu tự động PHẢI cảnh báo nhẹ kèm dung lượng ước tính mỗi bản sao lưu; không chặn sao lưu.
+  sau lần sao lưu tự động (tối đa một lần mỗi ngày) PHẢI cảnh báo nhẹ kèm dung lượng ước tính mỗi bản sao lưu; không chặn sao lưu.
 - **FR-027**: ⌘F PHẢI tìm theo tên file (không phân biệt hoa thường, không dấu), hiện nhóm "File" với tên và nơi gắn;
   chọn kết quả mở nơi gắn và tô sáng file. File của task trong Thùng rác không xuất hiện.
 - **FR-028**: Cài đặt PHẢI có mục "File đính kèm": tổng dung lượng (tính một lần cho nội dung trùng), số file, 10 file

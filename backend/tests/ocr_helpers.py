@@ -56,3 +56,8 @@ def context(**overrides) -> PreviewContext:
 def load_pdf(name: str) -> bytes:
     """Bytes của PDF thời khoá biểu giả lập trong fixtures (feature 004)."""
     return (FIXTURES / name).read_bytes()
+
+
+def load_attachment(name: str) -> bytes:
+    """Bytes của file đính kèm giả lập (feature 005)."""
+    return (Path(__file__).parent / "fixtures" / "attachments" / name).read_bytes()

@@ -86,8 +86,10 @@ File trên đĩa: `/var/lib/lichhoc/attachments/<sha256[0:2]>/<sha256>` (volume 
 upload ─▶ .incoming/<uuid> ─fsync─▶ (hash đã có? bỏ file tạm : os.replace → ab/<sha>) ─▶ INSERT blob (nếu mới) + attachment ─▶ COMMIT
 xoá mục / xoá hẳn task / xoá môn / xoá buổi thi ─▶ COMMIT ─▶ collect_garbage({các sha bị ảnh hưởng})
 regenerate_sessions xoá buổi có file ─▶ UPDATE attachments SET session_id=NULL, subject_id=<môn> (trước DELETE) + cảnh báo attachments_moved
-khởi động backend + mỗi ngày ─▶ sweep: xoá .incoming/* cũ > 1 giờ, file không có blob, blob không có attachment
+khởi động backend + mỗi ngày ─▶ sweep: xoá .incoming/* cũ > 1 giờ, file không có blob VÀ có thời gian sửa cũ > 1 giờ, blob không có attachment
 ```
+
+**Chạy chồng**: `collect_garbage` khoá dòng blob (`SELECT … FOR UPDATE`) rồi kiểm tra lại tham chiếu; upload chèn blob bằng `INSERT … ON CONFLICT DO NOTHING`, khoá dòng và đặt lại file nếu đang thiếu.
 
 `collect_garbage(shas)`: với mỗi sha không còn dòng `attachments` nào (kể cả của task trong Thùng rác) → xoá dòng blob,
 commit, rồi xoá file. Lỗi xoá file chỉ ghi log; lượt quét sau sẽ dọn.

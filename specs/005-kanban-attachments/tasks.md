@@ -33,14 +33,14 @@ description: "Task list — Bảng Kanban cho công việc và đính kèm file"
 
 **Purpose**: Phụ thuộc mới, volume, nginx, fixture.
 
-- [ ] T001 Thêm `"@dnd-kit/core": "6.3.1"`, `"@dnd-kit/sortable": "10.0.0"`, `"@dnd-kit/utilities": "3.2.2"` vào `dependencies` trong `frontend/package.json`, chạy `npm install` để cập nhật `frontend/package-lock.json`
-- [ ] T002 Thêm named volume `lichhoc_attachments` (khối `volumes:` có `name: lichhoc_attachments` và ghi chú như `lichhoc_pgdata`) và gắn vào service `backend` tại `/var/lib/lichhoc/attachments` trong `docker-compose.yml`. Không bind mount thư mục dự án. Thêm biến `ATTACHMENTS_DIR=/var/lib/lichhoc/attachments` và `ATTACHMENTS_DIR` mặc định trong `backend/app/config.py`. Trong `docker-compose.dev.yml` (nếu có service backend) dùng cùng volume
-- [ ] T003 [P] Thêm `location /api/attachments` trong `frontend/nginx.conf` với các giá trị sau (R5):
+- [X] T001 Thêm `"@dnd-kit/core": "6.3.1"`, `"@dnd-kit/sortable": "10.0.0"`, `"@dnd-kit/utilities": "3.2.2"` vào `dependencies` trong `frontend/package.json`, chạy `npm install` để cập nhật `frontend/package-lock.json`
+- [X] T002 Thêm named volume `lichhoc_attachments` (khối `volumes:` có `name: lichhoc_attachments` và ghi chú như `lichhoc_pgdata`) và gắn vào service `backend` tại `/var/lib/lichhoc/attachments` trong `docker-compose.yml`. Không bind mount thư mục dự án. Thêm biến `ATTACHMENTS_DIR=/var/lib/lichhoc/attachments` và `ATTACHMENTS_DIR` mặc định trong `backend/app/config.py`. Trong `docker-compose.dev.yml` (nếu có service backend) dùng cùng volume
+- [X] T003 [P] Thêm `location /api/attachments` trong `frontend/nginx.conf` với các giá trị sau (R5):
   - `client_max_body_size 510m`
   - `proxy_request_buffering off`
   - `proxy_read_timeout 300s`
   - cùng `proxy_pass`/header như `location /api/`
-- [ ] T004 [P] Tạo fixture giả lập trong `backend/tests/fixtures/attachments/` (không dùng tài liệu thật):
+- [X] T004 [P] Tạo fixture giả lập trong `backend/tests/fixtures/attachments/` (không dùng tài liệu thật):
   - `anh-nho.png` (PNG 8×8)
   - `de-cuong.pdf` (PDF 2 trang, sinh bằng reportlab hoặc commit file nhỏ)
   - `bai-tap.docx` và `bang-diem.xlsx` (file Office rỗng hợp lệ)
@@ -313,7 +313,7 @@ gắn 2 nơi chỉ tính dung lượng một lần.
   Đăng ký blueprint. Thêm `attachment_count` vào serializer của `backend/app/schemas/subjects.py`
   (`serialize_subject`, serializer buổi học), `backend/app/schemas/tasks.py` và serializer lịch thi trong
   `backend/app/services/exams.py`/`backend/app/api/exams.py` (đếm bằng một truy vấn gộp, không N+1)
-- [ ] T032 [P] [US4] Frontend:
+- [ ] T032 [P] [US4] Frontend (giao diện gửi mỗi file một yêu cầu riêng để có tiến trình và lỗi riêng từng file):
   - `frontend/src/api/attachments.ts`: kiểu `Attachment`, `useAttachments(owner)`, `useRenameAttachment`.
   - `frontend/src/features/attachments/upload.ts`: XHR, tiến trình, huỷ, kiểm tra giới hạn từ `useSettings`.
   - `frontend/src/features/attachments/attachmentFormat.ts`: biểu tượng theo MIME/phần mở rộng, dùng lại `formatSize`.
