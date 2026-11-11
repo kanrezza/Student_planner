@@ -97,6 +97,10 @@ export const vi = {
     titlePlaceholder: 'Tên công việc',
     notesPlaceholder: 'Thêm ghi chú…',
     due: 'Hạn chót',
+    status: 'Trạng thái',
+    subject: 'Môn học',
+    noSubject: 'Không gắn môn',
+    subjectAuto: 'Theo môn của buổi học tạo ra deadline này.',
     dueDate: 'Ngày hạn',
     dueTime: 'Giờ hạn',
     clearDueTime: 'Xoá giờ (chỉ giữ ngày)',
@@ -302,6 +306,32 @@ export const vi = {
     deleteSubject: 'Xoá môn “{name}” cùng {count} buổi học?',
     confirmExceptions:
       'Các buổi đã huỷ hoặc đã sửa riêng sau đây nằm ngoài lịch mới và sẽ bị xoá: {dates}. Tiếp tục?',
+  },
+  attachments: {
+    count: '{count} file đính kèm',
+  },
+  board: {
+    viewSwitch: 'Dạng xem',
+    viewList: 'Danh sách',
+    viewBoard: 'Bảng',
+    columns: { todo: 'Chưa làm', doing: 'Đang làm', done: 'Xong' },
+    dropHere: 'Kéo thẻ vào đây',
+    showAllDone: 'Hiện tất cả ({count} ẩn)',
+    onlyRecentDone: 'Chỉ 7 ngày gần nhất',
+    doneToast: 'Đã hoàn thành “{title}”',
+    undo: 'Hoàn tác',
+    moveFailed: 'Không chuyển được thẻ: {message}',
+    cardsLabel: 'Bảng công việc',
+    columnLabel: 'Cột {name}, {count} thẻ',
+    inProgress: 'Đang làm',
+    announce: {
+      instructions:
+        'Nhấn Space để nhấc thẻ, mũi tên để di chuyển, Space để thả, Esc để huỷ. Hoặc dùng ⌘← ⌘→ đổi cột, ⌘↑ ⌘↓ đổi chỗ.',
+      pick: 'Đã nhấc “{title}”',
+      over: '“{title}” đang ở {column}, vị trí {position} trên {total}',
+      drop: 'Đã chuyển “{title}” sang {column}, vị trí {position} trên {total}',
+      cancel: 'Đã huỷ chuyển “{title}”',
+    },
   },
   timetable: {
     semester: 'Học kỳ',

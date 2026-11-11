@@ -91,6 +91,9 @@ export type TaskInput = {
   list_id: number;
   reminder_minutes?: number | null;
   is_important?: boolean;
+  /** Môn gắn tay và trạng thái todo/doing (feature 005). */
+  subject_id?: number | null;
+  status?: 'todo' | 'doing';
   work_date?: string | null;
   work_start?: string | null;
   work_end?: string | null;

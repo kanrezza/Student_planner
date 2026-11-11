@@ -25,10 +25,14 @@ from app.models.base import IdMixin, TimestampMixin
 
 
 def _top_rank(context) -> float:
-    """Thứ tự cho task mới: đầu cột Chưa làm (feature 005, FR-006); chạy ở mọi đường tạo task."""
+    """Thứ tự cho task mới: đầu cột của nó (FR-006); chạy ở mọi đường tạo task."""
+    params = context.get_current_parameters()
+    in_progress = bool(params.get("in_progress"))
     lowest = context.connection.scalar(
         select(func.min(Task.board_rank)).where(
-            Task.completed_at.is_(None), Task.in_progress.is_(false()), Task.deleted_at.is_(None)
+            Task.completed_at.is_(None),
+            Task.in_progress.is_(in_progress),
+            Task.deleted_at.is_(None),
         )
     )
     return (lowest if lowest is not None else 1.0) - 1

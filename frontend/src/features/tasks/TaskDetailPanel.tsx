@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 
 import { DateInput } from '../../components/DateInput';
 import { ApiError } from '../../api/client';
 import { useLists } from '../../api/lists';
+import { useSemesters } from '../../api/semesters';
 import { useSettings } from '../../api/settings';
+import { useSubjects } from '../../api/subjects';
 import {
   isScopeRequired,
   useCreateTask,
@@ -237,6 +239,8 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
   const lists = useLists().data ?? [];
   const settings = useSettings().data;
   const { now, today } = useNow();
+  const currentSemester = useSemesters().data?.find((semester) => semester.is_current);
+  const subjects = useSubjects(currentSemester?.id ?? null).data ?? [];
 
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? '');
@@ -389,6 +393,45 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
         )}
 
         <dl className="mt-4 flex flex-col divide-y divide-border border-y border-border">
+          <Row label={t('detail.status')}>
+            <select
+              aria-label={t('detail.status')}
+              value={task.status ?? (task.completed ? 'done' : 'todo')}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === 'done') actions.toggleComplete(task, true);
+                else save({ status: value as 'todo' | 'doing' }, ['status']);
+              }}
+            >
+              <option value="todo">{t('board.columns.todo')}</option>
+              <option value="doing">{t('board.columns.doing')}</option>
+              <option value="done">{t('board.columns.done')}</option>
+            </select>
+          </Row>
+
+          <Row label={t('detail.subject')}>
+            {task.is_auto && task.source_session_id ? (
+              <p className="text-[12px] text-muted">{t('detail.subjectAuto')}</p>
+            ) : (
+              <select
+                aria-label={t('detail.subject')}
+                value={task.subject_id ?? ''}
+                onChange={(e) =>
+                  save({ subject_id: e.target.value ? Number(e.target.value) : null }, [
+                    'subject_id',
+                  ])
+                }
+              >
+                <option value="">{t('detail.noSubject')}</option>
+                {subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Row>
+
           <Row label={t('detail.due')}>
             <div className="flex items-center gap-1.5">
               <DateInput

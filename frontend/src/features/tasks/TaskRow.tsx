@@ -67,6 +67,11 @@ export const TaskRow = forwardRef<
       >
         {highlight ? <Highlighted text={task.title} query={highlight} /> : task.title}
       </span>
+      {task.status === 'doing' && (
+        <span className="shrink-0 rounded-full bg-accent-soft px-2 py-px text-[11px] font-medium text-accent-strong">
+          {t('board.inProgress')}
+        </span>
+      )}
       {task.is_auto && (
         <span aria-label={t('tasks.auto')} title={t('tasks.auto')} className="text-muted">
           <IconRepeat size={14} />

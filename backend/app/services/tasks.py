@@ -276,8 +276,11 @@ def complete_task(task_id: int) -> tuple[Task, Task | None]:
     next_task = None
     if task.completed_at is None:
         now = timeutil.now()
+        from app.services import board  # import muộn: board gọi lại module này
+
         task.completed_at = now
         task.in_progress = False
+        task.board_rank = board.top_rank("done", exclude_id=task.id)  # vừa xong → đầu cột Xong
         db.session.flush()
         next_task = task_series.on_complete(task, now)
         bump_revision(db.session)

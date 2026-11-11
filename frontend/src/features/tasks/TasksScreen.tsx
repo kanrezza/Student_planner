@@ -5,6 +5,7 @@ import { useTags } from '../../api/tags';
 import type { TaskView } from '../../api/tasks';
 import { TASKS_HOME } from '../../app/navigation';
 import { isTypingTarget, useHotkeys } from '../../app/useHotkeys';
+import { useStoredState } from '../../lib/storage';
 import { t } from '../../i18n/vi';
 import { cx } from '../../ui/cx';
 import { IconButton } from '../../ui/IconButton';
@@ -14,6 +15,8 @@ import { SEARCH_PATH } from '../search/searchRoute';
 import { ListColumn } from './ListColumn';
 import { SmartListView } from './SmartListView';
 import { TaskDetailPanel } from './TaskDetailPanel';
+import { BoardPane } from './board/BoardPane';
+import { ViewSwitch, type TasksViewMode } from './board/ViewSwitch';
 import { parseTaskPath, smartTitle, taskPath } from './viewRoutes';
 
 /**
@@ -87,6 +90,15 @@ function TasksPane({
   const openId = Number(params.get('task')) || null;
   const [selectedId, setSelectedId] = useState<number | null>(openId);
   const title = useViewTitle(view);
+  const [storedMode, setMode] = useStoredState<TasksViewMode>('tasks.view', 'list');
+  // Thùng rác và Đã hoàn thành chỉ có dạng danh sách.
+  const boardAllowed = !(view.kind === 'smart' && ['trash', 'completed'].includes(view.view));
+  const mode: TasksViewMode = boardAllowed ? storedMode : 'list';
+  const headerEnd = boardAllowed ? <ViewSwitch mode={mode} onChange={setMode} /> : undefined;
+  const open = (task: { id: number }) => {
+    setSelectedId(task.id);
+    openTask(task.id);
+  };
 
   useEffect(() => {
     if (openId !== null) setSelectedId(openId);
@@ -130,18 +142,28 @@ function TasksPane({
 
   return (
     <div className="relative flex min-w-0 flex-1">
-      <SmartListView
-        view={view}
-        title={title}
-        headerStart={headerStart}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
-        openId={openId}
-        onOpen={(task) => {
-          setSelectedId(task.id);
-          openTask(task.id);
-        }}
-      />
+      {mode === 'board' ? (
+        <BoardPane
+          view={view}
+          title={title}
+          headerStart={headerStart}
+          headerEnd={headerEnd}
+          selectedId={selectedId ?? openId}
+          onSelect={setSelectedId}
+          onOpen={open}
+        />
+      ) : (
+        <SmartListView
+          view={view}
+          title={title}
+          headerStart={headerStart}
+          headerEnd={headerEnd}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          openId={openId}
+          onOpen={open}
+        />
+      )}
       {openId !== null && <TaskDetailPanel taskId={openId} onClose={() => openTask(null)} />}
     </div>
   );

@@ -150,7 +150,7 @@ giữ nguyên; dạng Danh sách thấy task Xong đã tick.
 
 ### Tests for User Story 1
 
-- [ ] T015 [P] [US1] Test API trong `backend/tests/integration/test_board_api.py`:
+- [X] T015 [P] [US1] Test API trong `backend/tests/integration/test_board_api.py`:
   - `GET /tasks/board`:
     - 3 cột sắp theo `board_rank`;
     - cột `done` chưa sắp tay thì theo `completed_at` giảm dần;
@@ -166,12 +166,12 @@ giữ nguyên; dạng Danh sách thấy task Xong đã tick.
     chưa sửa bị gỡ.
   - Đổi chỗ 40 lần giữa hai thẻ thì cột được sắp lại, thứ tự đúng.
   - Task mới tạo nằm đầu cột Chưa làm. Thêm test: đổi trạng thái qua PATCH `/tasks/{id}` (dạng Danh sách) và bỏ tick đều đưa thẻ lên đầu cột đích.
-- [ ] T016 [P] [US1] Test Vitest `frontend/tests/boardState.test.ts`:
+- [X] T016 [P] [US1] Test Vitest `frontend/tests/boardState.test.ts`:
   - `groupColumns` từ phản hồi API;
   - `applyMove(columns, id, toStatus, index)` cho kết quả lạc quan đúng;
   - `neighbours(column, index)` → `before_id`/`after_id`;
   - `rollback` khi lỗi.
-- [ ] T017 [P] [US1] Test Vitest `frontend/tests/boardView.test.tsx` (mock API):
+- [X] T017 [P] [US1] Test Vitest `frontend/tests/boardView.test.tsx` (mock API):
   - nút "Danh sách | Bảng" đổi dạng xem và nhớ vào `localStorage` khoá `lichhoc.tasks.view`;
   - 3 cột có số thẻ; cột rỗng có "Kéo thẻ vào đây";
   - chuyển thẻ (qua bàn phím của dnd-kit) gọi `PATCH /tasks/{id}/board` đúng `status`/`before_id`/`after_id`;
@@ -181,7 +181,7 @@ giữ nguyên; dạng Danh sách thấy task Xong đã tick.
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Tạo `backend/app/services/board.py`:
+- [X] T018 [US1] Tạo `backend/app/services/board.py`:
   - `board(filters, done_window, now)` truy vấn 3 cột.
   - `move(task_id, status, before_id, after_id)`:
     - kiểm tra thẻ kề thuộc cột đích;
@@ -191,21 +191,21 @@ giữ nguyên; dạng Danh sách thấy task Xong đã tick.
     - trả `{task, next_task, undo}`.
 
   Mọi thay đổi trong một transaction.
-- [ ] T019 [US1] Tạo schema `backend/app/schemas/board.py` (`BoardMoveIn`: `status` ∈ `todo|doing|done`, `before_id?`, `after_id?`; query `done_window` ∈ `7d|all`) và API `backend/app/api/board.py` (`GET /tasks/board`, `PATCH /tasks/{id}/board`), đăng ký blueprint trong `backend/app/__init__.py`; cập nhật `specs/001-task-class-scheduler/contracts/rest-api.md` trỏ tới contract 005
-- [ ] T020 [P] [US1] Frontend:
+- [X] T019 [US1] Tạo schema `backend/app/schemas/board.py` (`BoardMoveIn`: `status` ∈ `todo|doing|done`, `before_id?`, `after_id?`; query `done_window` ∈ `7d|all`) và API `backend/app/api/board.py` (`GET /tasks/board`, `PATCH /tasks/{id}/board`), đăng ký blueprint trong `backend/app/__init__.py`; cập nhật `specs/001-task-class-scheduler/contracts/rest-api.md` trỏ tới contract 005
+- [X] T020 [P] [US1] Frontend:
   - `frontend/src/api/board.ts`: kiểu `BoardResponse`, `useBoard(filters, doneAll)`, `useMoveCard()` với cập nhật lạc
     quan và rollback.
   - `frontend/src/features/tasks/board/boardState.ts`: hàm thuần của T016.
   - `frontend/src/api/types.ts`: `Task` thêm `status`, `board_rank`, `subject_id`, `effective_subject_id`,
     `attachment_count`.
-- [ ] T021 [US1] Tạo `frontend/src/features/tasks/board/BoardView.tsx`, `BoardColumn.tsx`, `BoardCard.tsx`:
+- [X] T021 [US1] Tạo `frontend/src/features/tasks/board/BoardView.tsx`, `BoardColumn.tsx`, `BoardCard.tsx`:
   - `DndContext` + `SortableContext` mỗi cột, `PointerSensor` + `KeyboardSensor` với `sortableKeyboardCoordinates`;
   - vạch chèn khi kéo, `DragOverlay`;
   - cột Xong có nút "Hiện tất cả (n ẩn)" / "Chỉ 7 ngày gần nhất" (khoá `lichhoc.board.doneAll`);
   - toast "Đã hoàn thành “…”" kèm "Hoàn tác" trong 6 giây (dùng `useToast`);
   - ô "+ Thêm" đầu cột Chưa làm/Đang làm dùng `QuickAdd`; ở Đang làm, sau khi tạo thì gọi PATCH `status: doing`;
   - chuỗi trong `frontend/src/i18n/vi.ts` (khối `board`).
-- [ ] T022 [US1] Thêm nút phân đoạn "Danh sách | Bảng" trong `frontend/src/features/tasks/TasksScreen.tsx` (nhớ `lichhoc.tasks.view`, bọc `localStorage` trong try/catch như `frontend/src/lib/storage.ts`). Dạng Danh sách:
+- [X] T022 [US1] Thêm nút phân đoạn "Danh sách | Bảng" trong `frontend/src/features/tasks/TasksScreen.tsx` (nhớ `lichhoc.tasks.view`, bọc `localStorage` trong try/catch như `frontend/src/lib/storage.ts`). Dạng Danh sách:
   - `frontend/src/features/tasks/TaskRow.tsx` hiện nhãn nhỏ "Đang làm";
   - `frontend/src/features/tasks/TaskDetailPanel.tsx` có ô "Trạng thái" (Chưa làm / Đang làm / Xong): Xong gọi
     complete, còn lại gọi PATCH `status`.

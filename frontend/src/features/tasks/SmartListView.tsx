@@ -39,6 +39,7 @@ export function SmartListView({
   view,
   title,
   headerStart,
+  headerEnd,
   selectedId,
   onSelect,
   onOpen,
@@ -47,6 +48,7 @@ export function SmartListView({
   view: TaskView;
   title: string;
   headerStart?: ReactNode;
+  headerEnd?: ReactNode;
   selectedId: number | null;
   onSelect: (id: number | null) => void;
   onOpen: (task: Task) => void;
@@ -114,7 +116,10 @@ export function SmartListView({
     <div className="flex h-full min-w-0 flex-1 flex-col">
       <header className="flex shrink-0 items-center gap-2 px-8 pb-3 pt-[calc(20px+var(--titlebar-inset))]">
         {headerStart}
-        <h1 className="min-w-0 truncate text-[22px] leading-8 font-bold tracking-tight">{title}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-[22px] leading-8 font-bold tracking-tight">
+          {title}
+        </h1>
+        {headerEnd}
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto px-8 pb-10">
         <div className="mx-auto flex max-w-[760px] flex-col gap-4">

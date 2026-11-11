@@ -75,6 +75,7 @@ def register_blueprints(app: Flask) -> None:
     """Mọi API nằm dưới /api. Blueprint của từng user story được thêm vào danh sách này."""
     from app.api import (
         backup,
+        board,
         calendar,
         canonical_names,
         exams,
@@ -100,6 +101,7 @@ def register_blueprints(app: Flask) -> None:
         *modules,
         exams,
         imports,
+        board,
         timetable_import,
         periods,
         canonical_names,

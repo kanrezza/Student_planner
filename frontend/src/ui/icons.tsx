@@ -179,6 +179,11 @@ export const IconRepeat = icon(
   <path d="M4 9V8a3 3 0 0 1 3-3h8l-2.5-2.5M16 11v1a3 3 0 0 1-3 3H5l2.5 2.5" />,
 );
 
+export const IconPaperclip = icon(
+  'Paperclip',
+  <path d="M15.5 9.5 9.8 15.2a3.4 3.4 0 0 1-4.8-4.8l6-6a2.3 2.3 0 0 1 3.3 3.3l-6 6a1.1 1.1 0 0 1-1.6-1.6l5.3-5.3" />,
+);
+
 export const IconSidebar = icon(
   'Sidebar',
   <>
