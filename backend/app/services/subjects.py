@@ -4,6 +4,7 @@ Mọi kiểm tra trả lỗi theo tên trường; với nhập nhiều môn, tê
 để giao diện chỉ đúng ô lỗi (FR-010).
 """
 
+import dataclasses
 from dataclasses import dataclass
 from datetime import date, time
 
@@ -545,7 +546,9 @@ def delete_subject(subject_id: int) -> None:
     db.session.commit()
 
 
-def create_many(items: list[dict], row_name: str = "rows") -> tuple[list[Subject], list[dict]]:
+def create_many(
+    items: list[dict], row_name: str = "rows", index_map: list[int] | None = None
+) -> tuple[list[Subject], list[dict]]:
     """Tạo nhiều môn trong MỘT transaction, mỗi môn có học kỳ và khoảng ngày riêng (nhập từ ảnh).
 
     Dòng nào lỗi thì không lưu môn nào; lỗi báo theo `rows[i].<trường>` (contracts/rest-api.md).
@@ -554,7 +557,7 @@ def create_many(items: list[dict], row_name: str = "rows") -> tuple[list[Subject
     resolved_rows: list[Resolved] = []
     used = _used_colors()
     for i, item in enumerate(items):
-        prefix = f"{row_name}[{i}]."
+        prefix = f"{row_name}[{index_map[i] if index_map else i}]."
         try:
             semester = resolve_semester(item.get("semester_id"))
             resolved = resolve_subject(
@@ -578,3 +581,55 @@ def create_many(items: list[dict], row_name: str = "rows") -> tuple[list[Subject
     bump_revision(db.session)
     db.session.commit()
     return subjects, warnings
+
+
+@dataclass
+class ImportUpdate:
+    """Kết quả cập nhật một môn đã có từ nhập PDF (chưa commit)."""
+
+    subject: Subject
+    created: int = 0
+    updated: int = 0
+    skipped: int = 0
+    kept: list[ClassSession] = dataclasses.field(default_factory=list)
+
+
+def update_from_import(
+    subject: Subject, item: dict, keep_before: date, prefix: str = ""
+) -> ImportUpdate:
+    """Nhập lại PDF: thay toàn bộ quy tắc của môn đã có bằng quy tắc từ file (feature 004, R9).
+
+    Buổi trước `keep_before` không bị sửa/xoá; buổi đã huỷ/sửa riêng giữ như cũ, buổi có ngoại lệ
+    nằm ngoài lịch mới được giữ lại (tách khỏi quy tắc) thay vì hỏi xác nhận. Không commit.
+    """
+    tag_ids = list(dict.fromkeys([t.id for t in subject.tags] + list(item.get("tag_ids") or [])))
+    merged = {
+        "name": item["name"],
+        "class_code": subject.class_code or item.get("class_code"),
+        "course_code": item.get("course_code") or subject.course_code,
+        "credits": item.get("credits") if item.get("credits") is not None else subject.credits,
+        "lecturer": subject.lecturer,
+        "color": subject.color,
+        "reminder_minutes": subject.reminder_minutes,
+        "is_important": subject.is_important,
+        "tag_ids": tag_ids,
+        "schedules": [{**rule, "id": None} for rule in item["schedules"]],
+    }
+    try:
+        resolved = resolve_subject(merged, subject.semester, (None, None), _used_colors(), prefix)
+    except FieldErrors as e:
+        _raise_fields(e.fields)
+    before = {s.id: (s.start_at, s.end_at, s.room) for s in subject.sessions}
+    for key, value in resolved.values.items():
+        setattr(subject, key, value)
+    apply_schedules(subject, resolved.schedules)
+    replace_tag_links(SubjectTag, "subject_id", subject.id, resolved.tag_ids)
+    db.session.flush()
+    created = regenerate_sessions(subject, keep_before=keep_before, keep_conflicts=True)
+    result = ImportUpdate(subject, created=len(created), kept=subject.kept_exception_sessions)  # type: ignore[attr-defined]
+    for session in subject.sessions:
+        if session.id in before:
+            same = before[session.id] == (session.start_at, session.end_at, session.room)
+            result.skipped += same
+            result.updated += not same
+    return result

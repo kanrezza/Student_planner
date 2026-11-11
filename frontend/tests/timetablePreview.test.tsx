@@ -168,3 +168,33 @@ describe('TimetablePreview', () => {
     expect(payload.subjects[1].schedules[0].weekdays).toEqual([3]);
   });
 });
+
+describe('Môn đã có (US3)', () => {
+  it('hiện huy hiệu Đã có/Thay đổi và danh sách khác biệt', () => {
+    const preview = structuredClone(SAMPLE_PREVIEW);
+    Object.assign(preview.subjects[0], {
+      status: 'unchanged',
+      selected: false,
+      existing_subject_id: 4,
+    });
+    preview.subjects[0].schedules.forEach((r) => (r.selected = false));
+    Object.assign(preview.subjects[1], {
+      status: 'changed',
+      existing_subject_id: 5,
+      diff: [{ field: 'Phòng', before: 'A6-501 (PC)', after: 'A6-203 (PC)' }],
+    });
+    mockApi({ 'GET /semesters': [], 'GET /shifts': [] });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <TimetablePreview state={initialState(preview)} onChange={() => undefined} />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText('Đã có')).toBeTruthy();
+    expect(screen.getByText('Thay đổi')).toBeTruthy();
+    expect(screen.getByText('Phòng: A6-501 (PC) → A6-203 (PC)')).toBeTruthy();
+    const state = initialState(preview);
+    expect(selectedSubjectCount(state)).toBe(2); // môn "Đã có" bỏ chọn sẵn
+    expect(buildCommitPayload(state, null).subjects[0].existing_subject_id).toBe(5);
+  });
+});

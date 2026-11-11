@@ -8,6 +8,7 @@ cá nhân vì phần đầu trang đã bị bỏ ở tầng bố cục (R6).
 from dataclasses import dataclass, field
 from datetime import date
 
+from app.lib.text import ci_key, fold_key
 from app.pdfimport.cells import (
     join_cell_lines,
     parse_class_label,
@@ -29,7 +30,9 @@ class PreviewContext:
     shifts: list  # ca học (id, position, start_time, end_time)
     periods: dict  # {số tiết: (giờ bắt đầu, giờ kết thúc)}
     semesters: list  # (id, name, start_date, end_date)
-    existing_subjects: list = field(default_factory=list)  # dùng ở US3 (nhập lại)
+    existing_subjects: list = field(
+        default_factory=list
+    )  # môn đã có (kèm quy tắc) để nhận ra khi nhập lại
 
 
 def _hhmm(value) -> str:
@@ -111,6 +114,100 @@ def _duplicate_warnings(schedules: list[dict]) -> None:
                     _problem("start_date", "warning", "Trùng ngày và giờ với một lịch khác của môn")
                 )
                 break
+
+
+def match_existing(subject: dict, existing_subjects: list):
+    """Môn đã có khớp với môn trong PDF (R9, FR-021): cùng mã lớp (không phân biệt hoa thường)
+    VÀ (cùng mã học phần HOẶC cùng tên không phân biệt dấu). Không khớp → None."""
+    class_key = ci_key(subject["class_code"] or "")
+    for existing in existing_subjects:
+        if ci_key(existing.class_code or "") != class_key:
+            continue
+        same_code = bool(
+            subject["course_code"]
+            and existing.course_code
+            and ci_key(existing.course_code) == ci_key(subject["course_code"])
+        )
+        if same_code or fold_key(existing.name) == fold_key(subject["name"]):
+            return existing
+    return None
+
+
+def _existing_rules(existing) -> list[tuple]:
+    rules = []
+    for rule in existing.schedules:
+        for weekday in rule.weekdays:
+            rules.append(
+                (
+                    weekday,
+                    rule.start_date.isoformat(),
+                    rule.end_date.isoformat(),
+                    _hhmm(rule.start_time),
+                    _hhmm(rule.end_time),
+                    rule.room or None,
+                )
+            )
+    return rules
+
+
+def _preview_rules(subject: dict) -> list[tuple]:
+    return [
+        (r["weekday"], r["start_date"], r["end_date"], r["start_time"], r["end_time"], r["room"])
+        for r in subject["schedules"]
+    ]
+
+
+def _rule_text(rule: tuple) -> str:
+    weekday, start, end, begin, finish, room = rule
+    days = {7: "CN"}.get(weekday, f"T{weekday + 1}")
+    parts = [days, f"{begin}–{finish}"] + ([room] if room else [])
+    return f"{' · '.join(parts)} ({start[8:]}/{start[5:7]}–{end[8:]}/{end[5:7]})"
+
+
+def diff_subject(existing, subject: dict) -> list[dict]:
+    """Khác biệt giữa môn đã có và môn trong PDF; rỗng nghĩa là giống hệt (`unchanged`)."""
+    diff: list[dict] = []
+    for label, before, after in (
+        ("Tên", existing.name, subject["name"]),
+        ("Mã học phần", existing.course_code, subject["course_code"]),
+        ("Số tín chỉ", existing.credits, subject["credits"]),
+    ):
+        if after is not None and before != after:
+            diff.append(
+                {
+                    "field": label,
+                    "before": None if before is None else str(before),
+                    "after": str(after),
+                }
+            )
+    old, new = _existing_rules(existing), _preview_rules(subject)
+    only_old = [r for r in old if r not in new]
+    only_new = [r for r in new if r not in old]
+    # Cùng thứ, ngày, giờ mà khác phòng → một dòng "Phòng: a → b".
+    for rule in list(only_new):
+        twin = next((o for o in only_old if o[:5] == rule[:5]), None)
+        if twin is not None:
+            diff.append({"field": "Phòng", "before": twin[5], "after": rule[5]})
+            only_old.remove(twin)
+            only_new.remove(rule)
+    diff += [{"field": "Lịch", "before": _rule_text(r), "after": None} for r in only_old]
+    diff += [{"field": "Lịch", "before": None, "after": _rule_text(r)} for r in only_new]
+    return diff
+
+
+def apply_existing(subjects: list[dict], existing_subjects: list) -> None:
+    """Gắn `status`, `existing_subject_id`, `diff` cho từng môn (môn giống hệt mặc định bỏ chọn)."""
+    for subject in subjects:
+        existing = match_existing(subject, existing_subjects)
+        if existing is None:
+            continue
+        subject["existing_subject_id"] = existing.id
+        subject["diff"] = diff_subject(existing, subject)
+        subject["status"] = "changed" if subject["diff"] else "unchanged"
+        if subject["status"] == "unchanged":
+            subject["selected"] = False
+            for rule in subject["schedules"]:
+                rule["selected"] = False
 
 
 def group_subjects(rows: list[RawRow], ctx: PreviewContext) -> list[dict]:
@@ -219,4 +316,7 @@ def build_timetable_preview(
     semester = choose_semester(
         date.fromisoformat(min(starts)), date.fromisoformat(max(ends)), ctx.semesters, name
     )
+    if semester["choice"] in ("use", "extend"):
+        target = [e for e in ctx.existing_subjects if e.semester_id == semester["semester_id"]]
+        apply_existing(subjects, target)
     return {"semester": semester, "subjects": subjects, "warnings": warnings}

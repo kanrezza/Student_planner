@@ -1,11 +1,18 @@
 """Gộp hàng thành môn, đổi tiết sang giờ, chọn học kỳ (hàm thuần, không CSDL)."""
 
 import json
-from datetime import date
+from datetime import date, time
 from types import SimpleNamespace
 
 from app.pdfimport.layout import parse_table
-from app.pdfimport.preview import PreviewContext, build_timetable_preview, choose_semester
+from app.pdfimport.preview import (
+    PreviewContext,
+    apply_existing,
+    build_timetable_preview,
+    choose_semester,
+    diff_subject,
+    match_existing,
+)
 from app.pdfimport.reader import read_pdf
 from app.services.periods import default_periods
 from tests.ocr_helpers import FIXTURES, load_pdf, shifts
@@ -117,3 +124,111 @@ def test_tiet_chua_co_gio_la_loi():
     assert any(
         p["level"] == "error" and "Chưa có giờ cho tiết 16–18" in p["message"] for p in problems
     )
+
+
+# ---- Nhận ra môn đã có khi nhập lại (US3, R9) ----------------------------------------------------
+
+
+def _existing(i, name, class_code, course_code, rules, semester_id=1, credits=None):
+    schedules = [
+        SimpleNamespace(
+            weekdays=[wd],
+            start_date=date.fromisoformat(sd),
+            end_date=date.fromisoformat(ed),
+            start_time=time.fromisoformat(st),
+            end_time=time.fromisoformat(et),
+            room=room,
+        )
+        for wd, sd, ed, st, et, room in rules
+    ]
+    return SimpleNamespace(
+        id=i,
+        name=name,
+        class_code=class_code,
+        course_code=course_code,
+        credits=credits,
+        semester_id=semester_id,
+        schedules=schedules,
+    )
+
+
+def _subject(name="Bóng đá", class_code="2-2-26(N01)", course_code="FFS701069", **over):
+    base = {
+        "name": name,
+        "class_code": class_code,
+        "course_code": course_code,
+        "credits": 1,
+        "status": "new",
+        "existing_subject_id": None,
+        "diff": [],
+        "selected": True,
+        "schedules": [
+            {
+                "weekday": 1,
+                "start_date": "2026-11-30",
+                "end_date": "2027-01-24",
+                "start_time": "09:30",
+                "end_time": "12:10",
+                "room": "Sân bóng đá",
+                "selected": True,
+            }
+        ],
+    }
+    return {**base, **over}
+
+
+RULE = (1, "2026-11-30", "2027-01-24", "09:30", "12:10", "Sân bóng đá")
+
+
+def test_khop_theo_ma_lop_va_ma_hoc_phan_hoac_ten():
+    sub = _subject()
+    by_code = _existing(1, "Tên khác hẳn", "2-2-26(N01)", "ffs701069", [RULE])
+    assert match_existing(sub, [by_code]) is by_code
+    by_name = _existing(2, "BONG DA", "2-2-26(n01)", None, [RULE])  # môn tạo từ ảnh: không có mã HP
+    assert match_existing(sub, [by_name]) is by_name
+
+
+def test_cung_ma_lop_khac_ten_khong_khop_nham():
+    other = _existing(3, "Giải tích", "2-2-26(N01)", "MAT1101", [RULE])
+    assert match_existing(_subject(), [other]) is None
+    # N02 và N02.TH1 cùng tên vẫn là hai môn.
+    th = _existing(4, "Bóng đá", "2-2-26(N01.TH1)", "FFS701069", [RULE])
+    assert match_existing(_subject(), [th]) is None
+
+
+def test_unchanged_mac_dinh_bo_chon():
+    subject = _subject()
+    existing = _existing(1, "Bóng đá", "2-2-26(N01)", "FFS701069", [RULE], credits=1)
+    assert diff_subject(existing, subject) == []
+    apply_existing([subject], [existing])
+    assert subject["status"] == "unchanged" and subject["selected"] is False
+    assert subject["existing_subject_id"] == 1
+    assert subject["schedules"][0]["selected"] is False
+
+
+def test_changed_liet_ke_khac_biet():
+    existing = _existing(
+        1, "Bóng đá", "2-2-26(N01)", None,
+        [(1, "2026-11-30", "2027-01-24", "09:30", "12:10", "Sân A"), (3, "2026-11-30", "2027-01-24", "09:30", "12:10", None)],
+    )  # fmt: skip
+    subject = _subject()
+    diff = diff_subject(existing, subject)
+    fields = [d["field"] for d in diff]
+    assert {"Mã học phần", "Số tín chỉ", "Phòng", "Lịch"} <= set(fields)
+    room = next(d for d in diff if d["field"] == "Phòng")
+    assert (room["before"], room["after"]) == ("Sân A", "Sân bóng đá")
+    removed = next(d for d in diff if d["field"] == "Lịch")
+    assert removed["before"].startswith("T4") and removed["after"] is None
+    apply_existing([subject], [existing])
+    assert subject["status"] == "changed" and subject["selected"] is True
+
+
+def test_chi_nhan_ra_mon_cua_hoc_ky_dich():
+    ctx = _ctx(semesters=[_sem(1, date(2026, 9, 1), date(2027, 6, 30), "HK")])
+    ctx.existing_subjects = [
+        _existing(9, "Bóng đá", "2-2-26(N01)", "FFS701069", [RULE], semester_id=2)
+    ]
+    table = parse_table(read_pdf(load_pdf("tkb-synthetic-01.pdf")))
+    preview = build_timetable_preview(table.rows, table.semester_line, ctx)
+    assert preview["semester"]["choice"] == "use"
+    assert all(s["status"] == "new" for s in preview["subjects"])
