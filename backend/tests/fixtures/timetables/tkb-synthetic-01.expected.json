@@ -1,0 +1,213 @@
+{
+  "semester_line": "Học kỳ 2 Năm học 2026 - 2027 Đợt 2",
+  "semester_name": "HK2 2026–2027",
+  "subject_count": 8,
+  "rule_count": 17,
+  "must_not_appear": [
+    "Nguyễn Văn Test",
+    "21010999",
+    "K99-TEST_1"
+  ],
+  "subjects": [
+    {
+      "course_code": "FFS701069",
+      "class_code": "2-2-26(N01)",
+      "name": "Bóng đá",
+      "credits": 1,
+      "rules": [
+        {
+          "weekday": 1,
+          "period_from": 4,
+          "period_to": 6,
+          "room": "Sân bóng đá",
+          "start_date": "2027-02-15",
+          "end_date": "2027-02-28"
+        },
+        {
+          "weekday": 1,
+          "period_from": 4,
+          "period_to": 6,
+          "room": "Sân bóng đá",
+          "start_date": "2026-11-30",
+          "end_date": "2027-01-24"
+        }
+      ]
+    },
+    {
+      "course_code": "CSE703016",
+      "class_code": "2-2-26(N02.TH1)",
+      "name": "Giao diện người máy",
+      "credits": 3,
+      "rules": [
+        {
+          "weekday": 6,
+          "period_from": 1,
+          "period_to": 3,
+          "room": "A6-103 (PC)",
+          "start_date": "2027-02-15",
+          "end_date": "2027-02-28"
+        },
+        {
+          "weekday": 6,
+          "period_from": 1,
+          "period_to": 3,
+          "room": "A6-101.102 (PC)",
+          "start_date": "2026-11-30",
+          "end_date": "2027-01-24"
+        }
+      ]
+    },
+    {
+      "course_code": "CSE703065",
+      "class_code": "2-2-26(N01)",
+      "name": "Xử lý ngôn ngữ tự nhiên",
+      "credits": 3,
+      "rules": [
+        {
+          "weekday": 2,
+          "period_from": 4,
+          "period_to": 6,
+          "room": "A6-103 (PC)",
+          "start_date": "2027-02-15",
+          "end_date": "2027-02-28"
+        },
+        {
+          "weekday": 2,
+          "period_from": 4,
+          "period_to": 6,
+          "room": "A6-203 (PC)",
+          "start_date": "2026-12-21",
+          "end_date": "2027-01-24"
+        },
+        {
+          "weekday": 5,
+          "period_from": 4,
+          "period_to": 6,
+          "room": "A6-702 (PC)",
+          "start_date": "2026-12-21",
+          "end_date": "2027-01-24"
+        },
+        {
+          "weekday": 5,
+          "period_from": 4,
+          "period_to": 6,
+          "room": "A6-501 (PC)",
+          "start_date": "2026-11-30",
+          "end_date": "2026-12-20"
+        }
+      ]
+    },
+    {
+      "course_code": "CSE703054",
+      "class_code": "2-2-26(COUR01.LT2)",
+      "name": "Tích hợp và phân tích dữ liệu lớn",
+      "credits": 3,
+      "rules": [
+        {
+          "weekday": 2,
+          "period_from": 7,
+          "period_to": 9,
+          "room": "A6-103 (PC)",
+          "start_date": "2027-02-15",
+          "end_date": "2027-02-28"
+        },
+        {
+          "weekday": 2,
+          "period_from": 7,
+          "period_to": 9,
+          "room": "A6-301.302 (PC)",
+          "start_date": "2026-11-30",
+          "end_date": "2027-01-24"
+        }
+      ]
+    },
+    {
+      "course_code": "CSE702060",
+      "class_code": "2-2-26(N01.TH1)",
+      "name": "Trực quan hoá dữ liệu",
+      "credits": 2,
+      "rules": [
+        {
+          "weekday": 2,
+          "period_from": 1,
+          "period_to": 3,
+          "room": "A6-103 (PC)",
+          "start_date": "2026-12-14",
+          "end_date": "2027-01-17"
+        }
+      ]
+    },
+    {
+      "course_code": "CSE703016",
+      "class_code": "2-2-26(N02)",
+      "name": "Giao diện người máy",
+      "credits": 3,
+      "rules": [
+        {
+          "weekday": 2,
+          "period_from": 7,
+          "period_to": 9,
+          "room": "A8-101",
+          "start_date": "2027-02-15",
+          "end_date": "2027-02-28"
+        },
+        {
+          "weekday": 2,
+          "period_from": 7,
+          "period_to": 9,
+          "room": "A2-402.404",
+          "start_date": "2026-11-30",
+          "end_date": "2027-01-24"
+        }
+      ]
+    },
+    {
+      "course_code": "CSE702060",
+      "class_code": "2-2-26(N01)",
+      "name": "Trực quan hoá dữ liệu",
+      "credits": 2,
+      "rules": [
+        {
+          "weekday": 1,
+          "period_from": 1,
+          "period_to": 2,
+          "room": "A8-104",
+          "start_date": "2027-01-18",
+          "end_date": "2027-01-24"
+        },
+        {
+          "weekday": 1,
+          "period_from": 1,
+          "period_to": 3,
+          "room": "A8-104",
+          "start_date": "2026-11-30",
+          "end_date": "2027-01-17"
+        }
+      ]
+    },
+    {
+      "course_code": "CSE703054",
+      "class_code": "2-2-26(COUR01)",
+      "name": "Tích hợp và phân tích dữ liệu lớn",
+      "credits": 3,
+      "rules": [
+        {
+          "weekday": 2,
+          "period_from": 16,
+          "period_to": 18,
+          "room": "ONLINE-Elearning",
+          "start_date": "2027-02-15",
+          "end_date": "2027-02-28"
+        },
+        {
+          "weekday": 2,
+          "period_from": 16,
+          "period_to": 18,
+          "room": "ONLINE-Elearning",
+          "start_date": "2026-11-30",
+          "end_date": "2027-01-24"
+        }
+      ]
+    }
+  ]
+}

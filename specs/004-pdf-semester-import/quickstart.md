@@ -19,7 +19,7 @@ File thật để thử tay: `samples/tkb-hk2-2026.pdf` (bị `.gitignore` chặ
 
 | # | Kịch bản | Kết quả mong đợi |
 |---|----------|------------------|
-| A1 | Đọc `tkb-synthetic-01.pdf` | 8 môn, 18 quy tắc khớp đáp án; tên/mã SV/lớp giả không có trong kết quả (SC-001, SC-006) |
+| A1 | Đọc `tkb-synthetic-01.pdf` | 8 môn, 17 quy tắc khớp đáp án; tên/mã SV/lớp giả không có trong kết quả (SC-001, SC-006) |
 | A2 | Đọc bản 2 trang, bảng tràn trang | đủ mọi hàng |
 | A3 | File không có chữ / có mật khẩu / không phải thời khoá biểu / không phải PDF / > 20 MB | đúng mã lỗi ở contract REST |
 | A4 | Luật ghép ô | bảng ví dụ ở contract định dạng PDF đều đúng |

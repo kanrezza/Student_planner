@@ -88,7 +88,7 @@ kiểm tra lịch tuần hiện đúng các buổi, kể cả tuần nghỉ Tế
 **Acceptance Scenarios**:
 
 1. **Given** chưa có học kỳ nào, **When** người dùng kéo thả file PDF mẫu vào trang Môn học, **Then**
-   bảng xem trước hiện 8 môn (lớp học phần) với tổng cộng 18 quy tắc lặp hằng tuần, và đề xuất tạo học
+   bảng xem trước hiện 8 môn (lớp học phần) với tổng cộng 17 quy tắc lặp hằng tuần, và đề xuất tạo học
    kỳ mới có tên theo dòng "Học kỳ 2 Năm học 2026 - 2027" và khoảng ngày 30/11/2026 – 28/02/2027.
 2. **Given** dòng "Bóng đá-2-2-26(N01)" ghi "4 - 6 (Sân bóng đá)" ở cột Thứ 2, khoảng 30/11/2026 –
    24/01/2027, **When** xem trước, **Then** môn "Bóng đá", mã lớp "2-2-26(N01)", mã học phần
@@ -377,7 +377,7 @@ kiểm tra tên môn trong bảng xem trước được sửa theo danh sách t�
 ### Measurable Outcomes
 
 - **SC-001**: Với file PDF mẫu (bản thật trên máy và bản giả lập trong test), 100% môn, quy tắc, thứ,
-  khoảng tiết, khoảng ngày, phòng và mã lớp trong bảng xem trước khớp đáp án viết tay (8 môn, 18 quy tắc).
+  khoảng tiết, khoảng ngày, phòng và mã lớp trong bảng xem trước khớp đáp án viết tay (8 môn, 17 quy tắc).
 - **SC-002**: Từ lúc thả file đến khi bảng xem trước hiện ra mất dưới 3 giây với file 1–3 trang.
 - **SC-003**: Người dùng nhập xong cả học kỳ (thả file, xem, lưu) trong dưới 2 phút khi không cần sửa gì.
 - **SC-004**: Sau khi lưu file mẫu, số buổi học tạo ra đúng bằng số ngày đúng thứ trong các khoảng ngày

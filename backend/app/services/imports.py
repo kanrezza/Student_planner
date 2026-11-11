@@ -146,23 +146,22 @@ def _commit_week(payload: CommitIn) -> dict:
             errors[f"{label}.semester_id"] = "Hãy chọn hoặc tạo học kỳ cho buổi này"
         if None in (name, day, start, end) or row.semester_id is None:
             continue
+        rule = {"weekdays": [day.isoweekday()], "room": _text(f, "room"), "start_date": day}
+        if row.shift is not None:
+            rule["shift"] = row.shift.model_dump()
+        else:
+            rule["start_time"], rule["end_time"] = start, end
+        weekly = row.repeat.mode == "weekly"
+        rule["end_date"] = (row.repeat.until or day) if weekly else day
         item = {
             "name": name,
             "class_code": _text(f, "class_code"),
             "lecturer": _text(f, "lecturer"),
-            "room": _text(f, "room"),
             "semester_id": row.semester_id,
-            "weekdays": [day.isoweekday()],
+            "schedules": [rule],
             "tag_ids": row.tag_ids,
         }
-        if row.shift is not None:
-            item["shift"] = row.shift.model_dump()
-        else:
-            item["start_time"], item["end_time"] = start, end
-        weekly = row.repeat.mode == "weekly"
-        item["start_date"] = day
-        item["end_date"] = (row.repeat.until or day) if weekly else day
-        if item["end_date"] < day:
+        if rule["end_date"] < day:
             errors[f"{label}.repeat"] = "Ngày kết thúc phải sau hoặc bằng ngày của buổi"
             continue
         prepared.append((i, item, (ci_key(name), day, start), row))
@@ -184,12 +183,14 @@ def _commit_week(payload: CommitIn) -> dict:
                 merged[row.merge_group] = item
                 kept.append(item)
             else:  # gộp: một môn lặp hàng tuần từ ngày sớm nhất tới `until` xa nhất
-                group["start_date"] = min(group["start_date"], item["start_date"])
-                group["end_date"] = max(group["end_date"], item["end_date"])
+                rule, other = group["schedules"][0], item["schedules"][0]
+                rule["start_date"] = min(rule["start_date"], other["start_date"])
+                rule["end_date"] = max(rule["end_date"], other["end_date"])
             continue
         kept.append(item)
     for item in merged.values():  # gộp luôn là lặp hàng tuần theo thứ của ngày sớm nhất
-        item["weekdays"] = [item["start_date"].isoweekday()]
+        rule = item["schedules"][0]
+        rule["weekdays"] = [rule["start_date"].isoweekday()]
 
     subjects, warnings = subject_service.create_many(kept) if kept else ([], [])
     return {

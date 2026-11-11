@@ -90,7 +90,8 @@ def test_commit_creates_weekly_and_once_subjects(client, db_session):
     result = resp.get_json()
     assert result["created_subjects"] == 3 and result["skipped_duplicates"] == 0
     weekly = db_session.scalars(select(Subject).where(Subject.name == "Giải tích 1")).one()
-    assert weekly.weekdays == [1] and weekly.class_code == "MAT1101-1-1-26(N01)"
+    assert [rule.weekdays for rule in weekly.schedules] == [[1]]  # một quy tắc lặp
+    assert weekly.class_code == "MAT1101-1-1-26(N01)"
     assert len(weekly.sessions) == 7  # các Thứ Hai từ 02/11 tới hết học kỳ 20/12
     once = db_session.scalars(select(Subject).where(Subject.name == "Triết học")).one()
     assert len(once.sessions) == 1

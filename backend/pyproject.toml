@@ -15,12 +15,14 @@ dependencies = [
     "pillow>=10.3",
     "pillow-heif>=0.16",
     "rapidfuzz>=3.6",
+    "pdfplumber>=0.11,<0.12",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "ruff>=0.5",
+    "reportlab>=4",
 ]
 
 [tool.ruff]

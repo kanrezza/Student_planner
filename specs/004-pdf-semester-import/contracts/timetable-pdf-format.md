@@ -43,7 +43,7 @@ xuất hiện.
 
 ## Đáp án của file giả lập chính (`tkb-synthetic-01.pdf`, cùng nội dung lịch với file thật)
 
-8 môn, 18 quy tắc; ví dụ kiểm tra:
+8 môn, 17 quy tắc; ví dụ kiểm tra:
 
 | Môn (mã lớp) | Quy tắc |
 |--------------|---------|

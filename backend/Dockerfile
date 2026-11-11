@@ -45,6 +45,12 @@ RUN pip install -r /tmp/requirements.txt
 RUN python -c "import easyocr; easyocr.Reader(['vi', 'en'], gpu=False, \
 model_storage_directory='/opt/easyocr-models', download_enabled=True)"
 
+# Phông DejaVu cho script sinh PDF thời khoá biểu giả lập (samples/synthetic/make_timetable_pdf.py, feature 004);
+# đặt ở lớp riêng cuối cùng để không phải cài lại PyTorch và model khi chỉ đổi gói này.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY . .
 RUN chmod +x docker-entrypoint.sh
 

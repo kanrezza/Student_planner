@@ -51,3 +51,8 @@ def context(**overrides) -> PreviewContext:
     }
     values.update(overrides)
     return PreviewContext(**values)
+
+
+def load_pdf(name: str) -> bytes:
+    """Bytes của PDF thời khoá biểu giả lập trong fixtures (feature 004)."""
+    return (FIXTURES / name).read_bytes()
