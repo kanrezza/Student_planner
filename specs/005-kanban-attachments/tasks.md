@@ -84,7 +84,7 @@ phase này.
   - `unique_display_name(name, existing)`:
     - `"a.pdf"` khi chưa có;
     - `"a (2).pdf"` khi đã có `"A.pdf"`;
-    - `"a (3).pdf"` khi đã có cả `"a (2).pdf"`.
+    - `"a (3).pdf"` khi đã có cả `"a (2).pdf"`. Thêm test: `sweep` không xoá file mồ côi có thời gian sửa mới hơn 1 giờ (file vừa đổi tên vào chỗ nhưng dòng CSDL chưa commit).
 - [X] T007 [P] Test migration trong `backend/tests/integration/test_migration_0012.py`:
   - Dựng dữ liệu ở revision `0011_periods_canonical_names`: 3 task chưa xong ở 2 danh sách, 2 task đã xong, 1 task trong
     Thùng rác.
@@ -126,14 +126,14 @@ phase này.
   - `store_stream` đọc từng 1 MiB, cập nhật `hashlib.sha256`, `fsync` file rồi `fsync` thư mục, `os.replace`;
   - `open_blob(sha)`, `delete_blob(sha)`, `sweep(known_shas, now)`, `detect_mime`, `is_executable`, `unique_display_name`;
   - `ENOSPC` ném `DiskFull`;
-  - không log nội dung file.
+  - không log nội dung file. `sweep` chỉ xoá file không có dòng CSDL khi thời gian sửa cũ hơn 1 giờ (tránh xoá file vừa gắn).
 - [X] T013 Sửa `backend/app/services/tasks.py`:
   - `create_task` (và mọi đường tạo: thêm nhanh, deadline tự tạo trong `backend/app/services/auto_deadlines.py`, lần kế
     tiếp của task lặp trong `backend/app/services/task_series.py`) đặt `board_rank = min(cột Chưa làm) − 1`.
   - `complete_task` đặt `in_progress = False`.
   - `update_task` nhận `subject_id` (kiểm tra môn tồn tại) và `status` ∈ `todo`/`doing` (không nhận `done`).
   - `serialize_task` trong `backend/app/schemas/tasks.py` thêm `status`, `board_rank`, `subject_id`,
-    `effective_subject_id`, `attachment_count`. Mục đính kèm tạm trả 0 cho tới US4.
+    `effective_subject_id`, `attachment_count`. Mục đính kèm tạm trả 0 cho tới US4. PATCH `status` và `uncomplete_task` đặt `board_rank` lên đầu cột đích (FR-006).
 - [X] T014 Gọi `attachments_store.sweep` khi backend khởi động (`backend/app/__init__.py`, cạnh dọn cờ bảo trì) và mỗi ngày một lần theo kiểu `purge_expired_trash_throttled`. Chưa có bảng blob thì bỏ qua
 
 **Checkpoint**: `./scripts/test.sh` xanh (kể cả test cũ của task, lặp, deadline tự tạo, Hôm nay); migration chạy trên DB thật sau khi `./scripts/backup.sh`. Commit.
@@ -165,7 +165,7 @@ giữ nguyên; dạng Danh sách thấy task Xong đã tick.
   - Task lặp kéo sang done → `next_task` ở đầu cột Chưa làm. Gọi lại với `undo` → task về cột/vị trí cũ, lần kế tiếp
     chưa sửa bị gỡ.
   - Đổi chỗ 40 lần giữa hai thẻ thì cột được sắp lại, thứ tự đúng.
-  - Task mới tạo nằm đầu cột Chưa làm.
+  - Task mới tạo nằm đầu cột Chưa làm. Thêm test: đổi trạng thái qua PATCH `/tasks/{id}` (dạng Danh sách) và bỏ tick đều đưa thẻ lên đầu cột đích.
 - [ ] T016 [P] [US1] Test Vitest `frontend/tests/boardState.test.ts`:
   - `groupColumns` từ phản hồi API;
   - `applyMove(columns, id, toStatus, index)` cho kết quả lạc quan đúng;
@@ -285,7 +285,7 @@ gắn 2 nơi chỉ tính dung lượng một lần.
   - Giả lập `DiskFull` → 507 `disk_full`, không có mục.
   - `GET /attachments?owner_type=…`.
   - `PATCH` đổi tên (rỗng, có `/` → 400).
-  - `attachment_count` có trong Task / Subject / ClassSession / Exam.
+  - `attachment_count` có trong Task / Subject / ClassSession / Exam. Thêm hai test: (1) chạy chồng, `collect_garbage` của một nội dung trong khi upload cùng nội dung vẫn cho kết quả nhất quán (blob còn file, mục trỏ đúng); (2) upload 50 MB < 5 giây (SC-005).
 - [ ] T029 [P] [US4] Test Vitest `frontend/tests/attachmentsSection.test.tsx` và `frontend/tests/attachmentUpload.test.ts`:
   - mục "File đính kèm · n" hiện danh sách (biểu tượng theo loại, "2,4 MB · 11/11/2026");
   - "Thêm file" chọn nhiều file;
@@ -302,7 +302,7 @@ gắn 2 nơi chỉ tính dung lượng một lần.
   - `create(owner_type, owner_id, files, max_bytes)`: với mỗi file gọi `attachments_store.store_stream`, upsert
     `AttachmentBlob` (mime, `is_executable` từ 4 KB đầu), tạo `Attachment` với `unique_display_name` (NFC).
   - `list_for(owner)`, `rename`, `count_for(...)` (bỏ mục của task trong Thùng rác), `stats()`.
-  - `owner_title(attachment)`.
+  - `owner_title(attachment)`. Chèn blob bằng `INSERT … ON CONFLICT DO NOTHING`, khoá dòng blob (`FOR UPDATE`) và đặt lại file nếu đang thiếu, để chạy chồng với `collect_garbage` không để mục trỏ tới blob đã bị xoá.
 
   Mỗi file một transaction để file lỗi không chặn file khác.
 - [ ] T031 [US4] Tạo schema `backend/app/schemas/attachments.py` và API `backend/app/api/attachments.py`:
@@ -370,7 +370,7 @@ mất khỏi danh sách, tổng dung lượng giảm.
   - `unique_download_path` thêm " (2)", " (3)";
   - `cache_path(sha, name)` không thoát khỏi thư mục cache (tên có `../` bị làm sạch);
   - `refuse_executable` theo metadata;
-  - `parse_clipboard_paths` từ đầu ra `osascript` (nhiều file, tên có dấu, rỗng).
+  - `parse_clipboard_paths` từ đầu ra `osascript` (nhiều file, tên có dấu, rỗng). Thêm test: hàm dựng URL chỉ chấp nhận `http://127.0.0.1:8080`, từ chối host khác (FR-029).
 
 ### Implementation for User Story 5
 
@@ -453,7 +453,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
   - Tương tự `DELETE /exams/{id}`.
   - `PATCH /subjects/{id}` đổi thứ làm mất buổi có file → file chuyển sang môn, `warnings` có `attachments_moved`.
   - Nhập lại lịch thi trùng (ảnh) → file của buổi thi giữ nguyên.
-  - `sweep` dọn file lạ và `.incoming` cũ.
+  - `sweep` dọn file lạ và `.incoming` cũ. Thêm test: xoá học kỳ và thu hẹp học kỳ làm môn bị xoá, khi có file đính kèm → 409 `confirm_required` kèm `attachment_count`; có `confirm` thì xoá và dọn blob.
 - [ ] T045 [P] [US6] Test sao lưu trong `backend/tests/integration/test_backup_attachments.py` (dùng `isolated_app` của feature 003, `ATTACHMENTS_DIR` riêng):
   - `build_backup` tạo ZIP format 2 có `attachments/<sha>` cho mọi blob đang dùng (kể cả của task trong Thùng rác) và
     manifest `attachments.count/bytes`.
@@ -483,7 +483,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
     `backend/app/services/tasks.py`, sau xoá môn trong `backend/app/services/subjects.py`, sau xoá buổi thi trong
     `backend/app/services/exams.py`. Lấy danh sách sha trước khi xoá.
   - `delete_subject`/`delete_exam` nhận `confirm`; API `backend/app/api/subjects.py`, `backend/app/api/exams.py` trả
-    409 `confirm_required` kèm `attachment_count`.
+    409 `confirm_required` kèm `attachment_count`. `delete_semester` và `update_semester` (thu hẹp, `clamp_subjects`) trong `backend/app/services/semesters.py` đếm file của các môn/buổi bị xoá, trả 409 `confirm_required` kèm `attachment_count` khi thiếu xác nhận, rồi gọi `collect_garbage` sau commit; giao diện học kỳ (`frontend/src/features/settings/SemestersSettings.tsx`) hiện số file trong hộp xác nhận.
 - [ ] T050 [US6] Trong `regenerate_sessions` của `backend/app/services/subjects.py`, trước khi xoá buổi theo `plan.to_delete`: chuyển mục đính kèm của các buổi đó sang `subject_id` của môn (`session_id = NULL`). Trả cảnh báo `attachments_moved` qua `_warnings` / kết quả nhập PDF trong `backend/app/services/timetable_import.py`
 - [ ] T051 [US6] Sao lưu format 2 trong `backend/app/services/backup.py` theo [data-model](data-model.md#bản-sao-lưu-lhbackup-format-2-r7):
   - `MANIFEST_FORMAT = 2`, nhận cả 1 và 2 khi mở.
@@ -493,7 +493,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
   - `_restore_in_maintenance`: sau khi nạp dump + nâng cấp thành công thì `os.replace` blob còn thiếu vào chỗ rồi
     `sweep`; lỗi thì xoá `.restore`.
   - `GET /backup/status` (`backend/app/services/backup_jobs.py`) thêm `attachments_bytes`, `estimated_backup_bytes`,
-    `attachments_warning`.
+    `attachments_warning`. Thứ tự khôi phục: giải nén vào `.restore` → nạp dump + nâng cấp schema → `os.replace` blob vào chỗ → commit; chỉ quét dọn sau khi mọi bước thành công. Lỗi ở bước chuyển blob thì nạp lại `safety.dump`; blob cũ còn nguyên vì chưa bị xoá.
 - [ ] T052 [US6] Agent: trong `mac-agent/lichhoc_agent/backup.py`, sau sao lưu tự động thành công đọc `attachments_warning` từ status và gọi `notify` (tối đa 1 lần/ngày, nhớ trong `state.py`), chuỗi tiếng Việt "File đính kèm đang chiếm 1,2 GB; mỗi bản sao lưu khoảng 1,3 GB."
 - [ ] T053 [US6] Thêm nhóm `files` vào `backend/app/services/search.py` (`GROUPS`, truy vấn theo `vn_fold(display_name)`, bỏ task trong Thùng rác, `owner` qua `owner_title`). Frontend:
   - `frontend/src/features/search/SearchResults.tsx`: nhóm "File" có biểu tượng kẹp giấy, dòng phụ nơi gắn; chọn thì
@@ -554,7 +554,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
 - [ ] T062 Kiểm tra tay theo `specs/005-kanban-attachments/quickstart.md` trên app macOS, gồm:
   - ⌘V file từ Finder;
   - PDF trong `<iframe>`;
-  - tháo ổ SSD thì app vẫn xem được file.
+  - tháo ổ SSD thì app vẫn xem được file. Thêm: cuộn bảng 200+ thẻ không giật, mở app và trình duyệt cùng lúc thấy thay đổi sau khi làm mới, đo xem trước ảnh/PDF < 10 MB dưới 2 giây (SC-005).
 
   Ghi kết quả vào `specs/005-kanban-attachments/validation.md`. Sau đó `./scripts/backup.sh`, rồi
   `docker compose build backend web && docker compose up -d`, rồi kiểm tra
