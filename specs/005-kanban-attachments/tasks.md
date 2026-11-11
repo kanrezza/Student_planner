@@ -222,7 +222,7 @@ giữ nguyên; dạng Danh sách thấy task Xong đã tick.
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] Test API trong `backend/tests/integration/test_board_filters.py`:
+- [X] T023 [P] [US2] Test API trong `backend/tests/integration/test_board_filters.py`:
   - `list_ids` nhiều giá trị;
   - `tag_ids` khớp bất kỳ;
   - `subject_ids` khớp `tasks.subject_id` **và** deadline tự tạo theo môn của buổi nguồn;
@@ -231,7 +231,7 @@ giữ nguyên; dạng Danh sách thấy task Xong đã tick.
   - `PATCH /tasks/{id}` với `subject_id` sai → 400, `null` bỏ gắn;
   - xoá môn → `subject_id` của task thành NULL;
   - 300 task + lọc < 1 giây (SC-002).
-- [ ] T024 [P] [US2] Test Vitest `frontend/tests/boardFilters.test.tsx` và `frontend/tests/boardCard.test.tsx`:
+- [X] T024 [P] [US2] Test Vitest `frontend/tests/boardFilters.test.tsx` và `frontend/tests/boardCard.test.tsx`:
   - thanh lọc gửi đúng query và nhớ ở `lichhoc.board.filters`; "Bỏ lọc";
   - thẻ hiện tiêu đề (cắt 2 dòng), hạn chót đỏ khi quá hạn và cam khi hôm nay, tối đa 3 chấm nhãn + "+n", sao Quan
     trọng, biểu tượng lặp, kẹp giấy + số khi `attachment_count > 0`;
@@ -240,14 +240,14 @@ giữ nguyên; dạng Danh sách thấy task Xong đã tick.
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Lọc trong `backend/app/services/board.py`:
+- [X] T025 [US2] Lọc trong `backend/app/services/board.py`:
   - `list_ids`;
   - `tag_ids` (dùng `_has_any_tag` của `backend/app/services/tasks.py`);
   - `subject_ids` theo môn hiệu lực `COALESCE(tasks.subject_id, class_sessions.subject_id)` (outer join qua
     `source_session_id`).
 
   Query parse trong `backend/app/api/board.py` (danh sách số cách nhau dấu phẩy, sai → 400 theo tham số)
-- [ ] T026 [US2] Tạo `frontend/src/features/tasks/board/BoardFilters.tsx`:
+- [X] T026 [US2] Tạo `frontend/src/features/tasks/board/BoardFilters.tsx`:
   - 3 menu chọn nhiều: danh sách (`useLists`), nhãn (giống `TagFilter`), môn (`useSubjects` của học kỳ hiện tại, kèm
     "Học kỳ khác…");
   - nút "Bỏ lọc";
@@ -255,7 +255,7 @@ giữ nguyên; dạng Danh sách thấy task Xong đã tick.
 
   Hoàn thiện `BoardCard.tsx` theo [contracts/ui.md](contracts/ui.md): dùng lại `formatDue`, chấm màu nhãn, dấu Quan
   trọng của `TaskRow`; `IconPaperclip` trong `frontend/src/ui/icons.tsx`.
-- [ ] T027 [US2] Ô "Môn học" trong `frontend/src/features/tasks/TaskDetailPanel.tsx`:
+- [X] T027 [US2] Ô "Môn học" trong `frontend/src/features/tasks/TaskDetailPanel.tsx`:
   - chọn môn của học kỳ hiện tại hoặc "Không gắn môn";
   - deadline tự tạo hiện môn của buổi, chỉ đọc.
 

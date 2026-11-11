@@ -322,6 +322,11 @@ export const vi = {
     undo: 'Hoàn tác',
     moveFailed: 'Không chuyển được thẻ: {message}',
     cardsLabel: 'Bảng công việc',
+    filters: 'Bộ lọc bảng',
+    filterLists: 'Danh sách',
+    filterTags: 'Nhãn',
+    filterSubjects: 'Môn học',
+    clearFilters: 'Bỏ lọc',
     columnLabel: 'Cột {name}, {count} thẻ',
     inProgress: 'Đang làm',
     announce: {

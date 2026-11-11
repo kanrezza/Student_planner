@@ -6,6 +6,8 @@ import type { Task } from '../../../api/types';
 import { useNow } from '../../../app/useNow';
 import { QuickAdd } from '../QuickAdd';
 import { hasQuickAdd } from '../quickAddDefaults';
+import { useStoredState } from '../../../lib/storage';
+import { BoardFilters as FilterBar } from './BoardFilters';
 import { BoardView } from './BoardView';
 
 /** Bộ lọc suy ra từ view đang xem: danh sách/nhãn của cột bên trái thu hẹp bảng. */
@@ -34,6 +36,7 @@ export function BoardPane({
   onOpen: (task: Task) => void;
 }) {
   const { today } = useNow();
+  const [stored, setStored] = useStoredState<BoardFilters>('board.filters', NO_FILTERS);
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col">
       <header className="flex shrink-0 items-center gap-2 px-8 pb-3 pt-[calc(20px+var(--titlebar-inset))]">
@@ -49,7 +52,22 @@ export function BoardPane({
         </div>
       )}
       <BoardView
-        filters={viewFilters(view)}
+        toolbar={
+          <FilterBar
+            value={viewFilters(view, stored)}
+            onChange={(next) =>
+              setStored({
+                ...next,
+                // Bộ lọc đã khoá theo view (danh sách/nhãn đang xem) không được ghi vào lựa chọn đã nhớ.
+                list_ids: view.kind === 'list' ? stored.list_ids : next.list_ids,
+                tag_ids: view.kind === 'tag' ? stored.tag_ids : next.tag_ids,
+              })
+            }
+            lockedList={view.kind === 'list'}
+            lockedTag={view.kind === 'tag'}
+          />
+        }
+        filters={viewFilters(view, stored)}
         selectedId={selectedId}
         onSelect={onSelect}
         onOpen={onOpen}
