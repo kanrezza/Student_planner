@@ -4,8 +4,8 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExamsScreen } from '../src/features/exams/ExamsScreen';
 import { ImportScreen } from '../src/features/imports/ImportScreen';
-import { takePendingImage } from '../src/features/imports/pendingImage';
-import { imageFromClipboard } from '../src/features/imports/usePasteImage';
+import { takePendingFile } from '../src/features/imports/pendingFile';
+import { fileFromClipboard } from '../src/features/imports/usePasteFile';
 import { SubjectsScreen } from '../src/features/subjects/SubjectsScreen';
 import { ToastProvider } from '../src/ui/Toast';
 import { mockApi } from './apiMock';
@@ -63,19 +63,19 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
-  takePendingImage();
+  takePendingFile();
   vi.unstubAllGlobals();
 });
 
-describe('imageFromClipboard', () => {
+describe('fileFromClipboard', () => {
   it('lấy ảnh đầu tiên, bỏ qua file không phải ảnh', () => {
     const img = png();
     const data = clipboard({ files: [new File(['a'], 'a.txt', { type: 'text/plain' }), img] });
-    expect(imageFromClipboard(data as unknown as DataTransfer)).toBe(img);
+    expect(fileFromClipboard(data as unknown as DataTransfer)).toBe(img);
   });
   it('không có ảnh thì null', () => {
-    expect(imageFromClipboard(clipboard() as unknown as DataTransfer)).toBeNull();
-    expect(imageFromClipboard(null)).toBeNull();
+    expect(fileFromClipboard(clipboard() as unknown as DataTransfer)).toBeNull();
+    expect(fileFromClipboard(null)).toBeNull();
   });
 });
 
@@ -84,7 +84,7 @@ describe('Dán ảnh (⌘V)', () => {
     mockApi(ROUTES);
     app('/mon-hoc/nhap-anh');
     expect(screen.getByTestId('dropzone').textContent).toContain(
-      'Dán ảnh (⌘V), kéo thả hoặc chọn file',
+      'Dán ảnh hoặc PDF (⌘V), kéo thả hoặc chọn file',
     );
   });
 
@@ -101,7 +101,7 @@ describe('Dán ảnh (⌘V)', () => {
     fireEvent.paste(document.body, { clipboardData: clipboard({ files: [png()] }) });
     await waitFor(() => expect(screen.getByTestId('path').textContent).toBe('/mon-hoc/nhap-anh'));
     await waitFor(() => expect(api.calls('POST', '/imports/recognize')).toHaveLength(1));
-    expect(takePendingImage()).toBeNull(); // đã được nhận, không còn nằm lại trong bộ nhớ
+    expect(takePendingFile()).toBeNull(); // đã được nhận, không còn nằm lại trong bộ nhớ
   });
 
   it('dán ảnh ở trang Lịch thi cũng mở màn hình nhập', async () => {
@@ -135,7 +135,7 @@ describe('Dán ảnh (⌘V)', () => {
     mockApi(ROUTES);
     app('/mon-hoc');
     fireEvent.paste(document.body, { clipboardData: clipboard({ text: 'abc' }) });
-    expect(await screen.findByText('Không có ảnh trong clipboard')).toBeTruthy();
+    expect(await screen.findByText('Không có ảnh hoặc PDF trong clipboard')).toBeTruthy();
     expect(screen.getByTestId('path').textContent).toBe('/mon-hoc');
   });
 
@@ -145,7 +145,7 @@ describe('Dán ảnh (⌘V)', () => {
     const field = document.createElement('input');
     document.body.appendChild(field);
     fireEvent.paste(field, { clipboardData: clipboard({ text: 'abc' }) });
-    expect(screen.queryByText('Không có ảnh trong clipboard')).toBeNull();
+    expect(screen.queryByText('Không có ảnh hoặc PDF trong clipboard')).toBeNull();
     field.remove();
   });
 });

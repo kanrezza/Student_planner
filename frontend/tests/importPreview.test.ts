@@ -124,7 +124,8 @@ describe('xem trước nhập ảnh', () => {
   it('kiểm tra ảnh phía trình duyệt: đúng loại và ≤ 20 MB', () => {
     expect(checkImageFile({ name: 'a.png', type: 'image/png', size: 1000 })).toBeNull();
     expect(checkImageFile({ name: 'a.HEIC', type: '', size: 1000 })).toBeNull();
-    expect(checkImageFile({ name: 'a.pdf', type: 'application/pdf', size: 10 })).toContain('PNG');
+    expect(checkImageFile({ name: 'a.pdf', type: 'application/pdf', size: 10 })).toBeNull();
+    expect(checkImageFile({ name: 'a.txt', type: 'text/plain', size: 10 })).toContain('PDF');
     expect(
       checkImageFile({ name: 'a.jpg', type: 'image/jpeg', size: MAX_IMAGE_BYTES + 1 }),
     ).toContain('20 MB');

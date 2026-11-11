@@ -93,9 +93,15 @@ export function BulkSubjectForm({
         end_date: endDate || null,
         rows: filled.map((r) => ({
           name: r.name.trim(),
-          weekdays: r.weekdays,
-          ...timeChoiceToInput(r.time),
-          room: blankToNull(r.room),
+          schedules: [
+            {
+              weekdays: r.weekdays,
+              start_date: null,
+              end_date: null,
+              ...timeChoiceToInput(r.time),
+              room: blankToNull(r.room),
+            },
+          ],
           class_code: blankToNull(r.class_code),
           lecturer: blankToNull(r.lecturer),
         })),
@@ -111,7 +117,9 @@ export function BulkSubjectForm({
     );
   }
 
-  const cellError = (i: number, field: string) => fieldError(error, `rows[${i}].${field}`);
+  const cellError = (i: number, field: string) =>
+    fieldError(error, `rows[${i}].${field}`) ??
+    fieldError(error, `rows[${i}].schedules[0].${field}`);
   const generalError =
     error instanceof ApiError && Object.keys(error.fields).length === 0 ? error.message : undefined;
 

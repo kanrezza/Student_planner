@@ -1,6 +1,6 @@
-import type { ClassSession, Priority, Task } from '../api/types';
+import type { ClassSession, Priority, Subject, Task } from '../api/types';
 import { t } from '../i18n/vi';
-import { formatDayLong, formatTime } from './dates';
+import { formatDate, formatDayLong, formatTime } from './dates';
 
 export const PRIORITIES: Priority[] = [1, 2, 3];
 
@@ -47,4 +47,24 @@ export function formatSize(bytes: number): string {
 /** "21:00 Thứ Năm, 05/11/2026" */
 export function formatMoment(iso: string): string {
   return `${formatTime(iso)} ${formatDayLong(iso)}`;
+}
+
+/**
+ * Tóm tắt lịch của môn: một quy tắc → "T2 · Ca 2 · Sân bóng đá"; nhiều quy tắc → "3 lịch ·
+ * 30/11/2026 – 28/02/2027" (khoảng từ ngày sớm nhất tới muộn nhất).
+ */
+export function describeSchedules(subject: Pick<Subject, 'schedules'>): string {
+  const rules = subject.schedules;
+  if (rules.length === 0) return '';
+  if (rules.length === 1) {
+    const rule = rules[0];
+    const when = rule.shift_label ?? `${rule.start_time}–${rule.end_time}`;
+    return [weekdaysLabel(rule.weekdays), when, rule.room].filter(Boolean).join(' · ');
+  }
+  const start = rules.map((r) => r.start_date).sort()[0];
+  const end = rules
+    .map((r) => r.end_date)
+    .sort()
+    .at(-1) as string;
+  return `${t('subjects.scheduleCount', { count: rules.length })} · ${formatDate(start)} – ${formatDate(end)}`;
 }

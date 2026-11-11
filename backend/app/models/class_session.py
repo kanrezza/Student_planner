@@ -49,7 +49,12 @@ class ClassSession(IdMixin, TimestampMixin, db.Model):
     # Ngày gốc khi buổi được dời sang ngày khác (feature 002 FR-028); NULL = chưa dời.
     original_date: Mapped[calendar_date | None] = mapped_column(Date)
 
+    schedule_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("subject_schedules.id", ondelete="SET NULL"), index=True
+    )
+
     subject = relationship("Subject", back_populates="sessions")
+    schedule = relationship("SubjectSchedule", foreign_keys=[schedule_id])
     tag_links = relationship(
         "SessionTag",
         cascade="all, delete-orphan",

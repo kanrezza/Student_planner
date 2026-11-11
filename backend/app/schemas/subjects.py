@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from pydantic import Field, ValidationInfo, field_validator
+from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from app.lib.timeutil import iso
 from app.schemas.common import HHMM, ApiModel, OptionalText, VietnameseText
@@ -61,18 +61,46 @@ class ShiftRef(ApiModel):
     end_shift_id: int
 
 
+class ScheduleIn(ApiModel):
+    """Một quy tắc lặp hằng tuần của môn (feature 004, FR-020).
+
+    Đúng một trong hai: `shift` (ca/dãy ca) hoặc cặp `start_time`/`end_time` (giờ tuỳ chỉnh); ràng
+    buộc này kiểm tra ở service để báo lỗi đúng tên trường. `id` có mặt khi sửa quy tắc đã lưu.
+    """
+
+    id: int | None = None
+    weekdays: list[int] = Field(min_length=1)
+    start_date: date | None = None  # None = theo học kỳ
+    end_date: date | None = None
+    shift: ShiftRef | None = None
+    start_time: HHMM | None = None
+    end_time: HHMM | None = None
+    period_from: int | None = Field(default=None, ge=1, le=30)
+    period_to: int | None = Field(default=None, ge=1, le=30)
+    room: OptionalText = None
+
+    @field_validator("weekdays")
+    @classmethod
+    def _weekdays(cls, value):
+        return _check_weekdays(value)
+
+
 class SubjectFields(ApiModel):
     """Trường chung của một môn (dùng cho thêm một môn và cho từng dòng khi nhập nhiều môn).
 
-    Giờ học: hoặc `shift` (ca/dãy ca), hoặc cặp `start_time`/`end_time` (giờ tuỳ chỉnh). Ràng buộc
-    "đúng một trong hai" được kiểm tra ở service để báo lỗi đúng tên trường.
+    Lịch học: `schedules` (≥ 1 quy tắc), hoặc dạng rút gọn cho một quy tắc duy nhất bằng các trường
+    phẳng `weekdays`, `shift` / `start_time` + `end_time`, `room` (tương thích với bản trước
+    feature 004).
     """
 
     name: VietnameseText = Field(min_length=1, max_length=200)
     class_code: OptionalText = None
+    course_code: OptionalText = None
+    credits: int | None = Field(default=None, ge=0, le=30)
     lecturer: OptionalText = None
+    schedules: list[ScheduleIn] | None = Field(default=None, min_length=1)
     room: OptionalText = None
-    weekdays: list[int] = Field(min_length=1)
+    weekdays: list[int] | None = Field(default=None, min_length=1)
     shift: ShiftRef | None = None
     start_time: HHMM | None = None
     end_time: HHMM | None = None
@@ -86,17 +114,28 @@ class SubjectFields(ApiModel):
     def _weekdays(cls, value):
         return _check_weekdays(value)
 
+    @model_validator(mode="after")
+    def _has_schedule(self):
+        if self.schedules is None and self.weekdays is None:
+            raise ValueError(
+                "Cần ít nhất một lịch học (schedules) hoặc các thứ trong tuần (weekdays)"
+            )
+        return self
+
 
 class SubjectIn(SubjectFields):
     semester_id: int | None = None  # None = học kỳ hiện tại
-    start_date: date | None = None  # None = ngày bắt đầu học kỳ
-    end_date: date | None = None  # None = ngày kết thúc học kỳ
+    start_date: date | None = None  # None = ngày bắt đầu học kỳ (dạng rút gọn)
+    end_date: date | None = None  # None = ngày kết thúc học kỳ (dạng rút gọn)
 
 
 class SubjectPatch(ApiModel):
     name: VietnameseText | None = Field(default=None, min_length=1, max_length=200)
     class_code: OptionalText = None
+    course_code: OptionalText = None
+    credits: int | None = Field(default=None, ge=0, le=30)
     lecturer: OptionalText = None
+    schedules: list[ScheduleIn] | None = Field(default=None, min_length=1)
     room: OptionalText = None
     weekdays: list[int] | None = Field(default=None, min_length=1)
     shift: ShiftRef | None = None
@@ -122,27 +161,56 @@ class BulkSubjectsIn(ApiModel):
     rows: list[SubjectFields] = Field(min_length=1)
 
 
+def serialize_schedule(rule) -> dict:
+    """Quy tắc lặp (đọc) — contracts/rest-api.md (feature 004)."""
+    return {
+        "id": rule.id,
+        "position": rule.position,
+        "weekdays": list(rule.weekdays),
+        "start_date": rule.start_date.isoformat(),
+        "end_date": rule.end_date.isoformat(),
+        "shift": (
+            {"start_shift_id": rule.start_shift_id, "end_shift_id": rule.end_shift_id}
+            if rule.start_shift_id
+            else None
+        ),
+        "shift_label": shift_label(rule.start_shift, rule.end_shift),
+        "start_time": rule.start_time.strftime("%H:%M"),
+        "end_time": rule.end_time.strftime("%H:%M"),
+        "period_from": rule.period_from,
+        "period_to": rule.period_to,
+        "room": rule.room,
+    }
+
+
 def serialize_subject(subject, session_count: int | None = None) -> dict:
     tags = subject.tags
+    first = subject.schedules[0]
+    span_start, span_end = subject.date_span
     data = {
         "id": subject.id,
         "semester_id": subject.semester_id,
         "name": subject.name,
         "class_code": subject.class_code,
+        "course_code": subject.course_code,
+        "credits": subject.credits,
         "lecturer": subject.lecturer,
-        "room": subject.room,
         "color": subject.color,
-        "weekdays": list(subject.weekdays),
+        "schedules": [serialize_schedule(rule) for rule in subject.schedules],
+        # Tóm tắt tương thích ngược: thứ, ca, giờ, phòng của lịch đầu tiên; khoảng ngày là phạm vi
+        # từ ngày sớm nhất tới muộn nhất của mọi lịch. Giao diện mới dùng `schedules`.
+        "room": first.room,
+        "weekdays": list(first.weekdays),
         "shift": (
-            {"start_shift_id": subject.start_shift_id, "end_shift_id": subject.end_shift_id}
-            if subject.start_shift_id
+            {"start_shift_id": first.start_shift_id, "end_shift_id": first.end_shift_id}
+            if first.start_shift_id
             else None
         ),
-        "shift_label": shift_label(subject.start_shift, subject.end_shift),
-        "start_time": subject.start_time.strftime("%H:%M"),
-        "end_time": subject.end_time.strftime("%H:%M"),
-        "start_date": subject.start_date.isoformat(),
-        "end_date": subject.end_date.isoformat(),
+        "shift_label": shift_label(first.start_shift, first.end_shift),
+        "start_time": first.start_time.strftime("%H:%M"),
+        "end_time": first.end_time.strftime("%H:%M"),
+        "start_date": span_start.isoformat(),
+        "end_date": span_end.isoformat(),
         "reminder_minutes": subject.reminder_minutes,
         "is_important": subject.is_important,
         "tags": serialize_tags(tags),
@@ -156,6 +224,14 @@ def _active_auto_task_id(session) -> int | None:
     """Task tự tạo đã ở Thùng rác coi như không có (feature 002 FR-031)."""
     task = session.auto_task
     return task.id if task is not None and task.deleted_at is None else None
+
+
+def session_shift_label(session) -> str | None:
+    """Nhãn ca của buổi: lấy từ quy tắc đã sinh buổi, không có khi buổi đã sửa giờ riêng."""
+    rule = session.schedule
+    if session.time_overridden or rule is None:
+        return None
+    return shift_label(rule.start_shift, rule.end_shift)
 
 
 def serialize_session(session) -> dict:
@@ -181,9 +257,7 @@ def serialize_session(session) -> dict:
         "tags": serialize_tags(tags),
         "own_tag_ids": [link.tag_id for link in session.tag_links],  # nhãn riêng (không gồm môn)
         "display_color": display_color([t.color for t in tags], subject.color),
-        "shift_label": (
-            None if session.time_overridden else shift_label(subject.start_shift, subject.end_shift)
-        ),
+        "shift_label": session_shift_label(session),
         "auto_task_id": _active_auto_task_id(session),
         "is_important": session.is_important,
         "important_override": session.important_override,

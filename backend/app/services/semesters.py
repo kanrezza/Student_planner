@@ -85,7 +85,7 @@ def update_semester(semester_id: int, changes: dict, clamp_subjects: bool) -> Se
     affected = [
         s
         for s in db.session.scalars(select(Subject).where(Subject.semester_id == semester_id))
-        if s.start_date < start or s.end_date > end
+        if s.date_span and (s.date_span[0] < start or s.date_span[1] > end)
     ]
     if affected and not clamp_subjects:
         raise ApiError(
@@ -97,9 +97,9 @@ def update_semester(semester_id: int, changes: dict, clamp_subjects: bool) -> Se
                     {
                         "id": s.id,
                         "name": s.name,
-                        "start_date": s.start_date.isoformat(),
-                        "end_date": s.end_date.isoformat(),
-                        "will_be_deleted": s.end_date < start or s.start_date > end,
+                        "start_date": s.date_span[0].isoformat(),
+                        "end_date": s.date_span[1].isoformat(),
+                        "will_be_deleted": _all_outside(s, start, end),
                     }
                     for s in affected
                 ]
@@ -111,18 +111,31 @@ def update_semester(semester_id: int, changes: dict, clamp_subjects: bool) -> Se
     semester.start_date, semester.end_date = start, end
     kept = []
     for subject in affected:
-        if subject.end_date < start or subject.start_date > end:
+        if _all_outside(subject, start, end):
             auto_deadlines.drop_for_subjects([subject.id])
             db.session.delete(subject)
             continue
         kept.append(subject.id)
-        subject.start_date = max(subject.start_date, start)
-        subject.end_date = min(subject.end_date, end)
+        for rule in list(subject.schedules):
+            if rule.end_date < start or rule.start_date > end:
+                for session in subject.sessions:
+                    if session.schedule_id == rule.id:
+                        session.schedule_id = None
+                subject.schedules.remove(rule)  # lịch nằm hẳn ngoài học kỳ mới
+                continue
+            rule.start_date = max(rule.start_date, start)
+            rule.end_date = min(rule.end_date, end)
+        db.session.flush()
         subject_service.regenerate_sessions(subject, force=True)
     auto_deadlines.reconcile(subject_ids=kept)
     bump_revision(db.session)
     db.session.commit()
     return semester
+
+
+def _all_outside(subject, start: date, end: date) -> bool:
+    """Mọi lịch học của môn nằm hẳn ngoài khoảng [start, end]."""
+    return all(rule.end_date < start or rule.start_date > end for rule in subject.schedules)
 
 
 def delete_semester(semester_id: int, confirm: bool) -> None:

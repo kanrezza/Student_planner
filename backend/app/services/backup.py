@@ -131,21 +131,42 @@ def _dump_to(path: Path) -> None:
         raise BackupError(500, "dump_failed", "Bản sao lưu vừa tạo không đọc lại được.")
 
 
+def _data_tables() -> list[str]:
+    """Mọi bảng dữ liệu hiện có, trừ `PRESERVED_TABLES` (dữ liệu của chúng đã đọc vào bộ nhớ)."""
+    db.session.remove()
+    with db.engine.connect() as conn:
+        names = conn.scalars(sa.text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
+        return [name for name in names.all() if name not in PRESERVED_TABLES]
+
+
 def _restore_dump(path: Path) -> None:
+    """Nạp một dump, thay thế toàn bộ bảng dữ liệu, trong MỘT giao dịch: lỗi thì dữ liệu cũ còn
+    nguyên.
+
+    `pg_restore --clean` chỉ xoá được đúng các bảng/ràng buộc mà dump biết. Bản sao lưu cũ không
+    biết bảng của migration mới hơn (vd. `subject_schedules` trỏ khoá ngoại vào `subjects`) và
+    schema hiện có có thể khác schema trong dump, nên xoá từng phần sẽ lỗi "cannot drop … because
+    other objects depend on it". Vì vậy ghép `DROP TABLE … CASCADE` cho mọi bảng dữ liệu vào đầu
+    đúng kịch bản SQL mà `pg_restore` xuất ra, rồi chạy tất cả bằng `psql --single-transaction`.
+    """
     args, env = _connection_args()
-    command = [
-        "pg_restore",
-        "--clean",
-        "--if-exists",
-        "--single-transaction",
-        "--no-owner",
-        "--exit-on-error",
-        *args,
-        str(path),
-    ]
-    result = _run(command, env)
+    script = _run(["pg_restore", "--clean", "--if-exists", "--no-owner", "-f", "-", str(path)], env)
+    if script.returncode != 0:
+        log.error("pg_restore lỗi: %s", script.stderr.strip())
+        raise BackupError(
+            500, "restore_failed", "Không khôi phục được dữ liệu. Dữ liệu hiện tại giữ nguyên."
+        )
+    drops = "".join(f'DROP TABLE IF EXISTS "{name}" CASCADE;\n' for name in _data_tables())
+    result = subprocess.run(
+        ["psql", *args, "--single-transaction", "--quiet", "-v", "ON_ERROR_STOP=1"],
+        input=drops + script.stdout,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     if result.returncode != 0:
-        log.error("pg_restore lỗi: %s", result.stderr.strip())
+        log.error("nạp dữ liệu lỗi: %s", result.stderr.strip())
         raise BackupError(
             500, "restore_failed", "Không khôi phục được dữ liệu. Dữ liệu hiện tại giữ nguyên."
         )

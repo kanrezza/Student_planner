@@ -7,6 +7,7 @@ import { fieldError } from '../../components/FormField';
 import { t } from '../../i18n/vi';
 import { Button } from '../../ui/Button';
 import { Card } from '../../ui/layout';
+import { PeriodsTable } from './PeriodsTable';
 
 type Pending =
   | { kind: 'change'; shift: Shift; input: ShiftInput; count: number }
@@ -129,6 +130,7 @@ export function ShiftsSettings() {
           {Object.values(createError.fields)[0] ?? createError.message}
         </p>
       )}
+      <PeriodsTable />
       <ConfirmDialog
         open={pending !== null}
         title={pending?.kind === 'change' ? t('shifts.title') : t('confirm.deleteTitle')}

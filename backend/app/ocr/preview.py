@@ -50,6 +50,7 @@ class PreviewContext:
     shifts: list = field(default_factory=list)  # Shift (id, position, start_time, end_time)
     semesters: list = field(default_factory=list)  # Semester (id, start_date, end_date)
     subject_names: list[str] = field(default_factory=list)
+    canonical_names: list[str] = field(default_factory=list)  # tên môn chuẩn từ PDF (feature 004)
     sessions: list[ExistingSession] = field(default_factory=list)
     exams: list[tuple[ExamKey, int]] = field(default_factory=list)
 
@@ -185,6 +186,7 @@ def _fix_weak_name(name: str, known: list[str]) -> tuple[str, bool]:
 # ---- Lịch học -----------------------------------------------------------------------------------
 
 
+CANONICAL_REASON = "Đã sửa theo thời khoá biểu"
 TRUNCATED_REASON = "Ô bị cắt ở mép dưới ảnh, chỉ đọc được dòng tiêu đề — hãy kiểm tra lại"
 
 
@@ -249,7 +251,9 @@ def _exam_cell_row(
     name, name_conf = fields.get("name", (None, 0.0))
     if name:
         name = str(name)
-        fixed, changed = _fix_name(name, known)
+        fixed, changed = _fix_weak_name(name, ctx.canonical_names)
+        if not changed:
+            fixed, changed = _fix_name(name, known)
         if not changed:
             fixed, changed = _fix_weak_name(name, known)
         name = fixed
@@ -292,8 +296,13 @@ def _week_row(weekday, day, dates_certain, month_year, fields, ctx, known=None) 
     name, name_conf = get("name")
     reason, weak = None, False
     if name:
-        name, fixed = _fix_name(str(name), known)
-        reason = "Đã sửa theo tên môn có sẵn" if fixed else None
+        # Tên chuẩn từ PDF thời khoá biểu là nguồn đúng: sửa cả khi OCR tự tin (R11).
+        name, fixed = _fix_weak_name(str(name), ctx.canonical_names)
+        if fixed:
+            reason = CANONICAL_REASON
+        else:
+            name, fixed = _fix_name(str(name), known)
+            reason = "Đã sửa theo tên môn có sẵn" if fixed else None
         if not fixed and (name_conf < MIN_CONFIDENCE or truncated):
             name, fixed = _fix_weak_name(str(name), known)
             if fixed:

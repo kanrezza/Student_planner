@@ -7,7 +7,7 @@ from sqlalchemy import func, or_, select
 from app.api.errors import ApiError, not_found
 from app.extensions import db
 from app.lib.text import ci_key
-from app.models import Shift, Subject
+from app.models import Shift, Subject, SubjectSchedule
 from app.services.revision import bump_revision
 
 TOLERANCE_MINUTES = 5
@@ -73,13 +73,26 @@ def get_shift(shift_id: int) -> Shift:
 
 
 def _subjects_using(shift_id: int) -> list[Subject]:
+    """Môn có ít nhất một lịch học dùng ca này."""
     return list(
         db.session.scalars(
-            select(Subject).where(
-                or_(Subject.start_shift_id == shift_id, Subject.end_shift_id == shift_id)
+            select(Subject)
+            .join(SubjectSchedule, SubjectSchedule.subject_id == Subject.id)
+            .where(
+                or_(
+                    SubjectSchedule.start_shift_id == shift_id,
+                    SubjectSchedule.end_shift_id == shift_id,
+                )
             )
+            .distinct()
         )
     )
+
+
+def _rules_using(subject: Subject, shift_id: int) -> list[SubjectSchedule]:
+    return [
+        rule for rule in subject.schedules if shift_id in (rule.start_shift_id, rule.end_shift_id)
+    ]
 
 
 def _check(name: str | None, start: time, end: time, exclude_id: int | None = None) -> None:
@@ -123,8 +136,15 @@ def update_shift(shift_id: int, changes: dict, confirm: bool) -> Shift:
         shift.name = changes["name"]
     shift.start_time, shift.end_time = start, end
     db.session.flush()
+    if times_changed:
+        from app.services import periods  # tránh import vòng
+
+        periods.recompute_for_shift(shift, list_shifts())
+        db.session.flush()
     for subject in users:
-        subject.start_time, subject.end_time = resolve_range(subject.start_shift, subject.end_shift)
+        for rule in _rules_using(subject, shift_id):
+            rule.start_time, rule.end_time = resolve_range(rule.start_shift, rule.end_shift)
+        db.session.flush()
         regenerate_sessions(subject)
     if users:
         from app.services import auto_deadlines
@@ -148,8 +168,9 @@ def delete_shift(shift_id: int, confirm: bool) -> None:
             details={"subject_count": len(users)},
         )
     for subject in users:
-        subject.start_shift_id = None
-        subject.end_shift_id = None
+        for rule in _rules_using(subject, shift_id):
+            rule.start_shift_id = None
+            rule.end_shift_id = None
     db.session.flush()
     db.session.delete(shift)
     db.session.commit()

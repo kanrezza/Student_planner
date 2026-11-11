@@ -13,13 +13,13 @@ import { SubjectForm } from '../subjects/SubjectForm';
 import { t } from '../../i18n/vi';
 import { colorHex } from '../../lib/colors';
 import { formatDate } from '../../lib/dates';
-import { weekdaysLabel } from '../../lib/format';
+import { describeSchedules } from '../../lib/format';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { IconBook, IconPlus } from '../../ui/icons';
 import { Card, ItemList, ItemRow, Notice, Screen } from '../../ui/layout';
 import { useToast } from '../../ui/Toast';
-import { usePasteToImport } from '../imports/usePasteImage';
+import { usePasteToImport } from '../imports/usePasteFile';
 
 /**
  * Mục Môn học (feature 002 US8 kịch bản 3): môn theo học kỳ, thêm một môn, nhập nhiều môn, sửa,
@@ -124,10 +124,7 @@ export function SubjectsScreen() {
               title={s.name}
               meta={
                 <>
-                  <span className="tabular-nums">
-                    {weekdaysLabel(s.weekdays)} · {s.start_time}–{s.end_time}
-                  </span>
-                  {s.room && <span>{s.room}</span>}
+                  <span className="tabular-nums">{describeSchedules(s)}</span>
                   {s.lecturer && <span>{s.lecturer}</span>}
                   {s.class_code && <span>{s.class_code}</span>}
                   <span>

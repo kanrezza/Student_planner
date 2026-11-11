@@ -17,12 +17,21 @@ import { Notice, Screen } from '../../ui/layout';
 import { useToast } from '../../ui/Toast';
 import { ExamPreviewTable } from './ExamPreviewTable';
 import { ImportPreviewTable } from './ImportPreviewTable';
-import { takePendingImage } from './pendingImage';
-import { usePasteImage } from './usePasteImage';
+import { takePendingFile } from './pendingFile';
+import { usePasteFile } from './usePasteFile';
 import { canSaveExams, canSaveWeek, errorsByRow } from './previewState';
+import { TimetablePreview } from './TimetablePreview';
+import {
+  buildCommitPayload,
+  canSaveTimetable,
+  initialState,
+  selectedSubjectCount,
+  type TimetableState,
+} from './timetablePreviewState';
+import { useCommitTimetablePdf, usePreviewTimetablePdf } from '../../api/timetableImport';
 
 export const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
-const ACCEPT = 'image/png,image/jpeg,image/heic,.heic';
+const ACCEPT = 'image/png,image/jpeg,image/heic,.heic,application/pdf,.pdf';
 const SOURCE_LABELS: Record<string, string> = {
   grid_dates: 'import.sourceGrid',
   week_header: 'import.sourceHeader',
@@ -30,10 +39,13 @@ const SOURCE_LABELS: Record<string, string> = {
   menu_bar: 'import.sourceMenu',
 };
 
-/** Kiểm tra ảnh phía trình duyệt trước khi gửi (FR-028); trả thông báo lỗi hoặc null. */
+export const isPdfFile = (file: { type: string; name: string }) =>
+  file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+
+/** Kiểm tra ảnh hoặc PDF phía trình duyệt trước khi gửi (FR-028); trả thông báo lỗi hoặc null. */
 export function checkImageFile(file: { size: number; type: string; name: string }): string | null {
   const isImage = /^image\/(png|jpe?g|heic|heif)$/.test(file.type) || /\.heic$/i.test(file.name);
-  if (!isImage) return t('import.notImage');
+  if (!isImage && !isPdfFile(file)) return t('import.notImage');
   if (file.size > MAX_IMAGE_BYTES) return t('import.tooBig');
   return null;
 }
@@ -52,6 +64,9 @@ export function ImportScreen() {
   const [problem, setProblem] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const previewPdf = usePreviewTimetablePdf();
+  const commitPdf = useCommitTimetablePdf();
+  const [timetable, setTimetable] = useState<TimetableState | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
   const thumbnail = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
@@ -64,8 +79,23 @@ export function ImportScreen() {
     setExamRows([]);
     setProblem(null);
     setSaved(null);
+    setTimetable(null);
     recognize.reset();
     commit.reset();
+    previewPdf.reset();
+    commitPdf.reset();
+  }
+
+  function runPdf(pdf: File) {
+    setProblem(null);
+    setSaved(null);
+    previewPdf.mutate(pdf, {
+      onSuccess: (result) => {
+        setTimetable(initialState(result));
+        for (const warning of result.warnings) toast.show(warning.message, { tone: 'warning' });
+      },
+      onError: (err) => setProblem(err instanceof ApiError ? err.message : t('import.pdfFailed')),
+    });
   }
 
   function run(image: File, kind?: ImportKind) {
@@ -97,23 +127,26 @@ export function ImportScreen() {
     }
     setFile(image);
     setPreview(null);
-    run(image);
+    setTimetable(null);
+    if (isPdfFile(image)) runPdf(image);
+    else run(image);
   }
 
   // Ảnh dán từ trang Môn học / Lịch thi (đang chờ trong bộ nhớ) và ⌘V ngay tại màn hình này.
   const pickRef = useRef(pick);
   pickRef.current = pick;
   useEffect(() => {
-    const waiting = takePendingImage();
+    const waiting = takePendingFile();
     if (waiting) pickRef.current(waiting);
   }, []);
-  usePasteImage(
-    (image) => {
-      if (recognize.isPending || commit.isPending) return;
+  usePasteFile(
+    (pasted) => {
+      if (recognize.isPending || commit.isPending || previewPdf.isPending || commitPdf.isPending)
+        return;
       reset();
-      pick(image);
+      pick(pasted);
     },
-    () => toast.show(t('import.noClipboardImage')),
+    () => toast.show(t('import.noClipboardFile')),
   );
 
   function onDrop(e: DragEvent) {
@@ -124,6 +157,27 @@ export function ImportScreen() {
 
   const eLearningTag = tags.data?.find((tag) => tag.system_key === 'e_learning');
   const apiErrors = commit.error instanceof ApiError ? commit.error : null;
+  const pdfErrors = commitPdf.error instanceof ApiError ? commitPdf.error : null;
+
+  function savePdf() {
+    if (!timetable) return;
+    commitPdf.mutate(buildCommitPayload(timetable, eLearningTag?.id ?? null), {
+      onSuccess: ({ data, warnings }) => {
+        for (const warning of [...data.warnings, ...warnings])
+          toast.show(warning.message, { tone: 'warning' });
+        setSaved(
+          t('import.savedTimetable', {
+            created: data.created_subjects,
+            updated: data.updated_subjects,
+            sessions: data.created_sessions + data.updated_sessions,
+            skipped: data.skipped_sessions,
+          }),
+        );
+        setTimetable(null);
+        setFile(null);
+      },
+    });
+  }
 
   function save() {
     if (!preview) return;
@@ -222,7 +276,18 @@ export function ImportScreen() {
         </div>
       )}
 
-      {file && thumbnail && (
+      {file && isPdfFile(file) && (
+        <div className="flex items-start gap-3">
+          <p className="rounded-lg border border-border px-3 py-2 text-muted">{file.name}</p>
+          {previewPdf.isPending && (
+            <p role="status" className="pt-2 text-muted">
+              {t('import.readingPdf')}
+            </p>
+          )}
+        </div>
+      )}
+
+      {file && thumbnail && !isPdfFile(file) && (
         <div className="flex items-start gap-3">
           <img
             src={thumbnail}
@@ -234,6 +299,32 @@ export function ImportScreen() {
               {t('import.recognizing')}
             </p>
           )}
+        </div>
+      )}
+
+      {timetable && <TimetablePreview state={timetable} onChange={setTimetable} />}
+
+      {pdfErrors && (
+        <Notice tone="danger">
+          {pdfErrors.message}
+          {Object.entries(pdfErrors.fields).map(([key, message]) => (
+            <span key={key} className="block text-[12px]">
+              {message}
+            </span>
+          ))}
+        </Notice>
+      )}
+
+      {timetable && (
+        <div className="sticky bottom-0 flex justify-end gap-2 border-t border-border bg-bg py-3">
+          <Button onClick={reset}>{t('import.cancel')}</Button>
+          <Button
+            variant="primary"
+            disabled={!canSaveTimetable(timetable) || commitPdf.isPending}
+            onClick={savePdf}
+          >
+            {t('import.saveSubjects', { count: selectedSubjectCount(timetable) })}
+          </Button>
         </div>
       )}
 

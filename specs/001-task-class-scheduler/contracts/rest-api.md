@@ -107,6 +107,10 @@ chính máy (constitution IV).
 
 Chỉ được có một trong hai: `shift` hoặc cặp `start_time`/`end_time` (giờ tuỳ chỉnh).
 
+> **Feature 004**: lịch của môn nay là danh sách `schedules` (mỗi quy tắc có `weekdays`, `start_date`,
+> `end_date`, `shift` hoặc giờ, `room`) và môn có thêm `course_code`, `credits`. Dạng phẳng ở trên vẫn được
+> nhận như một quy tắc duy nhất. Xem [contract 004](../../004-pdf-semester-import/contracts/rest-api.md).
+
 ---
 
 ## Nhãn
@@ -150,6 +154,7 @@ Chỉ được có một trong hai: `shift` hoặc cặp `start_time`/`end_time`
 |--------|------|-------|
 | POST | `/imports/recognize?kind=` | `multipart/form-data` với trường `image`. `kind` (tuỳ chọn: `week_schedule` hoặc `exam_table`) ép loại ảnh khi lần nhận diện trước trả `"unknown"` (FR-059). Đồng bộ, có thể mất tới ~60 giây. Trả `ImportPreview` ([data-model](../data-model.md#thực-thể-tạm-thời-không-lưu-importpreview-fr-028-đến-fr-035)). Ảnh không được lưu |
 | POST | `/imports/commit` | Lịch học: `{kind: "week_schedule", rows: [ImportRow đã chỉnh, selected=true]}`; trả `{created_subjects, created_sessions, skipped_duplicates, warnings}`. Lịch thi: `{kind: "exam_table", exam_rows: [...]}`; trả `{created_exams, skipped_duplicates, warnings}` |
+| POST | `/imports/timetable-pdf/preview`, `/imports/timetable-pdf/commit` | Nhập học kỳ từ PDF thời khoá biểu chính thức (feature 004): xem [contract 004](../../004-pdf-semester-import/contracts/rest-api.md) |
 
 - `recognize` không ghi gì vào database. Với lịch thi, phản hồi **không** chứa họ tên hay mã số sinh
   viên (FR-061).

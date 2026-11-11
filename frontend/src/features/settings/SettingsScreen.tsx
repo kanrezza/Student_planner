@@ -5,6 +5,7 @@ import { cx } from '../../ui/cx';
 import { Screen } from '../../ui/layout';
 import { AutoDeadlineSettings } from './AutoDeadlineSettings';
 import { BackupSettings } from './BackupSettings';
+import { CanonicalNamesSettings } from './CanonicalNamesSettings';
 import { ListsSettings } from './ListsSettings';
 import { DigestSettings, ImportantOffsetsSettings, ReminderSettings } from './ReminderSettings';
 import { SemestersSettings } from './SemestersSettings';
@@ -23,6 +24,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { slug: 'nhan', labelKey: 'settings.tags', component: TagsSettings },
   { slug: 'danh-sach', labelKey: 'settings.lists', component: ListsSettings },
   { slug: 'tu-tao-deadline', labelKey: 'settings.autoDeadline', component: AutoDeadlineSettings },
+  { slug: 'ten-mon-chuan', labelKey: 'settings.canonicalNames', component: CanonicalNamesSettings },
   { slug: 'sao-luu', labelKey: 'settings.backup', component: BackupSettings },
 ];
 

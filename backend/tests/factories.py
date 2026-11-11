@@ -4,7 +4,7 @@ from datetime import date, time
 
 from sqlalchemy import select
 
-from app.models import Semester, Subject, Tag, Task, TaskList
+from app.models import Semester, Subject, SubjectSchedule, Tag, Task, TaskList
 
 
 def study_list(session) -> TaskList:
@@ -23,19 +23,37 @@ def make_semester(
     return semester
 
 
+SCHEDULE_FIELDS = {
+    "weekdays",
+    "start_time",
+    "end_time",
+    "start_date",
+    "end_date",
+    "start_shift_id",
+    "end_shift_id",
+    "room",
+    "period_from",
+    "period_to",
+}
+
+
 def make_subject(session, semester: Semester | None = None, **fields) -> Subject:
+    """Môn có một quy tắc lặp; các trường lịch (thứ, giờ, ngày, ca, phòng) đi vào quy tắc đó."""
     semester = semester or make_semester(session)
-    values = {
-        "name": "Giải tích 1",
-        "color": "c01",
+    subject_fields = {k: v for k, v in fields.items() if k not in SCHEDULE_FIELDS}
+    rule = {
         "weekdays": [1],
         "start_time": time(6, 45),
         "end_time": time(9, 25),
         "start_date": semester.start_date,
         "end_date": semester.end_date,
     }
-    values.update(fields)
-    subject = Subject(semester_id=semester.id, **values)
+    rule.update({k: v for k, v in fields.items() if k in SCHEDULE_FIELDS})
+    subject = Subject(
+        semester_id=semester.id,
+        **{"name": "Giải tích 1", "color": "c01", **subject_fields},
+    )
+    subject.schedules.append(SubjectSchedule(position=0, **rule))
     session.add(subject)
     session.flush()
     return subject

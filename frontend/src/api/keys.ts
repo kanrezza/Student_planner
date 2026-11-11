@@ -11,6 +11,7 @@ export const keys = {
   semesters: ['semesters'] as const,
   subjects: ['subjects'] as const,
   shifts: ['shifts'] as const,
+  periods: ['periods'] as const,
   tags: ['tags'] as const,
   /** Kết quả tìm kiếm: làm mới sau mọi thay đổi dữ liệu để kết quả luôn đúng. */
   search: ['search'] as const,

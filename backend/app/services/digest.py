@@ -137,7 +137,10 @@ def build_digest(
 
 def _session_info(s: ClassSession) -> DigestSession:
     subject = s.subject
-    label = None if s.time_overridden else shift_label(subject.start_shift, subject.end_shift)
+    rule = s.schedule
+    label = None
+    if rule is not None and not s.time_overridden:
+        label = shift_label(rule.start_shift, rule.end_shift)
     return DigestSession(s.start_at, label, subject.name, s.room, s.is_important)
 
 
