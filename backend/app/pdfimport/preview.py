@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from app.lib.text import ci_key, fold_key
+from app.ocr.fields import is_e_learning
 from app.pdfimport.cells import (
     join_cell_lines,
     parse_class_label,
@@ -114,6 +115,14 @@ def _duplicate_warnings(schedules: list[dict]) -> None:
                     _problem("start_date", "warning", "Trùng ngày và giờ với một lịch khác của môn")
                 )
                 break
+
+
+def is_e_learning_room(room: str | None) -> bool:
+    """Phòng học trực tuyến ("ONLINE-Elearning", "E-Learning", "online") → gợi ý nhãn E-Learning."""
+    if not room:
+        return False
+    compact = fold(room).replace("-", "").replace(" ", "")
+    return "elearning" in compact or "online" in compact or is_e_learning(room)
 
 
 def match_existing(subject: dict, existing_subjects: list):
@@ -241,8 +250,7 @@ def group_subjects(rows: list[RawRow], ctx: PreviewContext) -> list[dict]:
     result = list(subjects.values())
     for subject in result:
         _duplicate_warnings(subject["schedules"])
-        rooms = " ".join(fold(s["room"] or "") for s in subject["schedules"])
-        if "elearning" in rooms.replace("-", "").replace(" ", ""):
+        if any(is_e_learning_room(r["room"]) for r in subject["schedules"]):
             subject["suggested_tags"] = ["e_learning"]
         subject["selected"] = any(s["selected"] for s in subject["schedules"])
     return result

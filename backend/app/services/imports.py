@@ -18,6 +18,7 @@ from app.ocr import preprocess, reader
 from app.ocr.preview import ExistingSession, PreviewContext, build_preview
 from app.schemas.common import _parse_hhmm
 from app.schemas.imports import CommitIn, FieldIn
+from app.services import canonical_names
 from app.services import exams as exam_service
 from app.services import subjects as subject_service
 from app.services.exams import duplicate_key, exam_key, is_duplicate
@@ -37,6 +38,7 @@ def build_context() -> PreviewContext:
         now=timeutil.now(),
         shifts=list(db.session.scalars(select(Shift).order_by(Shift.position))),
         semesters=list(db.session.scalars(select(Semester).order_by(Semester.start_date))),
+        canonical_names=canonical_names.names(),
         subject_names=sorted(
             {s.name for _, s in sessions} | set(db.session.scalars(select(Subject.name)))
         ),

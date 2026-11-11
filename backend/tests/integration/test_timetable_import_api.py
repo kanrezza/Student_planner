@@ -200,3 +200,34 @@ def test_save_periods_tao_tiet_13_15(client, db_session):
     rule2.update(shift=None, start_time="22:00", end_time="23:00", period_from=20, period_to=21)
     assert client.post(COMMIT, json=body2).status_code == 200
     assert 20 not in {p["number"] for p in client.get("/api/periods").get_json()}
+
+
+def test_nhan_e_learning_gan_cho_mon_va_tao_deadline(client, db_session):
+    from app.models import Tag, Task
+
+    prev = preview(client)
+    online = next(s for s in prev["subjects"] if s["suggested_tags"] == ["e_learning"])
+    tag = db_session.scalars(select(Tag).where(Tag.system_key == "e_learning")).one()
+    body = payload(prev, only=[prev["subjects"].index(online)])
+    body["subjects"][0]["tag_ids"] = [tag.id]
+    result = client.post(COMMIT, json=body)
+    assert result.status_code == 200, result.get_json()
+    subject = db_session.scalars(
+        select(Subject).where(Subject.class_code == online["class_code"])
+    ).one()
+    assert [t.system_key for t in subject.tags] == ["e_learning"]
+    tasks = db_session.scalar(
+        select(func.count()).select_from(Task).where(Task.source_session_id.is_not(None))
+    )
+    assert tasks > 0
+
+
+def test_khong_co_nhan_thi_khong_gan(client, db_session):
+    prev = preview(client)
+    online = next(s for s in prev["subjects"] if s["suggested_tags"] == ["e_learning"])
+    body = payload(prev, only=[prev["subjects"].index(online)])
+    assert client.post(COMMIT, json=body).status_code == 200
+    subject = db_session.scalars(
+        select(Subject).where(Subject.class_code == online["class_code"])
+    ).one()
+    assert subject.tags == []

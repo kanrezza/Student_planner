@@ -155,9 +155,9 @@ số buổi đúng, không buổi nào trong 25/01–14/02/2027; không có giá
 
 **Independent Test**: Preview `tkb-synthetic-01.pdf` → môn "Tích hợp và phân tích dữ liệu lớn (COUR01)" có `suggested_tags: ["e_learning"]`; lưu → môn có nhãn và deadline tự tạo như gắn tay; bỏ nhãn trước khi lưu → không có nhãn.
 
-- [ ] T051 [P] [US4] Test trong `backend/tests/unit/test_pdf_preview.py` (phòng "ONLINE-Elearning", "Elearning", "E-Learning", "online" → đề xuất; "A6-103 (PC)" → không) và `backend/tests/integration/test_timetable_import_api.py` (commit với `tag_ids` chứa nhãn hệ thống E-Learning → môn có nhãn, `auto_deadlines` tạo deadline cho buổi của môn; commit không có nhãn → không)
-- [ ] T052 [US4] Đề xuất nhãn trong `backend/app/pdfimport/preview.py` (dùng `is_e_learning` của `backend/app/ocr/fields.py`, bổ sung khớp "Elearning" liền chữ); commit gắn `tag_ids` cho môn trong `backend/app/services/timetable_import.py` và gọi `auto_deadlines.reconcile` cho môn mới/cập nhật
-- [ ] T053 [US4] Frontend: ô nhãn E-Learning chọn sẵn theo `suggested_tags` và gửi `tag_ids` trong `frontend/src/features/imports/TimetablePreview.tsx` + `frontend/src/features/imports/timetablePreviewState.ts`; bổ sung `frontend/tests/timetablePreview.test.tsx`
+- [X] T051 [P] [US4] Test trong `backend/tests/unit/test_pdf_preview.py` (phòng "ONLINE-Elearning", "Elearning", "E-Learning", "online" → đề xuất; "A6-103 (PC)" → không) và `backend/tests/integration/test_timetable_import_api.py` (commit với `tag_ids` chứa nhãn hệ thống E-Learning → môn có nhãn, `auto_deadlines` tạo deadline cho buổi của môn; commit không có nhãn → không)
+- [X] T052 [US4] Đề xuất nhãn trong `backend/app/pdfimport/preview.py` (dùng `is_e_learning` của `backend/app/ocr/fields.py`, bổ sung khớp "Elearning" liền chữ); commit gắn `tag_ids` cho môn trong `backend/app/services/timetable_import.py` và gọi `auto_deadlines.reconcile` cho môn mới/cập nhật
+- [X] T053 [US4] Frontend: ô nhãn E-Learning chọn sẵn theo `suggested_tags` và gửi `tag_ids` trong `frontend/src/features/imports/TimetablePreview.tsx` + `frontend/src/features/imports/timetablePreviewState.ts`; bổ sung `frontend/tests/timetablePreview.test.tsx`
 
 **Checkpoint**: Quickstart kiểm tra tay bước 3 (nhãn + deadline). Commit.
 
@@ -169,10 +169,10 @@ số buổi đúng, không buổi nào trong 25/01–14/02/2027; không có giá
 
 **Independent Test**: Sau khi lưu `tkb-synthetic-01.pdf`, nhập khối chữ `real-week-02` → 7/7 tên môn khớp tên chuẩn (SC-007); buổi thi "Tal uuhóa" thành "Tối ưu hóa" khi tên chuẩn có môn đó.
 
-- [ ] T054 [P] [US5] Test trong `backend/tests/integration/test_canonical_names.py`: commit PDF ghi tên chuẩn (không trùng theo `lower(name)`, giữ khi môn bị xoá); `GET /canonical-names`, `DELETE /canonical-names`; preview ảnh `real-week-02` với tên chuẩn từ fixture → 7/7 tên khớp, `reason` = "Đã sửa theo thời khoá biểu"; tên không đủ giống giữ nguyên và vẫn tô vàng
-- [ ] T055 [US5] `backend/app/services/canonical_names.py` (ghi khi commit PDF, liệt kê, xoá hết) + API `backend/app/api/canonical_names.py` (`GET`/`DELETE /canonical-names`), đăng ký blueprint; gọi ghi tên trong `backend/app/services/timetable_import.py`
-- [ ] T056 [US5] Nhập ảnh dùng tên chuẩn: `build_context()` trong `backend/app/services/imports.py` thêm `canonical_names`; `PreviewContext` trong `backend/app/ocr/preview.py` thêm trường đó; `_week_row` và `_exam_cell_row` thử khớp tên chuẩn trước (so không dấu, ngưỡng 70, hơn ứng viên thứ hai ≥ 15 điểm, áp dụng cả khi OCR tự tin — R11) và đặt lý do "Đã sửa theo thời khoá biểu"
-- [ ] T057 [P] [US5] Frontend `frontend/src/features/settings/CanonicalNamesSettings.tsx` (danh sách tên · mã HP · ngày thêm, nút "Xoá danh sách" có xác nhận, ghi chú "Dùng để tự sửa tên môn khi nhập lịch từ ảnh."), gắn vào `frontend/src/features/settings/SettingsScreen.tsx`, API `frontend/src/api/canonicalNames.ts`; test `frontend/tests/canonicalNames.test.tsx`
+- [X] T054 [P] [US5] Test trong `backend/tests/integration/test_canonical_names.py`: commit PDF ghi tên chuẩn (không trùng theo `lower(name)`, giữ khi môn bị xoá); `GET /canonical-names`, `DELETE /canonical-names`; preview ảnh `real-week-02` với tên chuẩn từ fixture → 7/7 tên khớp, `reason` = "Đã sửa theo thời khoá biểu"; tên không đủ giống giữ nguyên và vẫn tô vàng
+- [X] T055 [US5] `backend/app/services/canonical_names.py` (ghi khi commit PDF, liệt kê, xoá hết) + API `backend/app/api/canonical_names.py` (`GET`/`DELETE /canonical-names`), đăng ký blueprint; gọi ghi tên trong `backend/app/services/timetable_import.py`
+- [X] T056 [US5] Nhập ảnh dùng tên chuẩn: `build_context()` trong `backend/app/services/imports.py` thêm `canonical_names`; `PreviewContext` trong `backend/app/ocr/preview.py` thêm trường đó; `_week_row` và `_exam_cell_row` thử khớp tên chuẩn trước (so không dấu, ngưỡng 70, hơn ứng viên thứ hai ≥ 15 điểm, áp dụng cả khi OCR tự tin — R11) và đặt lý do "Đã sửa theo thời khoá biểu"
+- [X] T057 [P] [US5] Frontend `frontend/src/features/settings/CanonicalNamesSettings.tsx` (danh sách tên · mã HP · ngày thêm, nút "Xoá danh sách" có xác nhận, ghi chú "Dùng để tự sửa tên môn khi nhập lịch từ ảnh."), gắn vào `frontend/src/features/settings/SettingsScreen.tsx`, API `frontend/src/api/canonicalNames.ts`; test `frontend/tests/canonicalNames.test.tsx`
 
 **Checkpoint**: Quickstart A13. Commit.
 

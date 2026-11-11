@@ -74,6 +74,7 @@ def register_blueprints(app: Flask) -> None:
     from app.api import (
         backup,
         calendar,
+        canonical_names,
         exams,
         health,
         imports,
@@ -99,6 +100,7 @@ def register_blueprints(app: Flask) -> None:
         imports,
         timetable_import,
         periods,
+        canonical_names,
         shifts,
         tags,
         sync,

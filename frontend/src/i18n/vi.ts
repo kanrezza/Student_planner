@@ -580,6 +580,17 @@ export const vi = {
     lists: 'Danh sách',
     autoDeadline: 'Tự tạo deadline',
     backup: 'Sao lưu',
+    canonicalNames: 'Tên môn chuẩn',
+  },
+  canonical: {
+    title: 'Tên môn chuẩn',
+    note: 'Dùng để tự sửa tên môn khi nhập lịch từ ảnh.',
+    empty: 'Chưa có tên nào. Tên được lưu khi bạn nhập lịch từ file PDF.',
+    colName: 'Tên môn',
+    colCode: 'Mã học phần',
+    colAdded: 'Ngày thêm',
+    clear: 'Xoá danh sách',
+    confirmClear: 'Xoá {count} tên môn chuẩn? Môn học và lịch học không bị ảnh hưởng.',
   },
   // Feature 003: các nhóm chữ được điền khi làm từng đợt (sao lưu, tìm kiếm, task lặp).
   backup: {

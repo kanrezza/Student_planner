@@ -4,6 +4,8 @@ import json
 from datetime import date, time
 from types import SimpleNamespace
 
+import pytest
+
 from app.pdfimport.layout import parse_table
 from app.pdfimport.preview import (
     PreviewContext,
@@ -11,6 +13,7 @@ from app.pdfimport.preview import (
     build_timetable_preview,
     choose_semester,
     diff_subject,
+    is_e_learning_room,
     match_existing,
 )
 from app.pdfimport.reader import read_pdf
@@ -232,3 +235,19 @@ def test_chi_nhan_ra_mon_cua_hoc_ky_dich():
     preview = build_timetable_preview(table.rows, table.semester_line, ctx)
     assert preview["semester"]["choice"] == "use"
     assert all(s["status"] == "new" for s in preview["subjects"])
+
+
+@pytest.mark.parametrize(
+    ("room", "expected"),
+    [
+        ("ONLINE-Elearning", True),
+        ("Elearning", True),
+        ("E-Learning", True),
+        ("online", True),
+        ("A6-103 (PC)", False),
+        ("Sân bóng đá", False),
+        (None, False),
+    ],
+)
+def test_phong_truc_tuyen_de_xuat_nhan_e_learning(room, expected):
+    assert is_e_learning_room(room) is expected

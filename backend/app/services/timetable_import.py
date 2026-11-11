@@ -14,6 +14,7 @@ from app.pdfimport.preview import PreviewContext, build_timetable_preview, match
 from app.pdfimport.reader import PdfImportError, read_pdf
 from app.schemas.timetable_import import TimetableCommitIn
 from app.services import auto_deadlines
+from app.services import canonical_names as canonical_service
 from app.services import periods as periods_service
 from app.services import semesters as semester_service
 from app.services import subjects as subject_service
@@ -131,6 +132,7 @@ def commit(payload: TimetableCommitIn) -> dict:
     except Exception:
         db.session.rollback()
         raise
+    canonical_service.record([(s.name, s.course_code) for s in payload.subjects])
     auto_deadlines.reconcile(subject_ids=[u.subject.id for u in updates])
     db.session.commit()
     return {
