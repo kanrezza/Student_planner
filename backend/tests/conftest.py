@@ -12,8 +12,15 @@ from app.extensions import db
 
 
 @pytest.fixture(scope="session")
-def app():
-    app = create_app({"SQLALCHEMY_DATABASE_URI": TEST_DATABASE_URL, "TESTING": True})
+def app(tmp_path_factory):
+    # Không bao giờ để test chạm volume thật `lichhoc_attachments` (file đính kèm của người dùng).
+    app = create_app(
+        {
+            "SQLALCHEMY_DATABASE_URI": TEST_DATABASE_URL,
+            "TESTING": True,
+            "ATTACHMENTS_DIR": str(tmp_path_factory.mktemp("kho-session")),
+        }
+    )
     with app.app_context():
         # Bắt đầu từ schema trống rồi chạy đúng các migration như môi trường thật.
         db.session.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
@@ -75,6 +82,7 @@ def isolated_app(tmp_path_factory):
             ),
             "TESTING": True,
             "RESTORE_FLAG_PATH": str(flag),
+            "ATTACHMENTS_DIR": str(tmp_path_factory.mktemp("kho-khoi-phuc")),
         }
     )
     with app.app_context():

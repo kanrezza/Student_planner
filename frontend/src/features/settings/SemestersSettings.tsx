@@ -16,9 +16,11 @@ export function SemestersSettings() {
   const semesters = useSemesters();
   const remove = useDeleteSemester();
   const [editing, setEditing] = useState<Semester | 'new' | null>(null);
-  const [deleting, setDeleting] = useState<{ semester: Semester; subjectCount?: number } | null>(
-    null,
-  );
+  const [deleting, setDeleting] = useState<{
+    semester: Semester;
+    subjectCount?: number;
+    fileCount?: number;
+  } | null>(null);
 
   function confirmDelete() {
     if (!deleting) return;
@@ -29,8 +31,12 @@ export function SemestersSettings() {
         onSuccess: () => setDeleting(null),
         onError: (err) => {
           if (err instanceof ApiError && err.status === 409) {
-            const count = (err.details as { subject_count: number }).subject_count;
-            setDeleting({ semester, subjectCount: count });
+            const details = err.details as { subject_count: number; attachment_count?: number };
+            setDeleting({
+              semester,
+              subjectCount: details.subject_count,
+              fileCount: details.attachment_count,
+            });
           }
         },
       },
@@ -98,7 +104,10 @@ export function SemestersSettings() {
             ? t('semesters.deleteWithSubjects', {
                 name: deleting.semester.name,
                 count: deleting.subjectCount,
-              })
+              }) +
+              (deleting.fileCount
+                ? ` ${t('attachments.deleteSemesterFiles', { count: deleting.fileCount })}`
+                : '')
             : t('semesters.deleteConfirm', { name: deleting?.semester.name ?? '' })
         }
         onCancel={() => setDeleting(null)}

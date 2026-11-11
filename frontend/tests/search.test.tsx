@@ -30,6 +30,7 @@ function response(over: Partial<SearchResponse['groups']> = {}): SearchResponse 
       subjects: empty,
       sessions: empty,
       exams: empty,
+      files: empty,
       ...over,
     },
   };

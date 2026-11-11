@@ -36,7 +36,9 @@ step() {
 # Backend chạy trong container, mount code hiện tại (không cần build lại image để test).
 backend() {
     # Bảng chữ có dấu của frontend được mount để test đối chiếu vn_fold ↔ foldVi đọc được.
-    docker compose run --rm --quiet-pull -v "$ROOT/backend:/app" \
+    # ATTACHMENTS_DIR trỏ ra /tmp để test không bao giờ đụng volume thật `lichhoc_attachments`.
+    docker compose run --rm --quiet-pull -e ATTACHMENTS_DIR=/tmp/lichhoc-test-attachments \
+        -v "$ROOT/backend:/app" \
         -v "$ROOT/frontend/tests/fixtures:/frontend-fixtures:ro" backend "$@"
 }
 

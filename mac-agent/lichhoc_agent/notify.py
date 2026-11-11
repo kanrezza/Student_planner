@@ -70,7 +70,31 @@ def install_delegate() -> bool:
         return False
 
 
+def attachments_notice_due(warning: bool, notified_on: str | None, today: str) -> bool:
+    """Cảnh báo file đính kèm lớn: tối đa một lần mỗi ngày, chỉ khi vượt ngưỡng (FR-026)."""
+    return bool(warning) and notified_on != today
+
+
+def attachments_notice_body(attachments_bytes: int, estimated_bytes: int) -> str:
+    def size(value: int) -> str:
+        units = [(1 << 30, "GB"), (1 << 20, "MB"), (1 << 10, "KB")]
+        for factor, name in units:
+            if value >= factor:
+                return f"{value / factor:.1f}".replace(".", ",") + f" {name}"
+        return f"{value} B"
+
+    return (
+        f"File đính kèm đang chiếm {size(attachments_bytes)}; "
+        f"mỗi bản sao lưu khoảng {size(estimated_bytes)}."
+    )
+
+
 def send_stale_notice() -> bool:
+    """Gửi thông báo quá 3 ngày chưa sao lưu (xem `send_notice`)."""
+    return send_notice(BODY, "backup-stale")
+
+
+def send_notice(body: str, identifier: str = "backup-notice") -> bool:
     """Gửi thông báo; trả True nếu đã gửi yêu cầu. Chưa được cấp quyền thì ghi log, không lỗi."""
     try:
         import UserNotifications as UN
@@ -83,13 +107,13 @@ def send_stale_notice() -> bool:
                 return
             content = UN.UNMutableNotificationContent.alloc().init()
             content.setTitle_(TITLE)
-            content.setBody_(BODY)
+            content.setBody_(body)
             request = UN.UNNotificationRequest.requestWithIdentifier_content_trigger_(
-                "backup-stale", content, None
+                identifier, content, None
             )
             center.addNotificationRequest_withCompletionHandler_(
                 request,
-                lambda err: log.info("Đã gửi thông báo quá 3 ngày chưa sao lưu (lỗi: %s)", err),
+                lambda err: log.info("Đã gửi thông báo %s (lỗi: %s)", identifier, err),
             )
 
         center.requestAuthorizationWithOptions_completionHandler_(

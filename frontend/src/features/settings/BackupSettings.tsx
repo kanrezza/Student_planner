@@ -56,6 +56,14 @@ function StatusCard({ status }: { status: BackupStatus }) {
             )}
           </>
         )}
+        {status.attachments_warning && (
+          <Notice tone="warning">
+            {t('backup.attachmentsWarning', {
+              files: formatSize(status.attachments_bytes ?? 0),
+              backup: formatSize(status.estimated_backup_bytes ?? 0),
+            })}
+          </Notice>
+        )}
         {status.destination.state !== 'ok' && status.destination.message && (
           <Notice tone="warning">{status.destination.message}</Notice>
         )}

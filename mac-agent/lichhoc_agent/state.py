@@ -19,6 +19,7 @@ BACKUP_KEYS = (
     "backup_last_success_at",
     "backup_last_success_size",
     "stale_notified_for",
+    "attachments_notified_on",
 )
 
 
@@ -38,6 +39,7 @@ class State:
     backup_last_success_at: str | None = None
     backup_last_success_size: int | None = None
     stale_notified_for: str | None = None  # mốc đã gửi thông báo "quá 3 ngày chưa sao lưu"
+    attachments_notified_on: str | None = None  # ngày đã báo "file đính kèm lớn" (1 lần/ngày)
 
     @classmethod
     def load(cls, path: Path = DEFAULT_PATH) -> "State":

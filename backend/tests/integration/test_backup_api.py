@@ -26,11 +26,12 @@ def dump_response(client):
 def test_dump_la_zip_co_manifest_va_data_dump(dump_response):
     assert dump_response.mimetype == "application/zip"
     with zipfile.ZipFile(io.BytesIO(dump_response.data)) as zf:
-        assert sorted(zf.namelist()) == ["data.dump", "manifest.json"]
+        assert sorted(zf.namelist()) == ["data.dump", "manifest.json"]  # chưa có file đính kèm
         assert all(i.compress_type == zipfile.ZIP_STORED for i in zf.infolist())
         manifest = json.loads(zf.read("manifest.json"))
         dump = zf.read("data.dump")
-    assert manifest["format"] == 1
+    assert manifest["format"] == 2
+    assert manifest["attachments"] == {"count": 0, "bytes": 0}
     assert manifest["kind"] == "tu-dong"
     assert manifest["schema_revision"] == backup._head_revision()
     assert manifest["app_version"]

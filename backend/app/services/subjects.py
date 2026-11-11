@@ -14,7 +14,7 @@ from app.api.errors import ApiError, not_found
 from app.extensions import db
 from app.lib.timeutil import combine
 from app.models import ClassSession, Shift, Subject, SubjectSchedule, SubjectTag
-from app.services import auto_deadlines
+from app.services import attachments, auto_deadlines
 from app.services import semesters as semester_service
 from app.services.colors import is_palette_color, next_color
 from app.services.recurrence import ExistingSession, desired_sessions, plan_sessions
@@ -258,6 +258,8 @@ def regenerate_sessions(
         )
 
     removed = plan.to_delete + (plan.exception_conflicts if force else [])
+    # File đính kèm của buổi sắp bị xoá chuyển sang môn học để không mất (feature 005, FR-024).
+    subject.moved_attachment_count = attachments.move_session_files_to_subject(removed, subject.id)  # type: ignore[attr-defined]
     auto_deadlines.drop_for_sessions(removed)
     for session_id in removed:
         db.session.delete(by_id[session_id])
@@ -327,6 +329,15 @@ def _warnings(subject: Subject) -> list[dict]:
         )
     else:
         warnings.extend(find_time_conflicts(subject))
+    moved = getattr(subject, "moved_attachment_count", 0)
+    if moved:
+        warnings.append(
+            {
+                "code": "attachments_moved",
+                "message": f"“{subject.name}”: đã chuyển {moved} file của buổi học bị xoá "
+                "sang môn học",
+            }
+        )
     _, overlaps = desired_sessions(subject.schedules)
     if overlaps:
         listed = ", ".join(_fmt(d) for d in overlaps[:MAX_CONFLICTS_LISTED])
@@ -539,11 +550,23 @@ def update_subject(subject_id: int, changes: dict, confirm: bool) -> tuple[Subje
     return subject, warnings
 
 
-def delete_subject(subject_id: int) -> None:
+def delete_subject(subject_id: int, confirm: bool = True) -> None:
+    """Xoá môn cùng buổi học và file đính kèm; có file mà chưa `confirm` → 409 nêu số file."""
+    subject = get_subject(subject_id)
+    count = attachments.count_for_subjects([subject_id])
+    if count and not confirm:
+        raise ApiError(
+            409,
+            "confirm_required",
+            f"Xoá môn sẽ xoá {count} file đính kèm của môn và các buổi học",
+            details={"attachment_count": count},
+        )
+    shas = attachments.shas_for_subjects([subject_id])
     auto_deadlines.drop_for_subjects([subject_id])
-    db.session.delete(get_subject(subject_id))
+    db.session.delete(subject)
     bump_revision(db.session)
     db.session.commit()
+    attachments.collect_garbage(shas)
 
 
 def create_many(

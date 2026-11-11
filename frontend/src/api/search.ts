@@ -4,7 +4,8 @@ import { apiFetch } from './client';
 import { keys } from './keys';
 import type { Task } from './types';
 
-export type SearchGroupName = 'tasks' | 'lists' | 'tags' | 'subjects' | 'sessions' | 'exams';
+export type SearchGroupName =
+  'tasks' | 'lists' | 'tags' | 'subjects' | 'sessions' | 'exams' | 'files';
 export const SEARCH_GROUPS: SearchGroupName[] = [
   'tasks',
   'lists',
@@ -12,6 +13,7 @@ export const SEARCH_GROUPS: SearchGroupName[] = [
   'subjects',
   'sessions',
   'exams',
+  'files',
 ];
 
 export type SearchTask = Task & { matched_field: 'title' | 'notes'; snippet: string | null };
@@ -50,6 +52,18 @@ export type SearchExam = {
   room: string | null;
 };
 
+export type SearchFile = {
+  id: number;
+  attachment_id: number;
+  name: string;
+  owner: {
+    type: 'task' | 'subject' | 'session' | 'exam';
+    id: number;
+    title: string;
+    semester_id?: number;
+  };
+};
+
 export type SearchItems = {
   tasks: SearchTask;
   lists: SearchList;
@@ -57,6 +71,7 @@ export type SearchItems = {
   subjects: SearchSubject;
   sessions: SearchSession;
   exams: SearchExam;
+  files: SearchFile;
 };
 export type SearchGroup<K extends SearchGroupName> = { total: number; items: SearchItems[K][] };
 export type SearchGroups = { [K in SearchGroupName]: SearchGroup<K> };

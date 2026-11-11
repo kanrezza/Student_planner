@@ -69,5 +69,5 @@ def update_subject(subject_id: int):
 
 @bp.delete("/subjects/<int:subject_id>")
 def delete_subject(subject_id: int):
-    service.delete_subject(subject_id)
+    service.delete_subject(subject_id, bool_arg("confirm", False))
     return "", 204

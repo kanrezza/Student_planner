@@ -5,7 +5,7 @@ Phần đĩa nằm ở `attachments_store`; module này giữ logic có CSDL.
 
 import logging
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.api.errors import ApiError, not_found
@@ -246,3 +246,45 @@ def stats() -> dict:
         "max_file_mb": cfg.attachment_max_mb,
         "backup_warn_mb": cfg.backup_attachments_warn_mb,
     }
+
+
+def _subject_scope(subject_ids: list[int]):
+    """Mục đính kèm của các môn và của mọi buổi học thuộc các môn đó."""
+    session_ids = select(ClassSession.id).where(ClassSession.subject_id.in_(subject_ids))
+    return Attachment.subject_id.in_(subject_ids) | Attachment.session_id.in_(session_ids)
+
+
+def count_for_subjects(subject_ids) -> int:
+    """Số file sẽ mất khi xoá các môn này (gồm file của các buổi học của môn)."""
+    ids = list(subject_ids)
+    if not ids:
+        return 0
+    return db.session.scalar(
+        select(func.count()).select_from(Attachment).where(_subject_scope(ids))
+    )
+
+
+def shas_for_subjects(subject_ids) -> list[str]:
+    ids = list(subject_ids)
+    if not ids:
+        return []
+    return list(db.session.scalars(select(Attachment.blob_sha256).where(_subject_scope(ids))))
+
+
+def count_for_exam(exam_id: int) -> int:
+    return db.session.scalar(
+        select(func.count()).select_from(Attachment).where(Attachment.exam_id == exam_id)
+    )
+
+
+def move_session_files_to_subject(session_ids, subject_id: int) -> int:
+    """Buổi học sắp bị xoá (sửa lịch môn): file của buổi chuyển sang môn học, không mất (FR-024)."""
+    ids = list(session_ids)
+    if not ids:
+        return 0
+    moved = db.session.execute(
+        update(Attachment)
+        .where(Attachment.session_id.in_(ids))
+        .values(session_id=None, subject_id=subject_id)
+    ).rowcount
+    return moved or 0

@@ -35,6 +35,10 @@ export type BackupJob = {
 };
 
 export type BackupStatus = {
+  /** File đính kèm (feature 005): dung lượng, ước tính mỗi bản sao lưu, cảnh báo khi quá lớn. */
+  attachments_bytes?: number;
+  estimated_backup_bytes?: number;
+  attachments_warning?: boolean;
   config: BackupConfig;
   agent_online: boolean;
   destination: { state: DestinationState; message: string | null; path: string | null };

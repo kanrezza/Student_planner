@@ -443,7 +443,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
 
 ### Tests for User Story 6
 
-- [ ] T044 [P] [US6] Test trong `backend/tests/integration/test_attachments_lifecycle.py`:
+- [X] T044 [P] [US6] Test trong `backend/tests/integration/test_attachments_lifecycle.py`:
   - Task có 2 file → `DELETE /tasks/{id}` (Thùng rác): mục ẩn khỏi `GET /attachments`, tìm kiếm, `stats`, nhưng blob
     còn. Khôi phục → hiện lại đủ.
   - `delete_permanently`, `empty_trash`, `purge_expired_trash` → mục bị xoá, blob bị dọn trừ blob nơi khác dùng
@@ -454,7 +454,7 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
   - `PATCH /subjects/{id}` đổi thứ làm mất buổi có file → file chuyển sang môn, `warnings` có `attachments_moved`.
   - Nhập lại lịch thi trùng (ảnh) → file của buổi thi giữ nguyên.
   - `sweep` dọn file lạ và `.incoming` cũ. Thêm test: xoá học kỳ và thu hẹp học kỳ làm môn bị xoá, khi có file đính kèm → 409 `confirm_required` kèm `attachment_count`; có `confirm` thì xoá và dọn blob.
-- [ ] T045 [P] [US6] Test sao lưu trong `backend/tests/integration/test_backup_attachments.py` (dùng `isolated_app` của feature 003, `ATTACHMENTS_DIR` riêng):
+- [X] T045 [P] [US6] Test sao lưu trong `backend/tests/integration/test_backup_attachments.py` (dùng `isolated_app` của feature 003, `ATTACHMENTS_DIR` riêng):
   - `build_backup` tạo ZIP format 2 có `attachments/<sha>` cho mọi blob đang dùng (kể cả của task trong Thùng rác) và
     manifest `attachments.count/bytes`.
   - Xoá DB + thư mục, khôi phục → mọi file có lại, SHA-256 khớp (SC-007).
@@ -463,29 +463,29 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
   - Lỗi sau khi nạp dump → hoàn tác, file cũ còn.
   - `GET /backup/status` có `attachments_bytes`, `estimated_backup_bytes`, `attachments_warning` (đặt ngưỡng 100 MB rồi
     vượt).
-- [ ] T046 [P] [US6] Test tìm kiếm trong `backend/tests/integration/test_search_files.py`:
+- [X] T046 [P] [US6] Test tìm kiếm trong `backend/tests/integration/test_search_files.py`:
   - nhóm `files` khớp "de cuong" với "Đề cương NLP.pdf" (NFD từ Finder cũng khớp);
   - `owner` đúng cho cả 4 loại nơi gắn;
   - file của task trong Thùng rác không có;
   - `group=files`;
   - 1.000 mục < 1 giây (SC-009).
-- [ ] T047 [P] [US6] Test agent trong `mac-agent/tests/test_backup_attachments_warning.py`: sau sao lưu tự động khi `attachments_warning = true` → gửi một thông báo nhẹ, không quá 1 lần/ngày; `false` → không gửi
-- [ ] T048 [P] [US6] Test Vitest `frontend/tests/searchFiles.test.tsx`:
+- [X] T047 [P] [US6] Test agent trong `mac-agent/tests/test_backup_attachments_warning.py`: sau sao lưu tự động khi `attachments_warning = true` → gửi một thông báo nhẹ, không quá 1 lần/ngày; `false` → không gửi
+- [X] T048 [P] [US6] Test Vitest `frontend/tests/searchFiles.test.tsx`:
   - nhóm "File" có tên tô phần khớp và dòng phụ nơi gắn;
   - chọn kết quả điều hướng tới nơi gắn kèm `?attachment=<id>`, dòng file được nháy sáng;
   - hộp xác nhận xoá môn/buổi thi có "và n file đính kèm" khi API trả 409.
 
 ### Implementation for User Story 6
 
-- [ ] T049 [US6] Vòng đời:
+- [X] T049 [US6] Vòng đời:
   - Lọc mục của task trong Thùng rác ở `backend/app/services/attachments.py` (`list_for`, `count_for`, `stats`).
   - Gọi `collect_garbage` sau `delete_permanently`, `empty_trash`, `purge_expired_trash` trong
     `backend/app/services/tasks.py`, sau xoá môn trong `backend/app/services/subjects.py`, sau xoá buổi thi trong
     `backend/app/services/exams.py`. Lấy danh sách sha trước khi xoá.
   - `delete_subject`/`delete_exam` nhận `confirm`; API `backend/app/api/subjects.py`, `backend/app/api/exams.py` trả
     409 `confirm_required` kèm `attachment_count`. `delete_semester` và `update_semester` (thu hẹp, `clamp_subjects`) trong `backend/app/services/semesters.py` đếm file của các môn/buổi bị xoá, trả 409 `confirm_required` kèm `attachment_count` khi thiếu xác nhận, rồi gọi `collect_garbage` sau commit; giao diện học kỳ (`frontend/src/features/settings/SemestersSettings.tsx`) hiện số file trong hộp xác nhận.
-- [ ] T050 [US6] Trong `regenerate_sessions` của `backend/app/services/subjects.py`, trước khi xoá buổi theo `plan.to_delete`: chuyển mục đính kèm của các buổi đó sang `subject_id` của môn (`session_id = NULL`). Trả cảnh báo `attachments_moved` qua `_warnings` / kết quả nhập PDF trong `backend/app/services/timetable_import.py`
-- [ ] T051 [US6] Sao lưu format 2 trong `backend/app/services/backup.py` theo [data-model](data-model.md#bản-sao-lưu-lhbackup-format-2-r7):
+- [X] T050 [US6] Trong `regenerate_sessions` của `backend/app/services/subjects.py`, trước khi xoá buổi theo `plan.to_delete`: chuyển mục đính kèm của các buổi đó sang `subject_id` của môn (`session_id = NULL`). Trả cảnh báo `attachments_moved` qua `_warnings` / kết quả nhập PDF trong `backend/app/services/timetable_import.py`
+- [X] T051 [US6] Sao lưu format 2 trong `backend/app/services/backup.py` theo [data-model](data-model.md#bản-sao-lưu-lhbackup-format-2-r7):
   - `MANIFEST_FORMAT = 2`, nhận cả 1 và 2 khi mở.
   - `build_backup` ghi `attachments/<sha>` từ volume và thêm `attachments.count/bytes`.
   - `_open_backup` kiểm tra tên mục là sha hợp lệ, giải nén vào `<ATTACHMENTS_DIR>/.restore/<uuid>/` và kiểm tra
@@ -494,8 +494,8 @@ mọi file mở được; ⌘F "de cuong" tìm ra file.
     `sweep`; lỗi thì xoá `.restore`.
   - `GET /backup/status` (`backend/app/services/backup_jobs.py`) thêm `attachments_bytes`, `estimated_backup_bytes`,
     `attachments_warning`. Thứ tự khôi phục: giải nén vào `.restore` → nạp dump + nâng cấp schema → `os.replace` blob vào chỗ → commit; chỉ quét dọn sau khi mọi bước thành công. Lỗi ở bước chuyển blob thì nạp lại `safety.dump`; blob cũ còn nguyên vì chưa bị xoá.
-- [ ] T052 [US6] Agent: trong `mac-agent/lichhoc_agent/backup.py`, sau sao lưu tự động thành công đọc `attachments_warning` từ status và gọi `notify` (tối đa 1 lần/ngày, nhớ trong `state.py`), chuỗi tiếng Việt "File đính kèm đang chiếm 1,2 GB; mỗi bản sao lưu khoảng 1,3 GB."
-- [ ] T053 [US6] Thêm nhóm `files` vào `backend/app/services/search.py` (`GROUPS`, truy vấn theo `vn_fold(display_name)`, bỏ task trong Thùng rác, `owner` qua `owner_title`). Frontend:
+- [X] T052 [US6] Agent: trong `mac-agent/lichhoc_agent/backup.py`, sau sao lưu tự động thành công đọc `attachments_warning` từ status và gọi `notify` (tối đa 1 lần/ngày, nhớ trong `state.py`), chuỗi tiếng Việt "File đính kèm đang chiếm 1,2 GB; mỗi bản sao lưu khoảng 1,3 GB."
+- [X] T053 [US6] Thêm nhóm `files` vào `backend/app/services/search.py` (`GROUPS`, truy vấn theo `vn_fold(display_name)`, bỏ task trong Thùng rác, `owner` qua `owner_title`). Frontend:
   - `frontend/src/features/search/SearchResults.tsx`: nhóm "File" có biểu tượng kẹp giấy, dòng phụ nơi gắn; chọn thì
     điều hướng kèm `?attachment=<id>`.
   - `AttachmentsSection.tsx` đọc tham số đó để cuộn tới dòng file và nháy sáng 2 giây.

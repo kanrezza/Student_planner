@@ -376,28 +376,46 @@ def delete_permanently(task_id: int) -> None:
     task = get_task(task_id, include_trashed=True)
     if task.deleted_at is None:
         raise ApiError(409, "conflict", "Chỉ xoá vĩnh viễn được công việc đang ở Thùng rác")
+    from app.services import attachments  # import muộn: attachments không phụ thuộc tasks
+
+    shas = attachments.shas_for("task", [task_id])
     db.session.delete(task)
     db.session.flush()
     task_series.prune_orphan_series()
     db.session.commit()
+    attachments.collect_garbage(shas)  # file của task bị xoá hẳn (nếu không còn nơi nào dùng)
 
 
 def empty_trash() -> int:
+    from app.services import attachments
+
+    trashed = list(db.session.scalars(select(Task.id).where(Task.deleted_at.is_not(None))))
+    shas = attachments.shas_for("task", trashed)
     deleted = db.session.execute(delete(Task).where(Task.deleted_at.is_not(None))).rowcount
     task_series.prune_orphan_series()
     db.session.commit()
+    attachments.collect_garbage(shas)
     return deleted
 
 
 def purge_expired_trash(now: datetime) -> int:
     """Xoá hẳn task ở Thùng rác quá 30 ngày (research R6). Task này đã không còn trong feed."""
+    from app.services import attachments
+
     cutoff = now - timedelta(days=TRASH_KEEP_DAYS)
+    expired = list(
+        db.session.scalars(
+            select(Task.id).where(Task.deleted_at.is_not(None), Task.deleted_at < cutoff)
+        )
+    )
+    shas = attachments.shas_for("task", expired)
     deleted = db.session.execute(
         delete(Task).where(Task.deleted_at.is_not(None), Task.deleted_at < cutoff)
     ).rowcount
     if deleted:
         task_series.prune_orphan_series()
         db.session.commit()
+        attachments.collect_garbage(shas)
     return deleted
 
 

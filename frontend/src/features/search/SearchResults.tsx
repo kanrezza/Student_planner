@@ -11,6 +11,7 @@ import { t } from '../../i18n/vi';
 import { colorHex } from '../../lib/colors';
 import { formatDayLong, formatTime } from '../../lib/dates';
 import { cx } from '../../ui/cx';
+import { IconPaperclip } from '../../ui/icons';
 import { useTaskActions } from '../tasks/useTaskActions';
 import { TaskRow } from '../tasks/TaskRow';
 import { Highlighted } from './Highlighted';
@@ -112,6 +113,17 @@ function GroupSection<K extends SearchGroupName>(props: SectionProps<K>) {
             }
             case 'exams':
               return navigate(resultPath({ type: 'exam', id: (item as SearchItems['exams']).id }));
+            case 'files': {
+              const file = item as SearchItems['files'];
+              const mark = `attachment=${file.attachment_id}`;
+              const { type, id, semester_id: semesterId } = file.owner;
+              if (type === 'session') return openSession(id);
+              if (type === 'task') return navigate(`/cong-viec/tat-ca?task=${id}&${mark}`);
+              if (type === 'exam') return navigate(`${resultPath({ type, id })}&${mark}`);
+              return navigate(
+                `${resultPath({ type: 'subject', id, semesterId: semesterId ?? 0 })}&${mark}`,
+              );
+            }
           }
         },
       })),
@@ -216,6 +228,20 @@ function GroupSection<K extends SearchGroupName>(props: SectionProps<K>) {
                     {session.is_cancelled && ` · ${t('search.cancelled')}`}
                   </>
                 }
+                onOpen={open}
+              />
+            );
+          }
+          case 'files': {
+            const file = item as SearchItems['files'];
+            return (
+              <ResultRow
+                key={id}
+                entryId={id}
+                active={active}
+                leading={<IconPaperclip size={15} />}
+                title={<Highlighted text={file.name} query={query} />}
+                meta={t(`search.fileOwner.${file.owner.type}`, { title: file.owner.title })}
                 onOpen={open}
               />
             );

@@ -45,6 +45,11 @@ class BackendClient:
         resp.raise_for_status()
         return resp.json()
 
+    def backup_status(self) -> dict:
+        resp = self.http.get(f"{self.base_url}/backup/status", timeout=TIMEOUT_SECONDS)
+        resp.raise_for_status()
+        return resp.json()
+
     def claim_job(self) -> dict | None:
         resp = self.http.post(f"{self.base_url}/backup/jobs/claim", timeout=TIMEOUT_SECONDS)
         if resp.status_code == 204:

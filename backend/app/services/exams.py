@@ -271,11 +271,24 @@ def update_exam(exam_id: int, changes: dict) -> tuple[Exam, list[dict], list[dic
     return exam, conflicts, warnings
 
 
-def delete_exam(exam_id: int) -> None:
+def delete_exam(exam_id: int, confirm: bool = True) -> None:
+    """Xoá buổi thi cùng file đính kèm; có file mà chưa `confirm` → 409 nêu số file (FR-024)."""
+    from app.services import attachments
+
     exam = get_exam(exam_id)
+    count = attachments.count_for_exam(exam_id)
+    if count and not confirm:
+        raise ApiError(
+            409,
+            "confirm_required",
+            f"Xoá buổi thi sẽ xoá {count} file đính kèm",
+            details={"attachment_count": count},
+        )
+    shas = attachments.shas_for("exam", [exam_id])
     db.session.delete(exam)
     bump_revision(db.session)
     db.session.commit()
+    attachments.collect_garbage(shas)
 
 
 def set_exam_tags(exam_id: int, tag_ids: list[int]) -> Exam:

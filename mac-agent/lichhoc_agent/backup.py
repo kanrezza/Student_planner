@@ -484,11 +484,13 @@ class BackupService:
         clock: Callable[[], datetime] = datetime.now,
         send_notice: Callable[[], bool] = notify.send_stale_notice,
         resync: Callable[[], None] = lambda: None,
+        send_text: Callable[[str], bool] = notify.send_notice,
     ):
         self.backend = backend
         self.state = state
         self.clock = clock
         self.send_notice = send_notice
+        self.send_text = send_text
         self.resync = resync
         self.config: BackupConfig | None = None
         self._config_revision: int | None = None
@@ -513,7 +515,10 @@ class BackupService:
             _parse_moment(self.state.backup_last_success_at),
             _parse_moment(self.state.backup_last_attempt_at),
         ):
-            self._finish(run_backup("tu-dong", self.backend, self.state, self.config, now))
+            result = run_backup("tu-dong", self.backend, self.state, self.config, now)
+            self._finish(result)
+            if result.ok:
+                self._maybe_notify_attachments(now)
         self._maybe_notify(now)
         self._maybe_report()
 
@@ -547,6 +552,24 @@ class BackupService:
             if self.send_notice():
                 self.state.stale_notified_for = anchor.isoformat()
                 self.state.save()
+
+    def _maybe_notify_attachments(self, now: datetime) -> None:
+        """Sau sao lưu tự động: file đính kèm vượt ngưỡng thì báo nhẹ, tối đa một lần mỗi ngày."""
+        try:
+            status = self.backend.backup_status()
+        except requests.RequestException:
+            return
+        today = now.date().isoformat()
+        if not notify.attachments_notice_due(
+            status.get("attachments_warning", False), self.state.attachments_notified_on, today
+        ):
+            return
+        body = notify.attachments_notice_body(
+            status.get("attachments_bytes", 0), status.get("estimated_backup_bytes", 0)
+        )
+        if self.send_text(body):
+            self.state.attachments_notified_on = today
+            self.state.save()
 
     def _maybe_report(self) -> None:
         if not self._dirty and clock_time.monotonic() - self._last_report < REPORT_EVERY_SECONDS:

@@ -38,7 +38,8 @@ export function useSaveExam() {
 export function useDeleteExam() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: (id: number) => apiFetch(`/exams/${id}`, { method: 'DELETE' }),
+    mutationFn: ({ id, confirm }: { id: number; confirm?: boolean }) =>
+      apiFetch(`/exams/${id}${confirm ? '?confirm=true' : ''}`, { method: 'DELETE' }),
     onSuccess: refresh,
   });
 }

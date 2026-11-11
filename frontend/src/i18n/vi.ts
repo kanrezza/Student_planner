@@ -130,6 +130,12 @@ export const vi = {
   schedule: {
     title: 'Lịch hôm nay',
     exam: 'Thi',
+    fileOwner: {
+      task: 'Công việc: {title}',
+      subject: 'Môn: {title}',
+      session: 'Buổi học: {title}',
+      exam: 'Buổi thi: {title}',
+    },
     cancelled: 'Đã huỷ',
     moved: 'Đã dời',
   },
@@ -340,6 +346,9 @@ export const vi = {
     executableWarning:
       'File có thể chạy chương trình, chỉ tải về khi bạn tin nguồn. App không mở trực tiếp file này.',
     missing: 'File bị thiếu trong kho lưu trữ',
+    deleteSemesterFiles: 'Cùng {count} file đính kèm của các môn và buổi học này cũng bị xoá.',
+    deleteWithFiles:
+      '“{name}” có {count} file đính kèm. Xoá luôn các file này? Không hoàn tác được.',
     saved: 'Đã lưu vào Tải về: {path}',
     openExternal: 'Mở bằng ứng dụng khác',
     prev: 'File trước',
@@ -671,6 +680,8 @@ export const vi = {
   },
   // Feature 003: các nhóm chữ được điền khi làm từng đợt (sao lưu, tìm kiếm, task lặp).
   backup: {
+    attachmentsWarning:
+      'File đính kèm đang chiếm {files}; mỗi bản sao lưu khoảng {backup}. Bản sao lưu vẫn chạy bình thường.',
     statusTitle: 'Lần sao lưu gần nhất',
     never: 'Chưa có bản sao lưu nào.',
     lastSuccess: 'Lần gần nhất: {when} — {size} — Thành công',
@@ -731,11 +742,17 @@ export const vi = {
     placeholder: 'Tìm kiếm',
     clear: 'Xoá từ khoá',
     title: 'Kết quả cho “{q}”',
-    hint: 'Gõ để tìm công việc, danh sách, nhãn, môn học, buổi học, buổi thi. Không cần gõ dấu.',
+    hint: 'Gõ để tìm công việc, danh sách, nhãn, môn học, buổi học, buổi thi, tên file đính kèm. Không cần gõ dấu.',
     includeDone: 'Gồm cả đã hoàn thành',
     empty: 'Không tìm thấy kết quả cho “{q}”',
     loading: 'Đang tìm…',
     more: 'Xem thêm ({n})',
+    fileOwner: {
+      task: 'Công việc: {title}',
+      subject: 'Môn: {title}',
+      session: 'Buổi học: {title}',
+      exam: 'Buổi thi: {title}',
+    },
     groups: {
       tasks: 'Công việc',
       lists: 'Danh sách',
@@ -743,6 +760,7 @@ export const vi = {
       subjects: 'Môn học',
       sessions: 'Buổi học',
       exams: 'Buổi thi',
+      files: 'File',
     },
     openTasks: '{n} việc chưa xong',
     cancelled: 'Đã huỷ',

@@ -185,7 +185,7 @@ def test_q_rong_hoac_khoang_trang_moi_nhom_rong(client):
     for q in ["", "%20%20%20"]:
         groups = search(client, q)
         assert all(g["total"] == 0 and g["items"] == [] for g in groups.values()), q
-    assert set(groups) == {"tasks", "lists", "tags", "subjects", "sessions", "exams"}
+    assert set(groups) == {"tasks", "lists", "tags", "subjects", "sessions", "exams", "files"}
 
 
 def test_ky_tu_dac_biet_khong_lam_hong_truy_van(client):
